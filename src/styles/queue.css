@@ -1,0 +1,493 @@
+/* ============================================================
+   M27 Queue — Linear-inspired board + Vercel status indicators.
+   Uses design tokens from tokens.css.
+   ============================================================ */
+
+/* ── Status indicator (Vercel-style dot) ──────────────────── */
+.q-status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.q-status-dot::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.q-status-dot--connected::before {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.q-status-dot--connecting::before {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  animation: q-pulse 1.2s ease-in-out infinite;
+}
+
+.q-status-dot--disconnected::before,
+.q-status-dot--error::before {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+@keyframes q-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Queue board (Linear-style) ───────────────────────────── */
+.q-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.q-board__column {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.q-board__column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.q-board__column-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.q-board__column-count {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: 999px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.q-board__column-body {
+  flex: 1;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 120px;
+}
+
+/* ── Token card (Linear card style) ───────────────────────── */
+.q-token-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: default;
+}
+
+.q-token-card:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.q-token-card--emergency {
+  border-left: 3px solid var(--color-danger);
+}
+
+.q-token-card--called {
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.q-token-card--completed {
+  opacity: 0.6;
+}
+
+.q-token-card__no {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+  min-width: 40px;
+}
+
+.q-token-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.q-token-card__patient {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.q-token-card__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-token-card__actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* ── Priority badge ───────────────────────────────────────── */
+.q-priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.q-priority--normal {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.q-priority--emergency {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* ── Status badge ─────────────────────────────────────────── */
+.q-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.q-status--waiting {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.q-status--called {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.q-status--completed {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.q-status--no-show {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* ── Cabin display (big screen) ───────────────────────────── */
+.q-cabin {
+  text-align: center;
+  padding: var(--space-7) var(--space-5);
+}
+
+.q-cabin__now-serving {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.q-cabin__token-no {
+  font-size: 72px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.q-cabin__patient {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-4);
+}
+
+.q-cabin__next {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.q-cabin__next strong {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-cabin__waiting-strip {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.q-cabin__waiting-chip {
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Call patient button ──────────────────────────────────── */
+.q-call-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.q-call-btn--primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.q-call-btn--primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.q-call-btn--danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.q-call-btn--danger:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.q-call-btn--outline {
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.q-call-btn--outline:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.q-call-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.q-call-btn--calling {
+  animation: q-call-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes q-call-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(29, 78, 216, 0); }
+}
+
+/* ── Wait time display ────────────────────────────────────── */
+.q-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.q-wait__value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.q-wait__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.q-wait--short .q-wait__value { color: var(--color-success); }
+.q-wait--medium .q-wait__value { color: var(--color-warning); }
+.q-wait--long .q-wait__value { color: var(--color-danger); }
+
+/* ── Doctor batch ─────────────────────────────────────────── */
+.q-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.q-batch-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition: background var(--transition-fast);
+}
+
+.q-batch-item:hover {
+  background: var(--color-surface-muted);
+}
+
+.q-batch-item__seq {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+/* ── Nurse desk ───────────────────────────────────────────── */
+.q-nurse-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .q-nurse-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.q-nurse-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.q-nurse-panel h3 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+
+/* ── Department queue ─────────────────────────────────────── */
+.q-dept-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.q-dept-stats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.q-dept-stat {
+  text-align: center;
+}
+
+.q-dept-stat__value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-dept-stat__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── Token manager ────────────────────────────────────────── */
+.q-manager-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Empty / loading states ───────────────────────────────── */
+.q-empty {
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────── */
+.q-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+}
+
+.q-toolbar select,
+.q-toolbar input {
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+</content>

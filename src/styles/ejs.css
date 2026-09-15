@@ -1,0 +1,250 @@
+/* M36 EJS/ASHA — component styles for ASHA work tracking, incentives, geography. */
+
+/* Tab group filter navigation */
+.tab-group {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.tab--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* Stat cards for summary grids */
+.card-grid {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.card-grid--4 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.stat-card__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.stat-card__value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.stat-card--warning { border-left: 3px solid var(--color-warning); }
+.stat-card--info { border-left: 3px solid var(--color-info); }
+.stat-card--success { border-left: 3px solid var(--color-success); }
+
+/* Linear list pattern */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list--linear .list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list--linear .list__item:last-child {
+  border-bottom: none;
+}
+
+.list__item--clickable {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.list__item--clickable:hover {
+  background: var(--color-bg);
+}
+
+.list__item-title {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.list__item-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.list__item-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Detail drawer */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer {
+  width: min(480px, 100%);
+  height: 100%;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.drawer__header h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+}
+
+.drawer__body h3 {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}
+
+/* Detail grid (key-value pairs) */
+.detail-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.detail-grid dt {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.detail-grid dd {
+  margin: 0;
+  color: var(--color-text);
+}
+
+/* Compact table variant */
+.data-table--compact {
+  font-size: var(--font-size-sm);
+}
+
+.data-table--compact th,
+.data-table--compact td {
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Button group */
+.btn-group {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.btn--small {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.btn--icon {
+  padding: var(--space-1) var(--space-2);
+  line-height: 1;
+  font-size: var(--font-size-lg);
+}
+
+.btn--success {
+  background: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+.btn--success:hover:not(:disabled) {
+  background: var(--color-success-dark);
+}
+
+/* Badge extensions */
+.badge--primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.badge--secondary {
+  background: var(--color-secondary-light);
+  color: var(--color-secondary);
+}
+
+.badge--danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* EjsPage content wrapper */
+.ejs-content {
+  margin-top: var(--space-4);
+}
+
+/* Row clickable */
+.row-clickable {
+  cursor: pointer;
+}
+
+.row-clickable:hover {
+  background: var(--color-bg);
+}

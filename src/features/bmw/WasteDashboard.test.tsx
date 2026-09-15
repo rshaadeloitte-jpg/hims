@@ -1,0 +1,143 @@
+import { vi, describe, expect, it, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WasteDashboard } from "./WasteDashboard";
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+});
+
+const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+
+vi.mock("./queries", () => ({
+  useWasteSummary: () => ({
+    data: {
+      totalCount: 50,
+      pendingCount: 10,
+      acceptedCount: 15,
+      handOveredCount: 10,
+      receivedCount: 10,
+      completedCount: 5,
+    },
+    isLoading: false,
+  }),
+  useWasteList: () => ({
+    data: {
+      items: [
+        {
+          id: 1001,
+          requisitionNo: "BMW/2026/001",
+          fromStore: "Ward A",
+          toStore: "BMW Store",
+          storeId: 1,
+          toStoreId: 2,
+          date: "2026-09-10",
+          requestStatus: 1,
+          handedOverTo: "",
+          status: true,
+          unitId: 1,
+        },
+        {
+          id: 1002,
+          requisitionNo: "BMW/2026/002",
+          fromStore: "Ward B",
+          toStore: "BMW Store",
+          storeId: 1,
+          toStoreId: 2,
+          date: "2026-09-09",
+          requestStatus: 3,
+          handedOverTo: "Ramesh",
+          status: true,
+          unitId: 1,
+        },
+      ],
+      total: 2,
+      page: 0,
+      size: 25,
+    },
+    isLoading: false,
+  }),
+}));
+
+describe("WasteDashboard", () => {
+  beforeEach(() => {
+    queryClient.clear();
+  });
+
+  it("renders the title and summary strip", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByRole("heading", { name: /biomedical waste/i })).toBeInTheDocument();
+    expect(screen.getByText("50")).toBeInTheDocument(); // total
+    expect(screen.getByText("10")).toBeInTheDocument(); // pending
+  });
+
+  it("renders the paginated request table", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByText("BMW/2026/001")).toBeInTheDocument();
+    expect(screen.getByText("BMW/2026/002")).toBeInTheDocument();
+  });
+
+  it("renders Stripe status badges", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText("Handed Over")).toBeInTheDocument();
+  });
+
+  it("renders category filter strip", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    for (const label of ["All", "Pending", "Accepted", "Handed Over", "Received", "Completed"]) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it("renders per-row action buttons based on status", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} isBioMedicalStore={true} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByRole("button", { name: "Accept" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Receive" })).toBeInTheDocument();
+  });
+
+  it("opens handover view when clicking a row", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    fireEvent.click(screen.getByText("BMW/2026/002"));
+    expect(screen.getByText(/handover — request #1002/i)).toBeInTheDocument();
+  });
+
+  it("shows the create button and opens the form on click", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    const createBtn = screen.getByRole("button", { name: /create waste request/i });
+    fireEvent.click(createBtn);
+    expect(screen.getByText("Create Biomedical Waste Request")).toBeInTheDocument();
+  });
+
+  it("filters by category when a filter pill is clicked", () => {
+    render(
+      <WasteDashboard unitId={1} storeId={1} />,
+      { wrapper: Wrapper },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    expect(screen.getByText("BMW/2026/001")).toBeInTheDocument();
+  });
+});
