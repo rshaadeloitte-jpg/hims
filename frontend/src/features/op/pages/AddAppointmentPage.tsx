@@ -1,6 +1,8 @@
 import React from "react";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button, Text, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../../components/ui";
 import {
   useCreateAppointment,
   useDepartments,
@@ -112,11 +114,8 @@ export function AddAppointmentPage() {
 
       <form className="card add-appt-form" onSubmit={onSubmit}>
         <div className="form-row form-row--three-col">
-          <div className="field">
-            <label className="field-label" htmlFor="cascade-department">Department</label>
-            <select
-              id="cascade-department"
-              className="form-input"
+          <FormField label="Department">
+            <HimsSelect
               value={departmentId ?? ""}
               onChange={(e) => {
                 setDepartmentId(e.target.value ? Number(e.target.value) : null);
@@ -129,13 +128,10 @@ export function AddAppointmentPage() {
               {(departments.data ?? []).map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field-label" htmlFor="cascade-doctor">Doctor</label>
-            <select
-              id="cascade-doctor"
-              className="form-input"
+            </HimsSelect>
+          </FormField>
+          <FormField label="Doctor">
+            <HimsSelect
               value={doctorId ?? ""}
               onChange={(e) => {
                 setDoctorId(e.target.value ? Number(e.target.value) : null);
@@ -152,14 +148,11 @@ export function AddAppointmentPage() {
                   {d.departmentName ? ` · ${d.departmentName}` : ""}
                 </option>
               ))}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field-label" htmlFor="cascade-date">Date</label>
-            <input
-              id="cascade-date"
+            </HimsSelect>
+          </FormField>
+          <FormField label="Date">
+            <TextInput
               type="date"
-              className="form-input"
               value={date}
               min={todayIso()}
               onChange={(e) => {
@@ -167,7 +160,7 @@ export function AddAppointmentPage() {
                 setSelectedSlot(null);
               }}
             />
-          </div>
+          </FormField>
         </div>
 
         <SlotPicker
@@ -178,19 +171,18 @@ export function AddAppointmentPage() {
         />
 
         <div className="form-row form-row--two-col">
-          <div className="field">
-            <label htmlFor="appt-notes" className="field-label">Reason / notes</label>
-            <textarea
-              id="appt-notes"
-              className="form-textarea"
+          <FormField label="Reason / notes">
+            <Textarea
+              bg="white"
+              borderColor="gray.300"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional — visible on the appointment and printed on the slip"
             />
-          </div>
+          </FormField>
           <div className="field">
-            <label className="field-label">Source</label>
+            <Text fontSize="sm" fontWeight="medium">Source</Text>
             <p className="form-readonly">{sourceLabel(appType, isNhnc)}</p>
             <p className="field-hint">Set by the OP route in the session state (Fg.g() equivalent).</p>
           </div>
@@ -203,21 +195,23 @@ export function AddAppointmentPage() {
         ) : null}
 
         <footer className="add-appt-form__actions">
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary"
+            variant="secondary"
             onClick={() => navigate(-1)}
             disabled={create.isPending}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="btn btn-primary"
-            disabled={!selectedPatient || !doctorId || !selectedSlot || create.isPending}
+            variant="primary"
+            disabled={!selectedPatient || !doctorId || !selectedSlot}
+            loading={create.isPending}
+            loadingText="Booking…"
           >
-            {create.isPending ? "Booking…" : "Book appointment"}
-          </button>
+            Book appointment
+          </Button>
         </footer>
       </form>
     </div>
@@ -281,16 +275,15 @@ function SlotPicker({
               {list.map((s) => {
                 const isSelected = selected?.slotId === s.slotId;
                 return (
-                  <button
+                  <Button
                     key={s.slotId}
                     type="button"
+                    variant={isSelected ? "primary" : "secondary"}
+                    size="sm"
                     role="radio"
                     aria-checked={isSelected}
                     disabled={!s.available}
                     onClick={() => onSelect(s)}
-                    className={`slot-pill${isSelected ? " slot-pill--selected" : ""}${
-                      !s.available ? " slot-pill--full" : ""
-                    }`}
                   >
                     <span className="slot-pill__time">
                       {new Date(s.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -298,7 +291,7 @@ function SlotPicker({
                     <span className="slot-pill__cap">
                       {s.booked}/{s.capacity}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { FormRenderer } from "./FormRenderer";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { submissionFilterSchema } from "./zodSchema";
 import { usePatientSubmissions, useEncounterSubmissions, useDeleteSubmission, formKeys, useQueryClient } from "./queries";
-import type { SubmissionFilterValues } from "./zodSchema";
+import { TextInput } from "../../components/ui";
+import { Button, Table } from "@chakra-ui/react";
 
 /**
  * CrossFormSubmissionsPage — unified submission lookup across all forms.
@@ -51,34 +48,35 @@ export function CrossFormSubmissionsPage() {
 
       <div className="submission-list__controls">
         <div className="submission-list__mode-toggle" role="group" aria-label="Search mode">
-          <button
+          <Button
+            variant={mode === "patient" ? "solid" : "outline"}
+            size="sm"
             type="button"
-            className={`submission-list__mode-btn${mode === "patient" ? " submission-list__mode-btn--active" : ""}`}
             onClick={() => setMode("patient")}
           >
             By Patient
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={mode === "encounter" ? "solid" : "outline"}
+            size="sm"
             type="button"
-            className={`submission-list__mode-btn${mode === "encounter" ? " submission-list__mode-btn--active" : ""}`}
             onClick={() => setMode("encounter")}
           >
             By Encounter
-          </button>
+          </Button>
         </div>
 
         <div className="submission-list__search">
-          <input
+          <TextInput
             type="number"
-            className="submission-list__input"
             placeholder={mode === "patient" ? "Patient ID" : "Encounter ID"}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
           />
-          <button type="button" className="submission-list__search-btn" onClick={handleSearch}>
+          <Button variant="secondary" type="button" onClick={handleSearch}>
             Look up
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -89,41 +87,40 @@ export function CrossFormSubmissionsPage() {
       )}
 
       {submissions.length > 0 && (
-        <table className="submission-list__table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Form</th>
-              <th>Submitted</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line" className="submission-list__table">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Form</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Submitted</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {submissions.map((s) => (
-              <tr key={s.id}>
-                <td>{s.id}</td>
-                <td><code>{s.formId}</code></td>
-                <td className="submission-list__date">{s.submittedAt?.slice(0, 19)}</td>
-                <td>
+              <Table.Row key={s.id}>
+                <Table.Cell>{s.id}</Table.Cell>
+                <Table.Cell><code>{s.formId}</code></Table.Cell>
+                <Table.Cell className="submission-list__date">{s.submittedAt?.slice(0, 19)}</Table.Cell>
+                <Table.Cell>
                   <span className={`submission-list__status${s.status === false ? " submission-list__status--deleted" : ""}`}>
                     {s.status === false ? "Deleted" : "Active"}
                   </span>
-                </td>
-                <td>
+                </Table.Cell>
+                <Table.Cell>
                   {s.status !== false && (
-                    <button
-                      className="submission-list__btn submission-list__btn--danger"
+                    <Button variant="ghost" size="sm"
                       onClick={() => handleDelete(s.formId, s.id)}
                     >
                       Delete
-                    </button>
+                    </Button>
                   )}
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             ))}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       )}
     </div>
   );

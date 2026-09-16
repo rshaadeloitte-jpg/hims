@@ -1,12 +1,4 @@
-import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  bankReconciliationFilterSchema,
-  bankMatchSchema,
-  type BankReconciliationFilterValues,
-  type BankMatchValues,
-} from "./zodSchema";
+import { useState } from "react";
 
 interface BankReconciliationProps {
   onImported?: (statementId: number) => void;
@@ -58,18 +50,6 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
   const [isImporting, setIsImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<BankReconciliationFilterValues>({
-    resolver: zodResolver(bankReconciliationFilterSchema),
-    defaultValues: {
-      status: "ALL",
-      page: 0,
-      size: 50,
-    },
-  });
 
   const loadReconciliation = async () => {
     if (!selectedAccount || !fromDate || !toDate) return;
@@ -271,8 +251,9 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
         <h2 className="text-lg font-semibold mb-3">Import Statement</h2>
         <div className="flex gap-3 items-end">
           <div className="flex-1">
-            <label className="form-label">Upload CSV/XLSX</label>
+            <label className="form-label" htmlFor="uploadCsv">Upload CSV/XLSX</label>
             <input
+              id="uploadCsv"
               type="file"
               accept=".csv,.xlsx,.xls"
               className="form-input"
@@ -420,9 +401,6 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
         />
       )}
 
-      {errors.bankAccountId && (
-        <div className="alert alert--error">{errors.bankAccountId.message}</div>
-      )}
     </div>
   );
 }

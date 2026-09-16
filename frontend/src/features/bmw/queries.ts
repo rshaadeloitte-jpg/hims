@@ -112,7 +112,7 @@ export function useWasteList(filter: WasteListFilterValues) {
         unitId: filter.storeId, // unitId resolved from session in real app
       };
       // category → requestStatus id
-      if (filter.category && filter.category !== "") {
+      if (filter.category) {
         // server expects category name (pending/accepted/handovered/received/completed)
       }
       if (filter.fromDate) body.fromDate = filter.fromDate;

@@ -79,7 +79,7 @@ describe("ConcessionTemplates", () => {
   it("shows template codes", () => {
     renderConcessionTemplates();
     expect(screen.getByText("STAFF")).toBeInTheDocument();
-    expect(screen.getByText("RGHS")).toBeInTheDocument();
+    expect(screen.getAllByText("RGHS").length).toBeGreaterThan(0);
   });
 
   it("shows max percent off", () => {
@@ -115,6 +115,6 @@ describe("ConcessionTemplates", () => {
   it("shows scheme on cards", () => {
     renderConcessionTemplates();
     expect(screen.getByText("Self")).toBeInTheDocument();
-    expect(screen.getByText("RGHS")).toBeInTheDocument();
+    expect(screen.getAllByText("RGHS").length).toBeGreaterThan(0);
   });
 });

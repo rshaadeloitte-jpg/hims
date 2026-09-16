@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
-import type { FileFilterValues } from "./zodSchema";
 
 /**
  * M34 File/Document Management hooks — consume the file-service REST API (Spring Boot :8095).

@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import { Button, HStack } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 import { useVerifyAbha } from "./queries";
 
 /**
@@ -68,46 +70,35 @@ export function AbhaInput({
 
   return (
     <div className="abha-input">
-      <label className="field">
-        <span className="field__label">
-          ABHA / Aadhaar
-          <span className="field__hint"> ABHA address or 12-digit Aadhaar</span>
-        </span>
-        <div className="abha-input__row">
-          <input
+      <FormField label="ABHA / Aadhaar" error={showError || undefined}>
+        <HStack align="flex-start">
+          <TextInput
             type="text"
-            className={`form-input ${showError ? "form-input--error" : ""} ${verifyAbha.isSuccess ? "form-input--success" : ""}`}
             value={value}
             onChange={handleChange}
             onBlur={handleBlur}
             disabled={disabled || verifyAbha.isPending}
             placeholder="e.g. abcd1234@abdm or 1234 5678 9012"
             aria-invalid={!!showError}
-            aria-describedby={showError ? "abha-error" : undefined}
           />
           {inputType === "abha" && value.length >= 4 && (
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary btn-sm"
+              variant="secondary"
+              size="sm"
               onClick={handleVerify}
               disabled={verifyAbha.isPending || disabled}
+              loading={verifyAbha.isPending}
               aria-label="Verify ABHA"
             >
-              {verifyAbha.isPending ? (
-                <span className="spinner spinner--sm" aria-hidden="true" />
-              ) : verifyAbha.isSuccess ? (
+              {verifyAbha.isSuccess ? (
                 <span aria-hidden="true">✓</span>
               ) : (
                 "Verify"
               )}
-            </button>
+            </Button>
           )}
-        </div>
-        {showError && (
-          <span id="abha-error" className="field-error" role="alert">
-            {showError}
-          </span>
-        )}
+        </HStack>
         {verifyAbha.isSuccess && (
           <span className="field-success">ABHA verified successfully</span>
         )}
@@ -120,7 +111,7 @@ export function AbhaInput({
                 : "Start typing to detect type"}
           </span>
         )}
-      </label>
+      </FormField>
     </div>
   );
 }

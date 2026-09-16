@@ -1,5 +1,5 @@
 import { vi, describe, expect, it, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WasteRequest } from "./WasteRequest";
 
@@ -72,7 +72,9 @@ describe("WasteRequest", () => {
     // Try to submit without adding bags
     const submitBtn = screen.getByRole("button", { name: /create request/i });
     fireEvent.click(submitBtn);
-    expect(screen.getByText(/add at least one waste bag/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/add at least one waste bag/i)).toBeInTheDocument();
+    });
   });
 
   it("renders cancel button that calls onCancel", () => {

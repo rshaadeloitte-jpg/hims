@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Box,
+  Button,
+  Card,
+  Flex,
+  Heading,
+  HStack,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
+import { DeloitteLogo } from '../../components/DeloitteIcon';
+import { FormField, TextInput } from '../../components/ui/form';
 import { useLogin, useGenerateOtp, useVerifyOtp } from './queries';
 import { loginSchema, otpVerifySchema } from './zodSchema';
 import type { LoginValues, OtpVerifyValues } from './zodSchema';
@@ -46,99 +58,165 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">HIMS</h1>
-          <p className="text-sm text-gray-500 mt-1">Hospital Information Management System</p>
-        </div>
+    <Flex minH="60vh" align="center" justify="center" py={10}>
+      <Card.Root w="full" maxW="md" bg="white" boxShadow="md">
+        <Card.Body p={8}>
+          <HStack gap={3} mb={6}>
+            <DeloitteLogo size={36} />
+            <VStack gap={0} align="flex-start" lineHeight={1.2}>
+              <Heading as="h1" size="lg" color="black" m={0}>
+                HIMS
+              </Heading>
+              <Text fontSize="sm" color="gray.600" m={0}>
+                Hospital Information Management System
+              </Text>
+            </VStack>
+          </HStack>
 
-        <div className="flex rounded-lg bg-gray-100 p-1 mb-6" role="group" aria-label="Login method">
-          <button
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-              mode === 'credentials' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setMode('credentials')}
+          <HStack
+            bg="gray.100"
+            p={1}
+            mb={6}
+            borderRadius="lg"
+            role="group"
+            aria-label="Login method"
+            gap={0}
           >
-            Username & Password
-          </button>
-          <button
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-              mode === 'otp' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-            onClick={() => setMode('otp')}
-          >
-            OTP Login
-          </button>
-        </div>
-
-        {mode === 'credentials' ? (
-          <form onSubmit={handleSubmit(onCredentialLogin)} className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
-              <input
-                id="username" type="text" {...register('username')}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
-                autoComplete="username"
-              />
-              {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>}
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="password" type="password" {...register('password')}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
-                autoComplete="current-password"
-              />
-              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
-            </div>
-            <button
-              type="submit" disabled={login.isPending}
-              className="w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50"
+            <Button
+              flex={1}
+              size="sm"
+              variant={mode === 'credentials' ? 'secondary' : 'ghost'}
+              boxShadow={mode === 'credentials' ? 'sm' : undefined}
+              bg={mode === 'credentials' ? 'white' : undefined}
+              onClick={() => setMode('credentials')}
             >
-              {login.isPending ? 'Signing in...' : 'Sign In'}
-            </button>
-            {login.isError && <div className="text-sm text-red-600 text-center">Login failed. Check credentials.</div>}
-          </form>
-        ) : (
-          <div className="space-y-4">
-            {!otpMobile ? (
-              <form onSubmit={handleSubmit((d) => onSendOtp(d.username))} className="space-y-4">
-                <div>
-                  <label htmlFor="mobile-otp" className="block text-sm font-medium text-gray-700">Mobile Number</label>
-                  <input
-                    id="mobile-otp" type="tel" placeholder="9876543210"
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-gray-900 focus:border-gray-900"
-                  />
-                </div>
-                <button type="submit" className="w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800">
-                  Send OTP
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={submitOtp(onVerifyOtpSubmit)} className="space-y-4">
-                <p className="text-sm text-gray-600">OTP sent to <strong>{otpMobile}</strong></p>
-                <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700">Enter OTP</label>
-                  <input
-                    id="otp" type="text" inputMode="numeric" maxLength={6} {...regOtp('otp')}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono tracking-[0.5em] text-center"
-                    placeholder="000000"
-                  />
-                  {otpErrors.otp && <p className="mt-1 text-sm text-red-600">{otpErrors.otp.message}</p>}
-                </div>
-                <button
-                  type="submit" disabled={verifyOtp.isPending || (otpCode?.length ?? 0) !== 6}
-                  className="w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:opacity-50"
+              Username &amp; Password
+            </Button>
+            <Button
+              flex={1}
+              size="sm"
+              variant={mode === 'otp' ? 'secondary' : 'ghost'}
+              boxShadow={mode === 'otp' ? 'sm' : undefined}
+              bg={mode === 'otp' ? 'white' : undefined}
+              onClick={() => setMode('otp')}
+            >
+              OTP Login
+            </Button>
+          </HStack>
+
+          {mode === 'credentials' ? (
+            <VStack
+              as="form"
+              gap={4}
+              align="stretch"
+              onSubmit={handleSubmit(onCredentialLogin)}
+            >
+              <FormField label="Username" error={errors.username?.message} required>
+                <TextInput
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  {...register('username')}
+                />
+              </FormField>
+              <FormField label="Password" error={errors.password?.message} required>
+                <TextInput
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  {...register('password')}
+                />
+              </FormField>
+              <Button
+                type="submit"
+                variant="primary"
+                w="full"
+                loading={login.isPending}
+                loadingText="Signing in…"
+              >
+                Sign In
+              </Button>
+              {login.isError && (
+                <Text fontSize="sm" color="red.600" textAlign="center">
+                  Login failed. Check credentials.
+                </Text>
+              )}
+            </VStack>
+          ) : (
+            <VStack gap={4} align="stretch">
+              {!otpMobile ? (
+                <VStack
+                  as="form"
+                  gap={4}
+                  align="stretch"
+                  onSubmit={handleSubmit((d) => onSendOtp(d.username))}
                 >
-                  {verifyOtp.isPending ? 'Verifying...' : 'Verify & Sign In'}
-                </button>
-                {verifyOtp.isError && <div className="text-sm text-red-600 text-center">Invalid OTP. Try again.</div>}
-              </form>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+                  <FormField label="Mobile Number" required>
+                    <TextInput
+                      id="mobile-otp"
+                      type="tel"
+                      placeholder="9876543210"
+                    />
+                  </FormField>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    w="full"
+                    loading={generateOtp.isPending}
+                    loadingText="Sending…"
+                  >
+                    Send OTP
+                  </Button>
+                  {generateOtp.isError && (
+                    <Text fontSize="sm" color="red.600" textAlign="center">
+                      Could not send OTP. Try again.
+                    </Text>
+                  )}
+                </VStack>
+              ) : (
+                <VStack
+                  as="form"
+                  gap={4}
+                  align="stretch"
+                  onSubmit={submitOtp(onVerifyOtpSubmit)}
+                >
+                  <Text fontSize="sm" color="gray.600">
+                    OTP sent to <Box as="strong" color="black">{otpMobile}</Box>
+                  </Text>
+                  <FormField label="Enter OTP" error={otpErrors.otp?.message} required>
+                    <TextInput
+                      id="otp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      textAlign="center"
+                      fontFamily="mono"
+                      letterSpacing="0.5em"
+                      {...regOtp('otp')}
+                    />
+                  </FormField>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    w="full"
+                    disabled={verifyOtp.isPending || (otpCode?.length ?? 0) !== 6}
+                    loading={verifyOtp.isPending}
+                    loadingText="Verifying…"
+                  >
+                    Verify &amp; Sign In
+                  </Button>
+                  {verifyOtp.isError && (
+                    <Text fontSize="sm" color="red.600" textAlign="center">
+                      Invalid OTP. Try again.
+                    </Text>
+                  )}
+                </VStack>
+              )}
+            </VStack>
+          )}
+        </Card.Body>
+      </Card.Root>
+    </Flex>
   );
 }

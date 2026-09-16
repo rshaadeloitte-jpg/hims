@@ -101,10 +101,17 @@ export function WasteRequest({
     );
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    if (bagLines.length === 0) {
+      setBagErrors({ form: "Add at least one waste bag" });
+    }
+    handleSubmit(onSubmit)(e);
+  };
+
   return (
     <div className="card">
       <h2>Create Biomedical Waste Request</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="master-form">
+      <form onSubmit={handleFormSubmit} className="master-form">
         <div className="form-grid">
           <div className={`field ${errors.storeId ? "field--error" : ""}`}>
             <label htmlFor="storeId">
@@ -164,9 +171,9 @@ export function WasteRequest({
             </button>
           </div>
 
-          {bagErrors.form && (
+          {(bagErrors.form || (errors.details as any)?.message) && (
             <div className="alert alert--error" role="alert">
-              {bagErrors.form}
+              {bagErrors.form || (errors.details as any)?.message}
             </div>
           )}
 

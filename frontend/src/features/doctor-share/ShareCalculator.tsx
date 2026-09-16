@@ -32,7 +32,7 @@ export function ShareCalculator({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
     watch,
   } = useForm<DoctorShareFormValues>({

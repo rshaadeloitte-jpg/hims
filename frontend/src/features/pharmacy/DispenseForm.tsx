@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { dispenseSchema, type DispenseValues } from "./zodSchema";
 import { useDispense } from "./queries";
 import type { Prescription } from "./types";
+import { Box, Button, HStack, VStack } from "@chakra-ui/react";
+import { TextInput } from "../../components/ui";
 
 interface DispenseFormProps {
   prescription: Prescription;
@@ -14,7 +16,7 @@ export function DispenseForm({ prescription, onClose }: DispenseFormProps) {
   const dispense = useDispense();
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const { register, handleSubmit, formState, getValues } = useForm<DispenseValues>({
+  const { register, handleSubmit, formState } = useForm<DispenseValues>({
     resolver: zodResolver(dispenseSchema),
     defaultValues: {
       prescriptionId: prescription.id,
@@ -39,34 +41,34 @@ export function DispenseForm({ prescription, onClose }: DispenseFormProps) {
 
   if (showSuccess) {
     return (
-      <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+      <Box mt={6} p={4} bg="green.50" borderWidth="1px" borderColor="green.200" borderRadius="md">
         <div className="flex">
           <div className="ml-3">
             <h3 className="text-sm font-medium text-green-800">Prescription dispensed successfully</h3>
             <div className="mt-2">
-              <button
+              <Button
                 onClick={onClose}
-                className="px-4 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700"
+                variant="primary"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
-      </div>
+      </Box>
     );
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
-      <div className="bg-gray-50 rounded-lg p-4">
+      <Box bg="gray.50" borderRadius="lg" p={4}>
         <h2 className="text-lg font-medium text-gray-900 mb-4">
           Dispense Prescription #{prescription.id} - {prescription.patientName}
         </h2>
 
-        <div className="space-y-3">
+        <VStack gap={3} align="stretch">
           {prescription.items.map((item, index) => (
-            <div key={item.id} className="flex items-center p-3 bg-white border rounded-lg">
+            <HStack key={item.id} align="center" p={3} bg="white" borderWidth="1px" borderRadius="lg">
               <div className="flex-1">
                 <div className="font-medium text-gray-900">{item.drugName}</div>
                 <div className="text-sm text-gray-500">
@@ -74,36 +76,37 @@ export function DispenseForm({ prescription, onClose }: DispenseFormProps) {
                 </div>
               </div>
               <div className="ml-4">
-                <input
+                <TextInput
                   type="number"
                   min="1"
                   max={item.quantity}
                   {...register(`items.${index}.dispensedQuantity` as const)}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-            </div>
+            </HStack>
           ))}
-        </div>
-      </div>
+        </VStack>
+      </Box>
 
-      <div className="flex justify-end space-x-3">
-        <button
+      <HStack justify="flex-end" gap={3}>
+        <Button
           type="button"
           onClick={onClose}
           disabled={dispense.isPending}
-          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          variant="secondary"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={dispense.isPending || !formState.isValid}
-          className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          variant="primary"
+          loading={dispense.isPending}
+          loadingText="Processing..."
         >
-          {dispense.isPending ? "Processing..." : "Complete Dispense"}
-        </button>
-      </div>
+          Complete Dispense
+        </Button>
+      </HStack>
 
       {formState.errors.items && (
         <div className="text-sm text-red-600">Please verify all dispensed quantities are valid</div>

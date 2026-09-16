@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Button, Checkbox, Table } from '@chakra-ui/react';
+import { HimsSelect, TextInput } from "../../components/ui";
 import { useLabTests } from './useLabTests';
 import { useCreateLabOrder } from './queries';
-import type { LabTest } from './types';
 
 interface TestBookingProps {
   patientId: number;
@@ -70,116 +71,111 @@ export function TestBooking({ patientId, encounterId, onBooked }: TestBookingPro
     <section className="space-y-4">
       <header className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Book Lab Tests</h2>
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={handleBook}
+          loading={createOrder.isPending}
+          loadingText="Booking..."
           disabled={selectedTests.size === 0 || createOrder.isPending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {createOrder.isPending ? 'Booking...' : `Book ${selectedTests.size} Test${selectedTests.size !== 1 ? 's' : ''}`}
-        </button>
+        </Button>
       </header>
 
       {/* Filters */}
       <div className="flex gap-3">
-        <input
+        <TextInput
           type="text"
           placeholder="Search tests..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
         />
-        <select
+        <HimsSelect
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
         >
           <option value="">All Departments</option>
           {departments.map(dept => (
             <option key={dept} value={dept}>{dept}</option>
           ))}
-        </select>
+        </HimsSelect>
       </div>
 
       {/* Linear-style Data Table */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
-                  <input
-                    type="checkbox"
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                  <Checkbox.Root
                     checked={selectedTests.size === tests.length && tests.length > 0}
-                    onChange={(e) => {
-                      if (e.target.checked) {
+                    onCheckedChange={(e) => {
+                      if (e.checked) {
                         setSelectedTests(new Set(tests.map(t => t.testId)));
                       } else {
                         setSelectedTests(new Set());
                       }
                     }}
-                    className="rounded border-gray-300"
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sample</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">TAT</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+                  >
+                    <Checkbox.Control />
+                  </Checkbox.Root>
+                </Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Test Name</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Department</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Sample</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">TAT</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Rate</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <Table.Row>
+                  <Table.Cell colSpan={7}>
                     Loading tests...
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ) : tests.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <Table.Row>
+                  <Table.Cell colSpan={7}>
                     No tests found
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ) : (
                 tests.map((test) => (
-                  <tr
+                  <Table.Row
                     key={test.testId}
                     onClick={() => toggleTest(test.testId)}
-                    className={`cursor-pointer transition-colors ${
-                      selectedTests.has(test.testId)
-                        ? 'bg-blue-50 hover:bg-blue-100'
-                        : 'hover:bg-gray-50'
-                    }`}
                   >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
+                    <Table.Cell>
+                      <Checkbox.Root
                         checked={selectedTests.has(test.testId)}
-                        onChange={() => toggleTest(test.testId)}
-                        className="rounded border-gray-300"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-                    <td className="px-4 py-3 font-mono text-sm text-gray-900">{test.testCode}</td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{test.testName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{test.department}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                        onCheckedChange={() => toggleTest(test.testId)}
+                      >
+                        <Checkbox.Control />
+                      </Checkbox.Root>
+                    </Table.Cell>
+                    <Table.Cell>{test.testCode}</Table.Cell>
+                    <Table.Cell>{test.testName}</Table.Cell>
+                    <Table.Cell>{test.department}</Table.Cell>
+                    <Table.Cell>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                         {test.sampleType}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 text-right font-mono">
+                    </Table.Cell>
+                    <Table.Cell>
                       {test.turnaroundTime}h
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right font-mono">
+                    </Table.Cell>
+                    <Table.Cell>
                       ₹{test.rate.toFixed(2)}
-                    </td>
-                  </tr>
+                    </Table.Cell>
+                  </Table.Row>
                 ))
               )}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       </div>
 

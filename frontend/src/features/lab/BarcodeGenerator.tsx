@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '@chakra-ui/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { labQueryKeys } from './queries';
 import type { LabDetail } from './types';
@@ -115,30 +116,34 @@ export function BarcodeGenerator({ orderId, detailId, testName, onGenerated }: B
               </div>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handlePrint}
-                className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
               >
                 Print Label
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setGeneratedBarcode(null);
                 }}
-                className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-colors"
               >
                 Regenerate
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleGenerate}
-            disabled={generateBarcode.isPending}
-            className="w-full px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            loading={generateBarcode.isPending}
+            loadingText="Generating..."
           >
             {generateBarcode.isPending ? 'Generating...' : 'Generate Barcode'}
-          </button>
+          </Button>
         )}
 
         {generateBarcode.isError && (

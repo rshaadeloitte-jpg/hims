@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Box, Button, Checkbox, Table, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   jsyJ1Schema,
   jsyJ2Schema,
@@ -54,38 +56,37 @@ export function EncounterRecord() {
       {/* Form type tabs */}
       <div className="flex gap-2 border-b pb-2" role="tablist" aria-label="JSY form types">
         {JSY_FORM_TYPES.map((type) => (
-          <button
+          <Button
             key={type}
             role="tab"
             aria-selected={activeForm === type}
-            className={`px-3 py-1.5 text-sm rounded-t transition-colors ${
-              activeForm === type
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            variant={activeForm === type ? "primary" : "secondary"}
+            size="sm"
             onClick={() => handleFormSwitch(type)}
           >
             {FORM_LABELS[type]}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Toggle form/list view */}
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
-          className={`px-3 py-1 text-sm rounded ${!showList ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+          variant={!showList ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setShowList(false)}
         >
           New Entry
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`px-3 py-1 text-sm rounded ${showList ? "bg-blue-600 text-white" : "bg-gray-100"}`}
+          variant={showList ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setShowList(true)}
         >
           View Records
-        </button>
+        </Button>
       </div>
 
       {showList ? (
@@ -103,32 +104,32 @@ function JsyFormList({ forms, loading }: { forms: JsyFormDetails[]; loading: boo
 
   return (
     <div className="card">
-      <table className="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Beneficiary</th>
-            <th>Status</th>
-            <th>Submitted</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Beneficiary</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Submitted</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {forms.map((f) => (
-            <tr key={f.id}>
-              <td>{f.id}</td>
-              <td>{f.beneficiaryName}</td>
-              <td>
+            <Table.Row key={f.id}>
+              <Table.Cell>{f.id}</Table.Cell>
+              <Table.Cell>{f.beneficiaryName}</Table.Cell>
+              <Table.Cell>
                 <span className={`badge badge--${f.status === "APPROVED" ? "success" : f.status === "REJECTED" ? "danger" : "info"}`}>
                   {f.status}
                 </span>
-              </td>
-              <td>{f.submittedDate}</td>
-              <td>{f.amount ? `₹${f.amount}` : "—"}</td>
-            </tr>
+              </Table.Cell>
+              <Table.Cell>{f.submittedDate}</Table.Cell>
+              <Table.Cell>{f.amount ? `₹${f.amount}` : "—"}</Table.Cell>
+            </Table.Row>
           ))}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </div>
   );
 }
@@ -195,83 +196,85 @@ function J1Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <legend className="sr-only">Beneficiary Details</legend>
-        <Field label="Patient ID" error={errors.patientId?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("patientId")} />
-        </Field>
-        <Field label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("beneficiaryName")} />
-        </Field>
-        <Field label="Husband Name" error={errors.husbandName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("husbandName")} />
-        </Field>
-        <Field label="Category" error={errors.category?.message} required>
-          <select className="w-full border rounded px-2 py-1.5" {...register("category")}>
+        <FormField label="Patient ID" error={errors.patientId?.message} required>
+          <TextInput type="number" {...register("patientId")} />
+        </FormField>
+        <FormField label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
+          <TextInput {...register("beneficiaryName")} />
+        </FormField>
+        <FormField label="Husband Name" error={errors.husbandName?.message} required>
+          <TextInput {...register("husbandName")} />
+        </FormField>
+        <FormField label="Category" error={errors.category?.message} required>
+          <HimsSelect {...register("category")}>
             {BENEFICIARY_CATEGORIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
-          </select>
-        </Field>
-        <Field label="BPL Card No." error={errors.bplCardNo?.message}>
-          <input className="w-full border rounded px-2 py-1.5" {...register("bplCardNo")} />
-        </Field>
-        <Field label="Mobile No." error={errors.mobileNo?.message}>
-          <input className="w-full border rounded px-2 py-1.5" {...register("mobileNo")} placeholder="10-digit" />
-        </Field>
+          </HimsSelect>
+        </FormField>
+        <FormField label="BPL Card No." error={errors.bplCardNo?.message}>
+          <TextInput {...register("bplCardNo")} />
+        </FormField>
+        <FormField label="Mobile No." error={errors.mobileNo?.message}>
+          <TextInput {...register("mobileNo")} placeholder="10-digit" />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <legend className="sr-only">Address</legend>
-        <Field label="Address" error={errors.address?.message} required className="sm:col-span-2">
-          <textarea className="w-full border rounded px-2 py-1.5" rows={2} {...register("address")} />
-        </Field>
+        <Box gridColumn={{ base: "auto", sm: "span 2" }}>
+          <FormField label="Address" error={errors.address?.message} required>
+            <Textarea bg="white" borderColor="gray.300" rows={2} {...register("address")} />
+          </FormField>
+        </Box>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <legend className="sr-only">ANC & Delivery</legend>
-        <Field label="ANC Registration Date" error={errors.ancRegistrationDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("ancRegistrationDate")} />
-        </Field>
-        <Field label="ANC Visits" error={errors.ancVisits?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("ancVisits")} />
-        </Field>
-        <Field label="Delivery Date" error={errors.deliveryDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("deliveryDate")} />
-        </Field>
-        <Field label="Delivery Type" error={errors.deliveryType?.message} required>
-          <select className="w-full border rounded px-2 py-1.5" {...register("deliveryType")}>
+        <FormField label="ANC Registration Date" error={errors.ancRegistrationDate?.message} required>
+          <TextInput type="date" {...register("ancRegistrationDate")} />
+        </FormField>
+        <FormField label="ANC Visits" error={errors.ancVisits?.message} required>
+          <TextInput type="number" {...register("ancVisits")} />
+        </FormField>
+        <FormField label="Delivery Date" error={errors.deliveryDate?.message} required>
+          <TextInput type="date" {...register("deliveryDate")} />
+        </FormField>
+        <FormField label="Delivery Type" error={errors.deliveryType?.message} required>
+          <HimsSelect {...register("deliveryType")}>
             {DELIVERY_TYPES.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
-          </select>
-        </Field>
-        <Field label="Place of Delivery" error={errors.placeOfDelivery?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("placeOfDelivery")} />
-        </Field>
-        <Field label="Child Gender" error={errors.childGender?.message} required>
-          <select className="w-full border rounded px-2 py-1.5" {...register("childGender")}>
+          </HimsSelect>
+        </FormField>
+        <FormField label="Place of Delivery" error={errors.placeOfDelivery?.message} required>
+          <TextInput {...register("placeOfDelivery")} />
+        </FormField>
+        <FormField label="Child Gender" error={errors.childGender?.message} required>
+          <HimsSelect {...register("childGender")}>
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
             <option value="OTHER">Other</option>
-          </select>
-        </Field>
-        <Field label="Child Weight (kg)" error={errors.childWeight?.message} required>
-          <input type="number" step="0.1" className="w-full border rounded px-2 py-1.5" {...register("childWeight")} />
-        </Field>
+          </HimsSelect>
+        </FormField>
+        <FormField label="Child Weight (kg)" error={errors.childWeight?.message} required>
+          <TextInput type="number" step="0.1" {...register("childWeight")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <legend className="sr-only">ANM Details</legend>
-        <Field label="ANM Name" error={errors.anmName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("anmName")} />
-        </Field>
-        <Field label="ANM Mobile" error={errors.anmMobile?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("anmMobile")} placeholder="10-digit" />
-        </Field>
+        <FormField label="ANM Name" error={errors.anmName?.message} required>
+          <TextInput {...register("anmName")} />
+        </FormField>
+        <FormField label="ANM Mobile" error={errors.anmMobile?.message} required>
+          <TextInput {...register("anmMobile")} placeholder="10-digit" />
+        </FormField>
       </fieldset>
 
-      <Field label="Submitted Date" error={errors.submittedDate?.message} required>
-        <input type="date" className="w-full border rounded px-2 py-1.5" {...register("submittedDate")} />
-      </Field>
+      <FormField label="Submitted Date" error={errors.submittedDate?.message} required>
+        <TextInput type="date" {...register("submittedDate")} />
+      </FormField>
 
       {saveForm.isError && (
         <p className="text-red-600 text-sm" role="alert">{(saveForm.error as Error).message}</p>
@@ -280,13 +283,15 @@ function J1Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
         <p className="text-green-600 text-sm" role="status">✓ Form submitted successfully</p>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+        variant="primary"
         disabled={isSubmitting || saveForm.isPending}
+        loading={saveForm.isPending}
+        loadingText="Submitting..."
       >
-        {saveForm.isPending ? "Submitting..." : "Submit J1 Form"}
-      </button>
+        Submit J1 Form
+      </Button>
     </form>
   );
 }
@@ -300,6 +305,7 @@ function J2Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
     formState: { errors, isSubmitting },
     reset,
     watch,
+    setValue,
   } = useForm<JsyJ2Values>({
     resolver: zodResolver(jsyJ2Schema),
     defaultValues: {
@@ -334,71 +340,72 @@ function J2Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
       <h2 className="text-lg font-semibold">J2 — Medical Officer / Facility Form</h2>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Patient ID" error={errors.patientId?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("patientId")} />
-        </Field>
-        <Field label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("beneficiaryName")} />
-        </Field>
-        <Field label="J1 Form ID (if linked)" error={errors.j1FormId?.message}>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("j1FormId")} />
-        </Field>
+        <FormField label="Patient ID" error={errors.patientId?.message} required>
+          <TextInput type="number" {...register("patientId")} />
+        </FormField>
+        <FormField label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
+          <TextInput {...register("beneficiaryName")} />
+        </FormField>
+        <FormField label="J1 Form ID (if linked)" error={errors.j1FormId?.message}>
+          <TextInput type="number" {...register("j1FormId")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <legend className="sr-only">Facility Details</legend>
-        <Field label="Facility Name" error={errors.facilityName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("facilityName")} />
-        </Field>
-        <Field label="Facility Code" error={errors.facilityCode?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("facilityCode")} />
-        </Field>
-        <Field label="MO Name" error={errors.moName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("moName")} />
-        </Field>
-        <Field label="MO Registration No." error={errors.moRegistrationNo?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("moRegistrationNo")} />
-        </Field>
+        <FormField label="Facility Name" error={errors.facilityName?.message} required>
+          <TextInput {...register("facilityName")} />
+        </FormField>
+        <FormField label="Facility Code" error={errors.facilityCode?.message} required>
+          <TextInput {...register("facilityCode")} />
+        </FormField>
+        <FormField label="MO Name" error={errors.moName?.message} required>
+          <TextInput {...register("moName")} />
+        </FormField>
+        <FormField label="MO Registration No." error={errors.moRegistrationNo?.message} required>
+          <TextInput {...register("moRegistrationNo")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <legend className="sr-only">Delivery Details</legend>
-        <Field label="Delivery Date" error={errors.deliveryDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("deliveryDate")} />
-        </Field>
-        <Field label="Delivery Type" error={errors.deliveryType?.message} required>
-          <select className="w-full border rounded px-2 py-1.5" {...register("deliveryType")}>
+        <FormField label="Delivery Date" error={errors.deliveryDate?.message} required>
+          <TextInput type="date" {...register("deliveryDate")} />
+        </FormField>
+        <FormField label="Delivery Type" error={errors.deliveryType?.message} required>
+          <HimsSelect {...register("deliveryType")}>
             {DELIVERY_TYPES.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
-          </select>
-        </Field>
-        <Field label="Discharge Date" error={errors.dischargeDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("dischargeDate")} />
-        </Field>
-        <Field label="Complications" error={errors.complications?.message}>
-          <input className="w-full border rounded px-2 py-1.5" {...register("complications")} />
-        </Field>
-        <Field label="Amount Claimed (₹)" error={errors.amountClaimed?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("amountClaimed")} />
-        </Field>
+          </HimsSelect>
+        </FormField>
+        <FormField label="Discharge Date" error={errors.dischargeDate?.message} required>
+          <TextInput type="date" {...register("dischargeDate")} />
+        </FormField>
+        <FormField label="Complications" error={errors.complications?.message}>
+          <TextInput {...register("complications")} />
+        </FormField>
+        <FormField label="Amount Claimed (₹)" error={errors.amountClaimed?.message} required>
+          <TextInput type="number" {...register("amountClaimed")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="space-y-2">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register("referralMade")} />
-          <span>Referral Made</span>
-        </label>
+        <Checkbox.Root checked={!!referralMade} onCheckedChange={(e) => setValue("referralMade", !!e.checked, { shouldValidate: true })}>
+          <Checkbox.HiddenInput {...register("referralMade")} />
+          <Checkbox.Control />
+          <Checkbox.Label>Referral Made</Checkbox.Label>
+        </Checkbox.Root>
         {referralMade && (
-          <Field label="Referral Facility" error={errors.referralFacility?.message}>
-            <input className="w-full border rounded px-2 py-1.5" {...register("referralFacility")} />
-          </Field>
+          <FormField label="Referral Facility" error={errors.referralFacility?.message}>
+            <TextInput {...register("referralFacility")} />
+          </FormField>
         )}
       </fieldset>
 
-      <Field label="Submitted Date" error={errors.submittedDate?.message} required>
-        <input type="date" className="w-full border rounded px-2 py-1.5" {...register("submittedDate")} />
-      </Field>
+      <FormField label="Submitted Date" error={errors.submittedDate?.message} required>
+        <TextInput type="date" {...register("submittedDate")} />
+      </FormField>
 
       {saveForm.isError && (
         <p className="text-red-600 text-sm" role="alert">{(saveForm.error as Error).message}</p>
@@ -407,13 +414,15 @@ function J2Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
         <p className="text-green-600 text-sm" role="status">✓ Form submitted successfully</p>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+        variant="primary"
         disabled={isSubmitting || saveForm.isPending}
+        loading={saveForm.isPending}
+        loadingText="Submitting..."
       >
-        {saveForm.isPending ? "Submitting..." : "Submit J2 Form"}
-      </button>
+        Submit J2 Form
+      </Button>
     </form>
   );
 }
@@ -452,40 +461,40 @@ function J3Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
       <h2 className="text-lg font-semibold">J3 — District / Block Consolidation</h2>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="District Name" error={errors.districtName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("districtName")} />
-        </Field>
-        <Field label="Block Name" error={errors.blockName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("blockName")} />
-        </Field>
-        <Field label="Month" error={errors.month?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("month")} placeholder="e.g. January" />
-        </Field>
-        <Field label="Year" error={errors.year?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("year")} />
-        </Field>
+        <FormField label="District Name" error={errors.districtName?.message} required>
+          <TextInput {...register("districtName")} />
+        </FormField>
+        <FormField label="Block Name" error={errors.blockName?.message} required>
+          <TextInput {...register("blockName")} />
+        </FormField>
+        <FormField label="Month" error={errors.month?.message} required>
+          <TextInput {...register("month")} placeholder="e.g. January" />
+        </FormField>
+        <FormField label="Year" error={errors.year?.message} required>
+          <TextInput type="number" {...register("year")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <legend className="sr-only">Consolidation Figures</legend>
-        <Field label="Total J1 Received" error={errors.totalJ1Received?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("totalJ1Received")} />
-        </Field>
-        <Field label="Total J2 Received" error={errors.totalJ2Received?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("totalJ2Received")} />
-        </Field>
-        <Field label="Total Amount Disbursed (₹)" error={errors.totalAmountDisbursed?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("totalAmountDisbursed")} />
-        </Field>
+        <FormField label="Total J1 Received" error={errors.totalJ1Received?.message} required>
+          <TextInput type="number" {...register("totalJ1Received")} />
+        </FormField>
+        <FormField label="Total J2 Received" error={errors.totalJ2Received?.message} required>
+          <TextInput type="number" {...register("totalJ2Received")} />
+        </FormField>
+        <FormField label="Total Amount Disbursed (₹)" error={errors.totalAmountDisbursed?.message} required>
+          <TextInput type="number" {...register("totalAmountDisbursed")} />
+        </FormField>
       </fieldset>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Submitted By" error={errors.submittedBy?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("submittedBy")} />
-        </Field>
-        <Field label="Submitted Date" error={errors.submittedDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("submittedDate")} />
-        </Field>
+        <FormField label="Submitted By" error={errors.submittedBy?.message} required>
+          <TextInput {...register("submittedBy")} />
+        </FormField>
+        <FormField label="Submitted Date" error={errors.submittedDate?.message} required>
+          <TextInput type="date" {...register("submittedDate")} />
+        </FormField>
       </fieldset>
 
       {saveForm.isError && (
@@ -495,13 +504,15 @@ function J3Form({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm> }) {
         <p className="text-green-600 text-sm" role="status">✓ Form submitted successfully</p>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+        variant="primary"
         disabled={isSubmitting || saveForm.isPending}
+        loading={saveForm.isPending}
+        loadingText="Submitting..."
       >
-        {saveForm.isPending ? "Submitting..." : "Submit J3 Form"}
-      </button>
+        Submit J3 Form
+      </Button>
     </form>
   );
 }
@@ -540,38 +551,38 @@ function HFormWrapper({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm
       <h2 className="text-lg font-semibold">H-Form — High-Risk Pregnancy Tracking</h2>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Patient ID" error={errors.patientId?.message} required>
-          <input type="number" className="w-full border rounded px-2 py-1.5" {...register("patientId")} />
-        </Field>
-        <Field label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("beneficiaryName")} />
-        </Field>
+        <FormField label="Patient ID" error={errors.patientId?.message} required>
+          <TextInput type="number" {...register("patientId")} />
+        </FormField>
+        <FormField label="Beneficiary Name" error={errors.beneficiaryName?.message} required>
+          <TextInput {...register("beneficiaryName")} />
+        </FormField>
       </fieldset>
 
-      <Field label="High-Risk Reason" error={errors.highRiskReason?.message} required>
-        <textarea className="w-full border rounded px-2 py-1.5" rows={2} {...register("highRiskReason")} />
-      </Field>
+      <FormField label="High-Risk Reason" error={errors.highRiskReason?.message} required>
+        <Textarea bg="white" borderColor="gray.300" rows={2} {...register("highRiskReason")} />
+      </FormField>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="LMP" error={errors.lmp?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("lmp")} />
-        </Field>
-        <Field label="EDD" error={errors.edd?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("edd")} />
-        </Field>
+        <FormField label="LMP" error={errors.lmp?.message} required>
+          <TextInput type="date" {...register("lmp")} />
+        </FormField>
+        <FormField label="EDD" error={errors.edd?.message} required>
+          <TextInput type="date" {...register("edd")} />
+        </FormField>
       </fieldset>
 
-      <Field label="Action Taken" error={errors.actionTaken?.message} required>
-        <textarea className="w-full border rounded px-2 py-1.5" rows={2} {...register("actionTaken")} />
-      </Field>
+      <FormField label="Action Taken" error={errors.actionTaken?.message} required>
+        <Textarea bg="white" borderColor="gray.300" rows={2} {...register("actionTaken")} />
+      </FormField>
 
       <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="ANM Name" error={errors.anmName?.message} required>
-          <input className="w-full border rounded px-2 py-1.5" {...register("anmName")} />
-        </Field>
-        <Field label="Submitted Date" error={errors.submittedDate?.message} required>
-          <input type="date" className="w-full border rounded px-2 py-1.5" {...register("submittedDate")} />
-        </Field>
+        <FormField label="ANM Name" error={errors.anmName?.message} required>
+          <TextInput {...register("anmName")} />
+        </FormField>
+        <FormField label="Submitted Date" error={errors.submittedDate?.message} required>
+          <TextInput type="date" {...register("submittedDate")} />
+        </FormField>
       </fieldset>
 
       {saveForm.isError && (
@@ -581,40 +592,15 @@ function HFormWrapper({ saveForm }: { saveForm: ReturnType<typeof useSaveJsyForm
         <p className="text-green-600 text-sm" role="status">✓ Form submitted successfully</p>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+        variant="primary"
         disabled={isSubmitting || saveForm.isPending}
+        loading={saveForm.isPending}
+        loadingText="Submitting..."
       >
-        {saveForm.isPending ? "Submitting..." : "Submit H-Form"}
-      </button>
+        Submit H-Form
+      </Button>
     </form>
-  );
-}
-
-// ---- Shared field component -----------------------------------------------
-
-function Field({
-  label,
-  error,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className={`text-sm ${className ?? ""}`}>
-      <span className="block font-medium">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </span>
-      {children}
-      {error && <span className="text-red-600 text-xs">{error}</span>}
-    </label>
   );
 }

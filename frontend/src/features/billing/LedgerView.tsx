@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useBillLedger, useRevenueAnalytics, useCollectionAnalytics } from "./hooks";
 import { type LedgerEntry } from "./hooks";
-import { ledgerFilterSchema, type LedgerFilterValues } from "./schemas";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Table } from "@chakra-ui/react";
 
 interface LedgerViewProps {
   billId?: number;
@@ -16,12 +14,6 @@ interface LedgerViewProps {
  * a summary dashboard with charts.
  */
 export function LedgerView({ billId }: LedgerViewProps) {
-  const { register, handleSubmit, watch } = useForm<LedgerFilterValues>({
-    resolver: zodResolver(ledgerFilterSchema),
-    defaultValues: { page: 0, size: 20, billId },
-  });
-
-  const filters = watch();
   const { data: ledgerEntries = [], isLoading: ledgerLoading } = useBillLedger(billId ?? 0);
   const { data: revenueAnalytics } = useRevenueAnalytics("DAILY", 30);
   const { data: collectionAnalytics } = useCollectionAnalytics("DAILY", 30);
@@ -48,20 +40,22 @@ export function LedgerView({ billId }: LedgerViewProps) {
           {billId ? `Bill Ledger #${billId}` : "Payment Ledger"}
         </h2>
         <div className="ledger-view__toggle">
-          <button
+          <Button
             type="button"
+            variant={view === "ledger" ? "primary" : "secondary"}
             className={`ledger-view__toggle-btn${view === "ledger" ? " ledger-view__toggle-btn--active" : ""}`}
             onClick={() => setView("ledger")}
           >
             Ledger
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={view === "charts" ? "primary" : "secondary"}
             className={`ledger-view__toggle-btn${view === "charts" ? " ledger-view__toggle-btn--active" : ""}`}
             onClick={() => setView("charts")}
           >
             Analytics
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -142,43 +136,43 @@ function LedgerTable({ entries }: { entries: LedgerEntry[] }) {
 
   return (
     <div className="ledger-view__table-wrap">
-      <table className="ledger-view__table">
-        <thead>
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Type</th>
-            <th scope="col">Reference</th>
-            <th scope="col" className="ledger-view__col--amount">Debit</th>
-            <th scope="col" className="ledger-view__col--amount">Credit</th>
-            <th scope="col" className="ledger-view__col--amount">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table.Root size="sm" variant="line" className="ledger-view__table">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">Date</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">Type</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">Reference</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col" className="ledger-view__col--amount">Debit</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col" className="ledger-view__col--amount">Credit</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col" className="ledger-view__col--amount">Balance</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {entries.map((entry) => {
             const isCredit = entry.entryType === "PAYMENT" || entry.entryType === "CREDIT_NOTE";
             return (
-              <tr key={entry.entryId}>
-                <td>{entry.entryDate}</td>
-                <td>
+              <Table.Row key={entry.entryId}>
+                <Table.Cell>{entry.entryDate}</Table.Cell>
+                <Table.Cell>
                   <span className={`badge badge--ledger badge--${entry.entryType.toLowerCase()}`}>
                     {entry.entryType.replace("_", " ")}
                   </span>
-                </td>
-                <td>{entry.reference ?? "—"}</td>
-                <td className="ledger-view__col--amount">
+                </Table.Cell>
+                <Table.Cell>{entry.reference ?? "—"}</Table.Cell>
+                <Table.Cell className="ledger-view__col--amount">
                   {!isCredit ? `₹ ${entry.amount.toFixed(2)}` : "—"}
-                </td>
-                <td className="ledger-view__col--amount">
+                </Table.Cell>
+                <Table.Cell className="ledger-view__col--amount">
                   {isCredit ? `₹ ${entry.amount.toFixed(2)}` : "—"}
-                </td>
-                <td className="ledger-view__col--amount ledger-view__balance">
+                </Table.Cell>
+                <Table.Cell className="ledger-view__col--amount ledger-view__balance">
                   ₹ {entry.runningBalance.toFixed(2)}
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             );
           })}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </div>
   );
 }

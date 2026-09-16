@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { FormRenderer } from "./FormRenderer";
 
@@ -72,7 +72,7 @@ describe("FormRenderer", () => {
 
   it("marks required fields with asterisk", () => {
     renderWithQueryClient(<FormRenderer schemaResponse={mockSchema} />);
-    expect(screen.getByText("*")).toBeInTheDocument();
+    expect(screen.getAllByText(/\*/).length).toBeGreaterThan(0);
   });
 
   it("displays the description text", () => {

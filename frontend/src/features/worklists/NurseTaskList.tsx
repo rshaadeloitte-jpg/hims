@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
+import { Button } from "@chakra-ui/react";
+import { FormField, HimsSelect } from "../../components/ui";
 import { useWorklistPatients, useTasksByPatient, useUpdateTaskStatus, type WorklistPatient, type NursingTaskItem } from "./queries";
 import { statusBadgeClass, priorityClass } from "./zodSchema";
 import type { TaskStatus } from "./zodSchema";
@@ -84,43 +86,47 @@ function TaskCard({ task, onStatusChange }: TaskCardProps) {
       </div>
       <div className="wl-task-card__actions">
         {task.status === "PENDING" && (
-          <button
+          <Button
             type="button"
-            className="wl-btn wl-btn--sm wl-btn--primary"
+            variant="primary"
+            size="sm"
             onClick={() => onStatusChange(task.taskId, "IN_PROGRESS")}
           >
             Start
-          </button>
+          </Button>
         )}
         {task.status === "IN_PROGRESS" && (
           <>
-            <button
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--success"
+              variant="primary"
+              size="sm"
               onClick={() => onStatusChange(task.taskId, "COMPLETED")}
             >
               Complete
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => onStatusChange(task.taskId, "CANCELLED")}
             >
               Cancel
-            </button>
+            </Button>
           </>
         )}
         {task.status === "COMPLETED" && (
           <span className="wl-badge bg-green-100 text-green-800">Done</span>
         )}
         {task.status === "CANCELLED" && (
-          <button
+          <Button
             type="button"
-            className="wl-btn wl-btn--sm wl-btn--ghost"
+            variant="ghost"
+            size="sm"
             onClick={() => onStatusChange(task.taskId, "PENDING")}
           >
             Reopen
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -234,18 +240,19 @@ export function NurseTaskList() {
             )}
           </div>
           <div className="wl-filters">
-            <label htmlFor="status-filter" className="sr-only">Filter by status</label>
-            <select
-              id="status-filter"
-              className="wl-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "ALL")}
-            >
-              <option value="ALL">All Statuses</option>
-              {STATUS_COLUMNS.map((col) => (
-                <option key={col.key} value={col.key}>{col.label}</option>
-              ))}
-            </select>
+            <FormField label="Filter by status">
+              <HimsSelect
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "ALL")}
+                aria-label="Filter by status"
+              >
+                <option value="ALL">All Statuses</option>
+                {STATUS_COLUMNS.map((col) => (
+                  <option key={col.key} value={col.key}>{col.label}</option>
+                ))}
+              </HimsSelect>
+            </FormField>
           </div>
         </header>
 

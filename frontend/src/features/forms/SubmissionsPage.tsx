@@ -1,5 +1,7 @@
 import { Fragment, useState } from "react";
 import { usePatientSubmissions, useEncounterSubmissions } from "./queries";
+import { TextInput } from "../../components/ui";
+import { Button, Table } from "@chakra-ui/react";
 
 function SubmissionViewer({ patientId, encounterId }: { patientId?: number; encounterId?: number }) {
   const patientQ = usePatientSubmissions(patientId ?? 0);
@@ -23,31 +25,31 @@ function SubmissionViewer({ patientId, encounterId }: { patientId?: number; enco
       ) : submissions.length === 0 ? (
         <p className="muted">No submissions found.</p>
       ) : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Form</th><th>Encounter</th><th>Submitted</th><th></th></tr></thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Form</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Encounter</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Submitted</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Body>
             {submissions.map((s) => (
               <Fragment key={s.id}>
-                <tr>
-                  <td>{s.id}</td>
-                  <td>{s.formId}</td>
-                  <td>{s.encounterId ?? "—"}</td>
-                  <td>{s.submittedAt?.slice(0, 19)}</td>
-                  <td><button className="btn btn--small" onClick={() => setOpenId(openId === s.id ? null : s.id)}>View</button></td>
-                </tr>
+                <Table.Row>
+                  <Table.Cell>{s.id}</Table.Cell>
+                  <Table.Cell>{s.formId}</Table.Cell>
+                  <Table.Cell>{s.encounterId ?? "—"}</Table.Cell>
+                  <Table.Cell>{s.submittedAt?.slice(0, 19)}</Table.Cell>
+                  <Table.Cell><Button variant="secondary" size="sm" onClick={() => setOpenId(openId === s.id ? null : s.id)}>View</Button></Table.Cell>
+                </Table.Row>
                 {openId === s.id && (
-                  <tr>
-                    <td colSpan={5}>
+                  <Table.Row>
+                    <Table.Cell colSpan={5}>
                       <pre className="code-block" style={{ maxHeight: 320, overflow: "auto", background: "#f6f6f6", padding: 12, borderRadius: 6 }}>
                         {JSON.stringify(JSON.parse(s.submissionJson ?? "{}"), null, 2)}
                       </pre>
-                    </td>
-                  </tr>
+                    </Table.Cell>
+                  </Table.Row>
                 )}
               </Fragment>
             ))}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       )}
     </section>
   );
@@ -62,26 +64,24 @@ export function PatientSubmissionsPage() {
   return (
     <>
       <div className="row" style={{ padding: "1rem", gap: 8 }}>
-        <input type="number" placeholder="Patient ID" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
-        <button
-          className="btn"
+        <TextInput type="number" placeholder="Patient ID" value={patientId} onChange={(e) => setPatientId(e.target.value)} />
+        <Button variant="secondary"
           onClick={() => {
             setActivePatient(Number(patientId) || undefined);
             setActiveEncounter(undefined);
           }}
         >
           View Patient
-        </button>
-        <input type="number" placeholder="Encounter ID" value={encounterId} onChange={(e) => setEncounterId(e.target.value)} />
-        <button
-          className="btn"
+        </Button>
+        <TextInput type="number" placeholder="Encounter ID" value={encounterId} onChange={(e) => setEncounterId(e.target.value)} />
+        <Button variant="secondary"
           onClick={() => {
             setActiveEncounter(Number(encounterId) || undefined);
             setActivePatient(undefined);
           }}
         >
           View Encounter
-        </button>
+        </Button>
       </div>
       <SubmissionViewer patientId={activePatient} encounterId={activeEncounter} />
     </>

@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   poRequestSchema,
   type PoRequestValues,
-  type PoRequestLineValues,
 } from "./zodSchema";
 
 interface PORequestProps {

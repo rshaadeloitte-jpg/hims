@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, SimpleGrid } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { documentUploadSchema, type DocumentUploadValues } from "./zodSchema";
 import {
   useDeletePatientDocument,
@@ -41,28 +43,27 @@ export function DocumentUploader({ patientId }: { patientId: number }) {
       <h2 className="text-lg font-semibold">Patient Documents</h2>
 
       <form onSubmit={onSubmit} className="space-y-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <label className="text-sm">
-            <span className="block font-medium">Type</span>
-            <select className="w-full border rounded px-2 py-1" {...register("documentType")}>
+        <SimpleGrid columns={{ base: 1, sm: 3 }} gap={2}>
+          <FormField label="Type">
+            <HimsSelect {...register("documentType")}>
               {["AADHAAR", "PAN", "INSURANCE", "ID_PROOF", "PHOTO", "DISCHARGE_SUMMARY", "PRESCRIPTION", "OTHER"].map((d) => (
                 <option key={d} value={d}>
                   {d}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="text-sm sm:col-span-2">
-            <span className="block font-medium">Description</span>
-            <input className="w-full border rounded px-2 py-1" {...register("description")} />
-          </label>
-        </div>
+            </HimsSelect>
+          </FormField>
+          <FormField label="Description">
+            <TextInput {...register("description")} />
+          </FormField>
+        </SimpleGrid>
 
-        <label className="text-sm block">
-          <span className="block font-medium">File (max 10 MB)</span>
-          <input type="file" className="w-full" {...register("file")} />
-          {errors.file && <span className="text-red-600 text-xs">{(errors.file as { message?: string }).message}</span>}
-        </label>
+        <FormField
+          label="File (max 10 MB)"
+          error={(errors.file as { message?: string } | undefined)?.message}
+        >
+          <TextInput type="file" {...register("file")} />
+        </FormField>
 
         {upload.isError && (
           <p className="text-sm text-red-600">{(upload.error as Error).message}</p>
@@ -71,13 +72,14 @@ export function DocumentUploader({ patientId }: { patientId: number }) {
           <p className="text-sm text-green-600">Uploaded {lastUploadedName}</p>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={upload.isPending}
+          variant="primary"
+          loading={upload.isPending}
+          loadingText="Uploading..."
         >
-          {upload.isPending ? "Uploading..." : "Upload"}
-        </button>
+          Upload
+        </Button>
       </form>
 
       <div>
@@ -98,14 +100,15 @@ export function DocumentUploader({ patientId }: { patientId: number }) {
                 {d.abdmSyncStatus && (
                   <span className="text-xs px-2 py-0.5 rounded bg-gray-100">{d.abdmSyncStatus}</span>
                 )}
-                <button
+                <Button
                   type="button"
-                  className="text-xs text-red-600 hover:underline"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => remove.mutate(d.id)}
                   aria-label={`delete-${d.id}`}
                 >
                   Delete
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

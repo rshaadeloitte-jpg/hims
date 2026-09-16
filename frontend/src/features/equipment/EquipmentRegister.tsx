@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, HStack, SimpleGrid, Table, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   useEquipmentList,
   useRegisterEquipment,
@@ -164,8 +166,8 @@ export function EquipmentRegister() {
     <section className="page">
       <header className="page-header">
         <h1>Equipment Asset Register</h1>
-        <button
-          className="btn btn-primary"
+        <Button
+          variant={showForm ? "secondary" : "primary"}
           onClick={() => {
             setShowForm(!showForm);
             setEditingId(null);
@@ -174,264 +176,298 @@ export function EquipmentRegister() {
           }}
         >
           {showForm ? "Cancel" : "Register Equipment"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>{editingId ? "Edit Equipment" : "Register New Equipment"}</h2>
-          <div className="form-grid">
-            <label htmlFor="eq-itemId">
-              Item ID *
-              {errors.itemId && <span className="error">{errors.itemId}</span>}
-            </label>
-            <input
-              id="eq-itemId"
-              type="number"
-              value={form.itemId || ""}
-              onChange={(e) => setForm({ ...form, itemId: Number(e.target.value) })}
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Item ID" error={errors.itemId} required>
+              <TextInput
+                id="eq-itemId"
+                aria-label="Item ID"
+                type="number"
+                value={form.itemId || ""}
+                onChange={(e) => setForm({ ...form, itemId: Number(e.target.value) })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-accessionNo">
-              Accession No. *
-              {errors.accessionNo && <span className="error">{errors.accessionNo}</span>}
-            </label>
-            <input
-              id="eq-accessionNo"
-              value={form.accessionNo}
-              onChange={(e) => setForm({ ...form, accessionNo: e.target.value })}
-            />
+            <FormField label="Accession No." error={errors.accessionNo} required>
+              <TextInput
+                id="eq-accessionNo"
+                aria-label="Accession No."
+                value={form.accessionNo}
+                onChange={(e) => setForm({ ...form, accessionNo: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-serialNo">Serial No.</label>
-            <input
-              id="eq-serialNo"
-              value={form.serialNo ?? ""}
-              onChange={(e) => setForm({ ...form, serialNo: e.target.value })}
-            />
+            <FormField label="Serial No.">
+              <TextInput
+                id="eq-serialNo"
+                aria-label="Serial No."
+                value={form.serialNo ?? ""}
+                onChange={(e) => setForm({ ...form, serialNo: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-model">Model</label>
-            <input
-              id="eq-model"
-              value={form.model ?? ""}
-              onChange={(e) => setForm({ ...form, model: e.target.value })}
-            />
+            <FormField label="Model">
+              <TextInput
+                id="eq-model"
+                aria-label="Model"
+                value={form.model ?? ""}
+                onChange={(e) => setForm({ ...form, model: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-make">Make</label>
-            <input
-              id="eq-make"
-              value={form.make ?? ""}
-              onChange={(e) => setForm({ ...form, make: e.target.value })}
-            />
+            <FormField label="Make">
+              <TextInput
+                id="eq-make"
+                aria-label="Make"
+                value={form.make ?? ""}
+                onChange={(e) => setForm({ ...form, make: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-purchaseDate">Purchase Date</label>
-            <input
-              id="eq-purchaseDate"
-              type="date"
-              value={form.purchaseDate ?? ""}
-              onChange={(e) => setForm({ ...form, purchaseDate: e.target.value })}
-            />
+            <FormField label="Purchase Date">
+              <TextInput
+                id="eq-purchaseDate"
+                aria-label="Purchase Date"
+                type="date"
+                value={form.purchaseDate ?? ""}
+                onChange={(e) => setForm({ ...form, purchaseDate: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-installationDate">Installation Date</label>
-            <input
-              id="eq-installationDate"
-              type="date"
-              value={form.installationDate ?? ""}
-              onChange={(e) => setForm({ ...form, installationDate: e.target.value })}
-            />
+            <FormField label="Installation Date">
+              <TextInput
+                id="eq-installationDate"
+                aria-label="Installation Date"
+                type="date"
+                value={form.installationDate ?? ""}
+                onChange={(e) => setForm({ ...form, installationDate: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-warrantyExpiry">Warranty Expiry</label>
-            <input
-              id="eq-warrantyExpiry"
-              type="date"
-              value={form.warrantyExpiry ?? ""}
-              onChange={(e) => setForm({ ...form, warrantyExpiry: e.target.value })}
-            />
+            <FormField label="Warranty Expiry">
+              <TextInput
+                id="eq-warrantyExpiry"
+                aria-label="Warranty Expiry"
+                type="date"
+                value={form.warrantyExpiry ?? ""}
+                onChange={(e) => setForm({ ...form, warrantyExpiry: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-departmentId">Department ID</label>
-            <input
-              id="eq-departmentId"
-              type="number"
-              value={form.departmentId ?? ""}
-              onChange={(e) => setForm({ ...form, departmentId: Number(e.target.value) || undefined })}
-            />
+            <FormField label="Department ID">
+              <TextInput
+                id="eq-departmentId"
+                aria-label="Department ID"
+                type="number"
+                value={form.departmentId ?? ""}
+                onChange={(e) => setForm({ ...form, departmentId: Number(e.target.value) || undefined })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-storeId">Store ID</label>
-            <input
-              id="eq-storeId"
-              type="number"
-              value={form.storeId ?? ""}
-              onChange={(e) => setForm({ ...form, storeId: Number(e.target.value) || undefined })}
-            />
+            <FormField label="Store ID">
+              <TextInput
+                id="eq-storeId"
+                aria-label="Store ID"
+                type="number"
+                value={form.storeId ?? ""}
+                onChange={(e) => setForm({ ...form, storeId: Number(e.target.value) || undefined })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-location">Location</label>
-            <input
-              id="eq-location"
-              value={form.location ?? ""}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-            />
+            <FormField label="Location">
+              <TextInput
+                id="eq-location"
+                aria-label="Location"
+                value={form.location ?? ""}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-cost">Cost</label>
-            <input
-              id="eq-cost"
-              type="number"
-              step="0.01"
-              value={form.cost ?? ""}
-              onChange={(e) => setForm({ ...form, cost: Number(e.target.value) || undefined })}
-            />
+            <FormField label="Cost">
+              <TextInput
+                id="eq-cost"
+                aria-label="Cost"
+                type="number"
+                step="0.01"
+                value={form.cost ?? ""}
+                onChange={(e) => setForm({ ...form, cost: Number(e.target.value) || undefined })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-supplierId">Supplier ID</label>
-            <input
-              id="eq-supplierId"
-              type="number"
-              value={form.supplierId ?? ""}
-              onChange={(e) => setForm({ ...form, supplierId: Number(e.target.value) || undefined })}
-            />
+            <FormField label="Supplier ID">
+              <TextInput
+                id="eq-supplierId"
+                aria-label="Supplier ID"
+                type="number"
+                value={form.supplierId ?? ""}
+                onChange={(e) => setForm({ ...form, supplierId: Number(e.target.value) || undefined })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-custodianName">Custodian Name</label>
-            <input
-              id="eq-custodianName"
-              value={form.custodianName ?? ""}
-              onChange={(e) => setForm({ ...form, custodianName: e.target.value })}
-            />
+            <FormField label="Custodian Name">
+              <TextInput
+                id="eq-custodianName"
+                aria-label="Custodian Name"
+                value={form.custodianName ?? ""}
+                onChange={(e) => setForm({ ...form, custodianName: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="eq-workingStatus">Working Status</label>
-            <select
-              id="eq-workingStatus"
-              value={form.workingStatus}
-              onChange={(e) => setForm({ ...form, workingStatus: Number(e.target.value) })}
-            >
-              {WORKING_STATUS_OPTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            className="btn btn-primary"
+            <FormField label="Working Status">
+              <HimsSelect
+                id="eq-workingStatus"
+                aria-label="Working Status"
+                value={form.workingStatus}
+                onChange={(e) => setForm({ ...form, workingStatus: Number(e.target.value) })}
+              >
+                {WORKING_STATUS_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </HimsSelect>
+            </FormField>
+          </SimpleGrid>
+          <Button
+            variant="primary"
             onClick={handleSubmit}
             disabled={register.isPending || update.isPending}
+            loading={register.isPending || update.isPending}
+            loadingText="Saving…"
           >
-            {register.isPending || update.isPending
-              ? "Saving…"
-              : editingId
-                ? "Update Equipment"
-                : "Register"}
-          </button>
+            {editingId ? "Update Equipment" : "Register"}
+          </Button>
         </div>
       )}
 
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Accession No.</th>
-              <th>Serial No.</th>
-              <th>Model</th>
-              <th>Make</th>
-              <th>Location</th>
-              <th>Working Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Accession No.</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Serial No.</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Model</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Make</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Location</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Working Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {items.map((e) => (
-              <tr key={e.id}>
-                <td>{e.id}</td>
-                <td>{e.accessionNo}</td>
-                <td>{e.serialNo ?? "—"}</td>
-                <td>{e.model ?? "—"}</td>
-                <td>{e.make ?? "—"}</td>
-                <td>{e.location ?? "—"}</td>
-                <td>
+              <Table.Row key={e.id}>
+                <Table.Cell>{e.id}</Table.Cell>
+                <Table.Cell>{e.accessionNo}</Table.Cell>
+                <Table.Cell>{e.serialNo ?? "—"}</Table.Cell>
+                <Table.Cell>{e.model ?? "—"}</Table.Cell>
+                <Table.Cell>{e.make ?? "—"}</Table.Cell>
+                <Table.Cell>{e.location ?? "—"}</Table.Cell>
+                <Table.Cell>
                   <span className={`badge ${STATUS_BADGE[e.workingStatus] ?? "badge-muted"}`}>
                     {WORKING_STATUS_OPTIONS.find((s) => s.value === e.workingStatus)?.label ??
                       e.workingStatus}
                   </span>
-                </td>
-                <td>
-                  <button className="btn btn-sm" onClick={() => startEdit(e)}>
-                    Edit
-                  </button>{" "}
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setTransferTarget(transferTarget === e.id ? null : e.id)}
-                  >
-                    Transfer
-                  </button>
-                </td>
-              </tr>
+                </Table.Cell>
+                <Table.Cell>
+                  <HStack gap={1}>
+                    <Button variant="secondary" size="sm" onClick={() => startEdit(e)}>
+                      Edit
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setTransferTarget(transferTarget === e.id ? null : e.id)}
+                    >
+                      Transfer
+                    </Button>
+                  </HStack>
+                </Table.Cell>
+              </Table.Row>
             ))}
             {items.length === 0 && (
-              <tr>
-                <td colSpan={8} className="muted">
+              <Table.Row>
+                <Table.Cell colSpan={8}>
                   No equipment registered.
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             )}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
 
       {transferTarget && (
         <div className="card">
           <h2>Transfer Equipment #{transferTarget}</h2>
-          <div className="form-grid">
-            <label htmlFor="tr-toDepartmentId">
-              Target Department ID *
-              {transferErrors.toDepartmentId && (
-                <span className="error">{transferErrors.toDepartmentId}</span>
-              )}
-            </label>
-            <input
-              id="tr-toDepartmentId"
-              type="number"
-              value={transferForm.toDepartmentId || ""}
-              onChange={(e) =>
-                setTransferForm({ ...transferForm, toDepartmentId: Number(e.target.value) })
-              }
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Target Department ID" error={transferErrors.toDepartmentId} required>
+              <TextInput
+                id="tr-toDepartmentId"
+                aria-label="Target Department ID"
+                type="number"
+                value={transferForm.toDepartmentId || ""}
+                onChange={(e) =>
+                  setTransferForm({ ...transferForm, toDepartmentId: Number(e.target.value) })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="tr-transferDate">Transfer Date</label>
-            <input
-              id="tr-transferDate"
-              type="date"
-              value={transferForm.transferDate ?? ""}
-              onChange={(e) => setTransferForm({ ...transferForm, transferDate: e.target.value })}
-            />
+            <FormField label="Transfer Date">
+              <TextInput
+                id="tr-transferDate"
+                aria-label="Transfer Date"
+                type="date"
+                value={transferForm.transferDate ?? ""}
+                onChange={(e) => setTransferForm({ ...transferForm, transferDate: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="tr-toLocation">Target Location</label>
-            <input
-              id="tr-toLocation"
-              value={transferForm.toLocation ?? ""}
-              onChange={(e) => setTransferForm({ ...transferForm, toLocation: e.target.value })}
-            />
+            <FormField label="Target Location">
+              <TextInput
+                id="tr-toLocation"
+                aria-label="Target Location"
+                value={transferForm.toLocation ?? ""}
+                onChange={(e) => setTransferForm({ ...transferForm, toLocation: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="tr-toStoreId">Target Store ID</label>
-            <input
-              id="tr-toStoreId"
-              type="number"
-              value={transferForm.toStoreId ?? ""}
-              onChange={(e) =>
-                setTransferForm({ ...transferForm, toStoreId: Number(e.target.value) || undefined })
-              }
-            />
+            <FormField label="Target Store ID">
+              <TextInput
+                id="tr-toStoreId"
+                aria-label="Target Store ID"
+                type="number"
+                value={transferForm.toStoreId ?? ""}
+                onChange={(e) =>
+                  setTransferForm({ ...transferForm, toStoreId: Number(e.target.value) || undefined })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="tr-reason">Reason</label>
-            <textarea
-              id="tr-reason"
-              value={transferForm.reason ?? ""}
-              onChange={(e) => setTransferForm({ ...transferForm, reason: e.target.value })}
-            />
-          </div>
-          <button
-            className="btn btn-primary"
+            <FormField label="Reason">
+              <Textarea
+                id="tr-reason"
+                aria-label="Reason"
+                value={transferForm.reason ?? ""}
+                onChange={(e) => setTransferForm({ ...transferForm, reason: e.target.value })}
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
+          </SimpleGrid>
+          <Button
+            variant="primary"
             onClick={handleTransfer}
             disabled={transfer.isPending}
+            loading={transfer.isPending}
+            loadingText="Transferring…"
           >
-            {transfer.isPending ? "Transferring…" : "Confirm Transfer"}
-          </button>
+            Confirm Transfer
+          </Button>
         </div>
       )}
     </section>

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreateItemSale } from "./queries";
 import { useFieldArray, useForm } from "react-hook-form";
+import { Button } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 interface Line {
   itemId: string;
@@ -53,33 +55,31 @@ export function NewSalePage() {
       <form className="form" onSubmit={handleSubmit(submit)}>
         <fieldset>
           <legend>Sale Header</legend>
-          <label>
-            Patient ID *
-            <input type="number" {...register("patientId")} />
-          </label>
-          <label>
-            Prescription ID
-            <input type="number" {...register("prescriptionId")} />
-          </label>
+          <FormField label="Patient ID *" required>
+            <TextInput type="number" {...register("patientId")} />
+          </FormField>
+          <FormField label="Prescription ID">
+            <TextInput type="number" {...register("prescriptionId")} />
+          </FormField>
         </fieldset>
         <fieldset>
           <legend>Items</legend>
           {fields.map((field, i) => (
             <div key={field.id} className="row">
-              <input type="number" placeholder="Item ID" {...register(`lines.${i}.itemId` as const)} />
-              <input type="number" placeholder="Qty" {...register(`lines.${i}.quantity` as const)} />
-              <input type="number" step="0.01" placeholder="Rate (opt)" {...register(`lines.${i}.rate` as const)} />
-              <button type="button" onClick={() => remove(i)}>✕</button>
+              <TextInput type="number" placeholder="Item ID" {...register(`lines.${i}.itemId` as const)} />
+              <TextInput type="number" placeholder="Qty" {...register(`lines.${i}.quantity` as const)} />
+              <TextInput type="number" step="0.01" placeholder="Rate (opt)" {...register(`lines.${i}.rate` as const)} />
+              <Button type="button" variant="ghost" size="sm" onClick={() => remove(i)}>✕</Button>
             </div>
           ))}
-          <button type="button" className="btn" onClick={() => append({ itemId: "", quantity: "1", rate: "" })}>
+          <Button type="button" variant="secondary" onClick={() => append({ itemId: "", quantity: "1", rate: "" })}>
             + Add Item
-          </button>
+          </Button>
         </fieldset>
         {err && <p className="error">{err}</p>}
-        <button type="submit" className="btn btn--primary" disabled={createSale.isPending}>
-          {createSale.isPending ? "Creating..." : "Create Sale"}
-        </button>
+        <Button type="submit" variant="primary" disabled={createSale.isPending} loading={createSale.isPending} loadingText="Creating...">
+          Create Sale
+        </Button>
       </form>
     </section>
   );

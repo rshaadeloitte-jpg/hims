@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useRadStudies, useCreateRadOrder, useRadOrders, useRescheduleLine, useRequestRetest } from "./queries";
 import { radOrderBookingSchema } from "./zodSchema";
-import { MODALITIES, type Modality, type RadStudyItem, type RadOrder } from "./types";
+import { MODALITIES, type Modality, type RadOrder } from "./types";
 
 interface RadOrderBookingProps {
   patientId?: number;
@@ -219,6 +219,7 @@ export function RadOrderBooking({ patientId, onBooked }: RadOrderBookingProps) {
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               />
               <select
+                aria-label="Modality"
                 value={modalityFilter}
                 onChange={(e) => setModalityFilter(e.target.value as Modality | "")}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"

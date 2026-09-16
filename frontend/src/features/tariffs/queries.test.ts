@@ -8,20 +8,21 @@ import {
   useServiceCategories,
   usePackages,
   useConcessionTemplates,
-  type TariffValues,
 } from "./queries";
+import type { TariffValues, TariffFilterValues } from "./zodSchema";
+
+import React, { type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const fetchMock = vi.fn();
+let queryClient: QueryClient;
 
-function wrapper() {
-  const { QueryClient, QueryClientProvider } = require("@tanstack/react-query");
-  const React = require("react");
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: any }) =>
-    React.createElement(QueryClientProvider, { client: queryClient }, children);
+function wrapper({ children }: { children: ReactNode }) {
+  return React.createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
 beforeEach(() => {
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -42,8 +43,7 @@ describe("useServiceCategories", () => {
     });
 
     const { result } = renderHook(() => useServiceCategories(), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(mockCategories);
+    await waitFor(() => expect(result.current.data).toEqual(mockCategories));
   });
 
   it("provides placeholder data initially", async () => {
@@ -69,7 +69,7 @@ describe("useTariffs", () => {
       json: async () => mockTariffs,
     });
 
-    const filter = { serviceCategory: "CONSULTATION", page: 0, size: 20 };
+    const filter: TariffFilterValues = { serviceCategory: "CONSULTATION", page: 0, size: 20 };
     const { result } = renderHook(() => useTariffs(filter), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));

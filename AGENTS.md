@@ -47,5 +47,6 @@ git pull origin main && git pull hims_new_deloitte main
 ## Conventions
 
 - Frontend: Zod schemas, TanStack Query, feature-folder pattern matching `features/masters/`
+- UI: Chakra UI v3 with the Deloitte theme in `src/theme/himsTheme.ts`; shared primitives in `src/components/ui/` (PageHeader, HimsCard, StatusBadge, FormField, …). Re-run `chakra typegen` after theme changes (`postinstall` does it automatically).
 - Never add speculative features; only implement what the gap matrix lists
 - Run lint/typecheck/tests after every change

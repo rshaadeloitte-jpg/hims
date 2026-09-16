@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Checkbox, HStack, SimpleGrid, Table } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { grnSchema, type GrnForm } from "./zodSchema";
 import { useSuppliers, useStores, useItems, usePostGrn } from "./queries";
 
@@ -11,7 +13,7 @@ export function GRNForm() {
   const stores = useStores();
   const items = useItems();
 
-  const { register, control, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<GrnForm>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<GrnForm>({
     resolver: zodResolver(grnSchema),
     defaultValues: {
       storeId: 0,
@@ -22,6 +24,8 @@ export function GRNForm() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "lines" });
+  const provisional = watch("provisional");
+  const consignment = watch("consignment");
 
   const onSubmit = (data: GrnForm) => {
     postGrn.mutate(data, {
@@ -36,122 +40,122 @@ export function GRNForm() {
           <h1>Goods Receipt Notes</h1>
           <p className="muted">Post GRNs with quality control</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <Button variant={showForm ? "secondary" : "primary"} onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "New GRN"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>New GRN</h2>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="form-grid">
-              <div className="field">
-                <label htmlFor="storeId">Store <span className="req">*</span></label>
-                <select id="storeId" {...register("storeId")}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+              <FormField label="Store" error={errors.storeId?.message} required>
+                <HimsSelect id="storeId" aria-label="Store" {...register("storeId")}>
                   <option value={0}>Select store</option>
                   {(stores.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}
-                </select>
-                {errors.storeId && <span className="field-error">{errors.storeId.message}</span>}
-              </div>
+                </HimsSelect>
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="supplierId">Supplier</label>
-                <select id="supplierId" {...register("supplierId")}>
+              <FormField label="Supplier">
+                <HimsSelect id="supplierId" aria-label="Supplier" {...register("supplierId")}>
                   <option value="">Select supplier (optional)</option>
                   {(suppliers.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}
-                </select>
-              </div>
+                </HimsSelect>
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="grnNo">GRN No</label>
-                <input id="grnNo" type="text" {...register("grnNo")} placeholder="Auto-generated if blank" />
-              </div>
+              <FormField label="GRN No">
+                <TextInput id="grnNo" aria-label="GRN No" type="text" {...register("grnNo")} placeholder="Auto-generated if blank" />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="invoiceNo">Invoice No</label>
-                <input id="invoiceNo" type="text" {...register("invoiceNo")} />
-              </div>
+              <FormField label="Invoice No">
+                <TextInput id="invoiceNo" aria-label="Invoice No" type="text" {...register("invoiceNo")} />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="invoiceDate">Invoice Date</label>
-                <input id="invoiceDate" type="date" {...register("invoiceDate")} />
-              </div>
+              <FormField label="Invoice Date">
+                <TextInput id="invoiceDate" aria-label="Invoice Date" type="date" {...register("invoiceDate")} />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="receivedDate">Received Date</label>
-                <input id="receivedDate" type="date" {...register("receivedDate")} />
-              </div>
+              <FormField label="Received Date">
+                <TextInput id="receivedDate" aria-label="Received Date" type="date" {...register("receivedDate")} />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="remarks">Remarks</label>
-                <input id="remarks" type="text" {...register("remarks")} placeholder="Optional remarks" />
-              </div>
+              <FormField label="Remarks">
+                <TextInput id="remarks" aria-label="Remarks" type="text" {...register("remarks")} placeholder="Optional remarks" />
+              </FormField>
 
-              <div className="field field--check">
-                <input id="provisional" type="checkbox" {...register("provisional")} />
-                <label htmlFor="provisional">Provisional</label>
-              </div>
+              <Checkbox.Root
+                checked={!!provisional}
+                onCheckedChange={(e) => setValue("provisional", !!e.checked, { shouldValidate: true })}
+              >
+                <Checkbox.HiddenInput id="provisional" aria-label="Provisional" {...register("provisional")} />
+                <Checkbox.Control />
+                <Checkbox.Label>Provisional</Checkbox.Label>
+              </Checkbox.Root>
 
-              <div className="field field--check">
-                <input id="consignment" type="checkbox" {...register("consignment")} />
-                <label htmlFor="consignment">Consignment</label>
-              </div>
-            </div>
+              <Checkbox.Root
+                checked={!!consignment}
+                onCheckedChange={(e) => setValue("consignment", !!e.checked, { shouldValidate: true })}
+              >
+                <Checkbox.HiddenInput id="consignment" aria-label="Consignment" {...register("consignment")} />
+                <Checkbox.Control />
+                <Checkbox.Label>Consignment</Checkbox.Label>
+              </Checkbox.Root>
+            </SimpleGrid>
 
             <h3 style={{ marginTop: "1.5rem" }}>Line Items</h3>
             <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Item <span className="req">*</span></th>
-                    <th>Qty <span className="req">*</span></th>
-                    <th>Batch ID</th>
-                    <th>Batch Code</th>
-                    <th>Expiry Date</th>
-                    <th>MRP</th>
-                    <th>Purchase Rate</th>
-                    <th>Remarks</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table.Root size="sm" variant="line">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Item *</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty *</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Batch ID</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Batch Code</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Expiry Date</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">MRP</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Purchase Rate</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Remarks</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {fields.map((field, idx) => (
-                    <tr key={field.id}>
-                      <td>
-                        <select {...register(`lines.${idx}.itemId`)}>
+                    <Table.Row key={field.id}>
+                      <Table.Cell>
+                        <HimsSelect aria-label={`Line ${idx + 1} item`} {...register(`lines.${idx}.itemId`)}>
                           <option value={0}>Select item</option>
                           {(items.data ?? []).map((i) => <option key={i.id} value={i.id}>{i.itemName}</option>)}
-                        </select>
+                        </HimsSelect>
                         {errors.lines?.[idx]?.itemId && <span className="field-error">{errors.lines[idx].itemId?.message}</span>}
-                      </td>
-                      <td>
-                        <input type="number" step="0.0001" {...register(`lines.${idx}.quantity`)} />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <TextInput type="number" step="0.0001" aria-label={`Line ${idx + 1} quantity`} {...register(`lines.${idx}.quantity`)} />
                         {errors.lines?.[idx]?.quantity && <span className="field-error">{errors.lines[idx].quantity?.message}</span>}
-                      </td>
-                      <td><input type="number" {...register(`lines.${idx}.batchId`)} /></td>
-                      <td><input type="text" {...register(`lines.${idx}.batchCode`)} /></td>
-                      <td><input type="date" {...register(`lines.${idx}.expiryDate`)} /></td>
-                      <td><input type="number" step="0.01" {...register(`lines.${idx}.mrp`)} /></td>
-                      <td><input type="number" step="0.01" {...register(`lines.${idx}.purchaseRate`)} /></td>
-                      <td><input type="text" {...register(`lines.${idx}.remarks`)} /></td>
-                      <td>{fields.length > 1 && <button type="button" className="btn btn-sm btn-secondary" onClick={() => remove(idx)}>Remove</button>}</td>
-                    </tr>
+                      </Table.Cell>
+                      <Table.Cell><TextInput type="number" aria-label={`Line ${idx + 1} batch ID`} {...register(`lines.${idx}.batchId`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="text" aria-label={`Line ${idx + 1} batch code`} {...register(`lines.${idx}.batchCode`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="date" aria-label={`Line ${idx + 1} expiry date`} {...register(`lines.${idx}.expiryDate`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="number" step="0.01" aria-label={`Line ${idx + 1} MRP`} {...register(`lines.${idx}.mrp`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="number" step="0.01" aria-label={`Line ${idx + 1} purchase rate`} {...register(`lines.${idx}.purchaseRate`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="text" aria-label={`Line ${idx + 1} remarks`} {...register(`lines.${idx}.remarks`)} /></Table.Cell>
+                      <Table.Cell>{fields.length > 1 && <Button type="button" variant="secondary" size="sm" onClick={() => remove(idx)}>Remove</Button>}</Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
+                </Table.Body>
+              </Table.Root>
             </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => append({ itemId: 0, quantity: 1 })} style={{ marginTop: "0.75rem" }}>
+            <Button type="button" variant="secondary" size="sm" onClick={() => append({ itemId: 0, quantity: 1 })} style={{ marginTop: "0.75rem" }}>
               + Add Line
-            </button>
+            </Button>
 
             {errors.lines && typeof errors.lines.message === "string" && <p className="field-error">{errors.lines.message}</p>}
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Posting..." : "Post GRN"}
-              </button>
-            </div>
+            <HStack gap={2} mt={4} className="form-actions">
+              <Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting} loadingText="Posting...">
+                Post GRN
+              </Button>
+            </HStack>
           </form>
         </div>
       )}

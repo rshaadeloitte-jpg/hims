@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { labQueryKeys } from './queries';
-import type { Sample, LabDetail } from './types';
+import type { LabDetail } from './types';
 
 const LAB_BASE: string = import.meta.env.VITE_LAB_API_BASE ?? '/api';
 

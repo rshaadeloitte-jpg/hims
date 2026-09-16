@@ -6,7 +6,6 @@ import {
   annotationSchema,
   FILE_CATEGORIES,
   OWNER_TYPES,
-  type FileUploadValues,
 } from "./zodSchema";
 
 /**

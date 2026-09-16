@@ -37,7 +37,7 @@ afterEach(() => {
 
 describe("AuditTrailPage", () => {
   it("renders the audit feed with entity-scoped entries and diff", async () => {
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => [
@@ -82,15 +82,15 @@ describe("AuditTrailPage", () => {
     });
 
     // Entries rendered
-    await screen.findByText("Patient #42");
+    await screen.findAllByText("Patient #42");
     expect(screen.getByText("UPDATE")).toBeInTheDocument();
     expect(screen.getByText("CREATE")).toBeInTheDocument();
-    expect(screen.getByText("by alice")).toBeInTheDocument();
+    expect(screen.getAllByText("by alice").length).toBeGreaterThanOrEqual(1);
   });
 
   it("expands a diff row to show old/new values", async () => {
     const user = userEvent.setup();
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => [

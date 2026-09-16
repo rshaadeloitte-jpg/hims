@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FormDesigner } from "./FormDesigner";
 import { useCreateForm } from "./queries";
 import type { FormDefinitionValues } from "./zodSchema";
+import { Button } from "@chakra-ui/react";
 
 /**
  * FormDesignerPage — wraps the designer with navigation and mutation handling.
@@ -27,9 +28,9 @@ export function FormDesignerPage() {
           <h1>New Form</h1>
           <p className="muted">Design a clinical form with versioned JSON schema</p>
         </div>
-        <button className="btn btn-secondary" onClick={() => navigate("/forms")}>
+        <Button variant="secondary" onClick={() => navigate("/forms")}>
           ← Back to Forms
-        </button>
+        </Button>
       </header>
 
       {error && (

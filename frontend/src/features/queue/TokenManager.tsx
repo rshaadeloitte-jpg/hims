@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTokens, useIssueToken, useTokenAction, useTransferToken, useCounters } from "./queries";
 import { tokenSchema, transferSchema, TOKEN_STATUS, type TokenValues, type TransferValues } from "./zodSchema";
-import type { QueueToken } from "./queries";
 
 /**
  * M27 TokenManager — issue, transfer, and manage queue tokens.

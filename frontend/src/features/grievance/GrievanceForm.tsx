@@ -4,9 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   grievanceSchema,
   type GrievanceFormValues,
-  type GrievanceCategory,
-  type GrievanceSeverity,
 } from "./zodSchema";
+import type { GrievanceCategory, GrievanceSeverity } from "./queries";
 
 interface GrievanceFormProps {
   categories: GrievanceCategory[];

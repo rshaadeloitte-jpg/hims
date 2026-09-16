@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Button } from "@chakra-ui/react";
 import { useDeathCertificate, useRequestCertificatePrint } from "./queries";
 import { deathCertificateRequestSchema } from "./zodSchema";
 
@@ -45,9 +46,9 @@ export function DeathCertificate({ patientId }: DeathCertificateProps) {
     <section className="page">
       <header className="page-header no-print">
         <h1>Death Certificate</h1>
-        <button className="btn btn-primary" onClick={handlePrint} disabled={printCert.isPending}>
-          {printCert.isPending ? "Preparing…" : "Print Certificate"}
-        </button>
+        <Button variant="primary" onClick={handlePrint} loading={printCert.isPending} loadingText="Preparing…">
+          Print Certificate
+        </Button>
       </header>
 
       <div ref={printRef} className="death-certificate">

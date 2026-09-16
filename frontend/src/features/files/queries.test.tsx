@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
 import {
   useFiles,
   useFile,
@@ -17,7 +16,6 @@ import {
   readFileAsDataURL,
   stripDataURIPrefix,
 } from "./queries";
-import { fileUploadSchema } from "./zodSchema";
 
 /**
  * M34 File/Document Management — wire-level + schema validation tests.
@@ -126,7 +124,7 @@ describe("useFile", () => {
   });
 
   it("is disabled when id is 0", () => {
-    const { result } = renderHook(() => useFile(0), { wrapper: testWrapper() });
+    renderHook(() => useFile(0), { wrapper: testWrapper() });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

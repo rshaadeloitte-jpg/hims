@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Checkbox, HStack, Table, Text, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   useChambers,
   useAllocateChamber,
@@ -46,27 +48,27 @@ export function MortuaryBox() {
     <section className="page">
       <header className="page-header">
         <h1>Mortuary Box Management</h1>
-        <button className="btn btn-primary" onClick={() => setShowAllocate(!showAllocate)}>
+        <Button variant={showAllocate ? "secondary" : "primary"} onClick={() => setShowAllocate(!showAllocate)}>
           {showAllocate ? "Cancel" : "Allocate Chamber"}
-        </button>
+        </Button>
       </header>
 
       {showAllocate && <AllocationForm onSubmit={(v) => allocate.mutate(v)} />}
 
       <div className="card">
         <h2>Chambers</h2>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Chamber</th>
-              <th>Body</th>
-              <th>Admitted</th>
-              <th>Status</th>
-              <th>Death Cert</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Chamber</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Body</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Admitted</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Death Cert</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {chambers.map((c) => (
               <ChamberRowView
                 key={c.id}
@@ -76,14 +78,14 @@ export function MortuaryBox() {
               />
             ))}
             {chambers.length === 0 && (
-              <tr>
-                <td colSpan={6} className="muted">
-                  No chambers allocated.
-                </td>
-              </tr>
+              <Table.Row>
+                <Table.Cell colSpan={6}>
+                  <Text color="gray.500">No chambers allocated.</Text>
+                </Table.Cell>
+              </Table.Row>
             )}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
 
       {showRelease !== null && (
@@ -126,31 +128,31 @@ function ChamberRowView({
   const label = CHAMBER_STATUS_LABEL[(chamber.status as keyof typeof CHAMBER_STATUS_LABEL) ?? chamber.status] ?? chamber.status;
 
   return (
-    <tr>
-      <td>{chamber.chamberNo}</td>
-      <td>{chamber.bodyName ?? "—"}</td>
-      <td>{chamber.admittedAt?.slice(0, 10) ?? "—"}</td>
-      <td>
+    <Table.Row>
+      <Table.Cell>{chamber.chamberNo}</Table.Cell>
+      <Table.Cell>{chamber.bodyName ?? "—"}</Table.Cell>
+      <Table.Cell>{chamber.admittedAt?.slice(0, 10) ?? "—"}</Table.Cell>
+      <Table.Cell>
         <span className={`badge ${tone}`}>{label}</span>
-      </td>
-      <td>{chamber.deathCertNo ?? "—"}</td>
-      <td>
-        <div className="btn-row">
+      </Table.Cell>
+      <Table.Cell>{chamber.deathCertNo ?? "—"}</Table.Cell>
+      <Table.Cell>
+        <HStack gap={2}>
           {chamber.status === "OCCUPIED" && (
             <>
-              <button className="btn btn-sm" onClick={onRelease}>
+              <Button variant="secondary" size="sm" onClick={onRelease}>
                 Release
-              </button>
+              </Button>
               {chamber.patientId && (
-                <button className="btn btn-sm" onClick={onDeathDetails}>
+                <Button variant="secondary" size="sm" onClick={onDeathDetails}>
                   Death Details
-                </button>
+                </Button>
               )}
             </>
           )}
-        </div>
-      </td>
-    </tr>
+        </HStack>
+      </Table.Cell>
+    </Table.Row>
   );
 }
 
@@ -176,36 +178,29 @@ function AllocationForm({ onSubmit }: { onSubmit: (v: ChamberAllocationValues) =
     <form className="card" onSubmit={handleSubmit(onSubmit)}>
       <h2>Allocate Chamber</h2>
       <div className="form-grid">
-        <label>
-          Chamber ID
-          {errors.chamberId && <span className="error">{errors.chamberId.message}</span>}
-        </label>
-        <input type="number" {...register("chamberId")} />
+        <FormField label="Chamber ID" error={errors.chamberId?.message}>
+          <TextInput type="number" {...register("chamberId")} />
+        </FormField>
 
-        <label>
-          Patient ID
-          {errors.patientId && <span className="error">{errors.patientId.message}</span>}
-        </label>
-        <input type="number" {...register("patientId")} />
+        <FormField label="Patient ID" error={errors.patientId?.message}>
+          <TextInput type="number" {...register("patientId")} />
+        </FormField>
 
-        <label>
-          Body Name
-          {errors.bodyName && <span className="error">{errors.bodyName.message}</span>}
-        </label>
-        <input {...register("bodyName")} />
+        <FormField label="Body Name" error={errors.bodyName?.message}>
+          <TextInput {...register("bodyName")} />
+        </FormField>
 
-        <label>Cause of Death (optional)</label>
-        <textarea {...register("causeOfDeath")} rows={2} />
+        <FormField label="Cause of Death (optional)">
+          <Textarea bg="white" borderColor="gray.300" {...register("causeOfDeath")} rows={2} />
+        </FormField>
 
-        <label>
-          Admitted At
-          {errors.admittedAt && <span className="error">{errors.admittedAt.message}</span>}
-        </label>
-        <input type="datetime-local" {...register("admittedAt")} />
+        <FormField label="Admitted At" error={errors.admittedAt?.message}>
+          <TextInput type="datetime-local" {...register("admittedAt")} />
+        </FormField>
       </div>
-      <button type="submit" className="btn btn-primary">
+      <Button type="submit" variant="primary">
         Allocate
-      </button>
+      </Button>
     </form>
   );
 }
@@ -241,42 +236,41 @@ function ReleaseForm({
     <form className="card" onSubmit={handleSubmit(onSubmit)}>
       <h2>Release Body — Chamber {chamberId}</h2>
       <div className="form-grid">
-        <label>
-          Released To
-          {errors.releasedTo && <span className="error">{errors.releasedTo.message}</span>}
-        </label>
-        <input {...register("releasedTo")} />
+        <FormField label="Released To" error={errors.releasedTo?.message}>
+          <TextInput {...register("releasedTo")} />
+        </FormField>
 
-        <label>Relationship</label>
-        <select {...register("relationship")}>
-          <option value="SPOUSE">Spouse</option>
-          <option value="PARENT">Parent</option>
-          <option value="CHILD">Child</option>
-          <option value="SIBLING">Sibling</option>
-          <option value="LEGAL">Legal</option>
-          <option value="OTHER">Other</option>
-        </select>
+        <FormField label="Relationship">
+          <HimsSelect {...register("relationship")}>
+            <option value="SPOUSE">Spouse</option>
+            <option value="PARENT">Parent</option>
+            <option value="CHILD">Child</option>
+            <option value="SIBLING">Sibling</option>
+            <option value="LEGAL">Legal</option>
+            <option value="OTHER">Other</option>
+          </HimsSelect>
+        </FormField>
 
-        <label>Recipient ID</label>
-        <input {...register("recipientId")} />
+        <FormField label="Recipient ID">
+          <TextInput {...register("recipientId")} />
+        </FormField>
 
-        <label>
-          Released At
-          {errors.releasedAt && <span className="error">{errors.releasedAt.message}</span>}
-        </label>
-        <input type="datetime-local" {...register("releasedAt")} />
+        <FormField label="Released At" error={errors.releasedAt?.message}>
+          <TextInput type="datetime-local" {...register("releasedAt")} />
+        </FormField>
 
-        <label>Remark</label>
-        <textarea {...register("remark")} rows={2} />
+        <FormField label="Remark">
+          <Textarea bg="white" borderColor="gray.300" {...register("remark")} rows={2} />
+        </FormField>
       </div>
-      <div className="btn-row">
-        <button type="submit" className="btn btn-primary">
+      <HStack gap={2}>
+        <Button type="submit" variant="primary">
           Confirm Release
-        </button>
-        <button type="button" className="btn" onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
-        </button>
-      </div>
+        </Button>
+      </HStack>
     </form>
   );
 }
@@ -296,6 +290,7 @@ function DeathDetailsForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<DeathDetailsValues>({
     resolver: zodResolver(deathDetailsSchema),
@@ -317,57 +312,49 @@ function DeathDetailsForm({
     <form className="card" onSubmit={handleSubmit(onSubmit)}>
       <h2>Death Details — Patient {patientId}</h2>
       <div className="form-grid">
-        <label>
-          Date of Death
-          {errors.deathDate && <span className="error">{errors.deathDate.message}</span>}
-        </label>
-        <input type="datetime-local" {...register("deathDate")} />
+        <FormField label="Date of Death" error={errors.deathDate?.message}>
+          <TextInput type="datetime-local" {...register("deathDate")} />
+        </FormField>
 
-        <label>
-          Cause of Death
-          {errors.causeOfDeath && <span className="error">{errors.causeOfDeath.message}</span>}
-        </label>
-        <textarea {...register("causeOfDeath")} rows={2} />
+        <FormField label="Cause of Death" error={errors.causeOfDeath?.message}>
+          <Textarea bg="white" borderColor="gray.300" {...register("causeOfDeath")} rows={2} />
+        </FormField>
 
-        <label>Death Type</label>
-        <select {...register("deathType")}>
-          <option value="NATURAL">Natural</option>
-          <option value="ACCIDENT">Accident</option>
-          <option value="SUICIDE">Suicide</option>
-          <option value="HOMICIDE">Homicide</option>
-          <option value="PENDING">Pending</option>
-          <option value="OTHER">Other</option>
-        </select>
+        <FormField label="Death Type">
+          <HimsSelect {...register("deathType")}>
+            <option value="NATURAL">Natural</option>
+            <option value="ACCIDENT">Accident</option>
+            <option value="SUICIDE">Suicide</option>
+            <option value="HOMICIDE">Homicide</option>
+            <option value="PENDING">Pending</option>
+            <option value="OTHER">Other</option>
+          </HimsSelect>
+        </FormField>
 
-        <label>
-          Certified By
-          {errors.certifiedBy && <span className="error">{errors.certifiedBy.message}</span>}
-        </label>
-        <input {...register("certifiedBy")} />
+        <FormField label="Certified By" error={errors.certifiedBy?.message}>
+          <TextInput {...register("certifiedBy")} />
+        </FormField>
 
-        <label className="checkbox-row">
-          <input type="checkbox" {...register("isMlc")} />
-          Medico-Legal Case (MLC)
-        </label>
+        <Checkbox.Root checked={!!isMlc} onCheckedChange={(e) => setValue("isMlc", !!e.checked, { shouldValidate: true })}>
+          <Checkbox.HiddenInput {...register("isMlc")} />
+          <Checkbox.Control />
+          <Checkbox.Label>Medico-Legal Case (MLC)</Checkbox.Label>
+        </Checkbox.Root>
 
         {isMlc && (
-          <>
-            <label>
-              MLC Number
-              {errors.mlcNumber && <span className="error">{errors.mlcNumber.message}</span>}
-            </label>
-            <input {...register("mlcNumber")} />
-          </>
+          <FormField label="MLC Number" error={errors.mlcNumber?.message}>
+            <TextInput {...register("mlcNumber")} />
+          </FormField>
         )}
       </div>
-      <div className="btn-row">
-        <button type="submit" className="btn btn-primary">
+      <HStack gap={2}>
+        <Button type="submit" variant="primary">
           Save Death Details
-        </button>
-        <button type="button" className="btn" onClick={onCancel}>
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
-        </button>
-      </div>
+        </Button>
+      </HStack>
     </form>
   );
 }

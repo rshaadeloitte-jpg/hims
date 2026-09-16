@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button, HStack } from "@chakra-ui/react";
 import { ItemsTab, StoresTab, StockTab } from "./components/InventoryTabs";
 
 const TABS = [
@@ -20,18 +21,19 @@ export function InventoryPage() {
       </header>
 
       <div className="card">
-        <div className="tabs">
+        <HStack gap={1} className="tabs">
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
-              className={`tab ${activeTab === tab.id ? "tab--active" : ""}`}
+              variant={activeTab === tab.id ? "secondary" : "ghost"}
+              size="sm"
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </HStack>
 
         <div className="tab-content">
           {activeTab === "items" && <ItemsTab />}

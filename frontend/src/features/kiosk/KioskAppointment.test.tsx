@@ -63,20 +63,20 @@ beforeEach(() => {
 describe("KioskAppointment", () => {
   it("renders the appointment booking form", () => {
     renderComponent();
-    expect(screen.getByText("Book Appointment")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Book Appointment" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Full name")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("10-digit mobile")).toBeInTheDocument();
     expect(screen.getByText("Select Department")).toBeInTheDocument();
     expect(screen.getByText("Select Doctor")).toBeInTheDocument();
     expect(screen.getByText("Select Slot")).toBeInTheDocument();
-    expect(screen.getByText("Book Appointment")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Book Appointment" })).toBeInTheDocument();
   });
 
   it("shows validation errors for empty form", async () => {
     const user = userEvent.setup();
     renderComponent();
 
-    await user.click(screen.getByText("Book Appointment"));
+    await user.click(screen.getByRole("button", { name: "Book Appointment" }));
 
     await waitFor(() => {
       expect(screen.getByText("Patient name required")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("KioskAppointment", () => {
     const slotSelect = screen.getByText("Select Slot").closest("select") as HTMLSelectElement;
     await user.selectOptions(slotSelect, "100");
 
-    await user.click(screen.getByText("Book Appointment"));
+    await user.click(screen.getByRole("button", { name: "Book Appointment" }));
 
     await waitFor(() => {
       expect(mockBookMutate).toHaveBeenCalledWith(
@@ -149,7 +149,7 @@ describe("KioskAppointment", () => {
     await user.type(dateInput, "2026-09-15");
     const slotSelect = screen.getByText("Select Slot").closest("select") as HTMLSelectElement;
     await user.selectOptions(slotSelect, "100");
-    await user.click(screen.getByText("Book Appointment"));
+    await user.click(screen.getByRole("button", { name: "Book Appointment" }));
 
     await waitFor(() => {
       expect(screen.getByText("Appointment Booked")).toBeInTheDocument();

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTokens, useCounters, useCallNext, useTokenAction } from "./queries";
-import { TOKEN_STATUS } from "./zodSchema";
 
 /**
  * M27 NurseDesk — triage and queue management interface for nursing staff.

@@ -12,6 +12,10 @@ export interface DietOrderDetails {
   id: number;
   orderNumber: string;
   patientId: number;
+  patientName?: string;
+  mealType?: string;
+  dietType?: string;
+  orderedAt?: string;
   admissionId: number;
   wardId: number;
   bedId: number;

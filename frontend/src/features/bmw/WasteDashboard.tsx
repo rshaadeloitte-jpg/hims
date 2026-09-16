@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useWasteList, useWasteSummary, type WasteRequestRow } from "./queries";
+import { HandoverView } from "./HandoverView";
+import { WasteRequest } from "./WasteRequest";
 import {
   STATUS_LABEL,
   STATUS_TONE,
@@ -55,6 +57,7 @@ export function WasteDashboard({
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   const filter: WasteListFilterValues = useMemo(
     () =>
@@ -111,6 +114,17 @@ export function WasteDashboard({
     }
   };
 
+  if (isCreating) {
+    return (
+      <WasteRequest
+        unitId={unitId}
+        defaultStoreId={storeId}
+        onCancel={() => setIsCreating(false)}
+        onSuccess={() => setIsCreating(false)}
+      />
+    );
+  }
+
   if (selectedId !== null) {
     return (
       <HandoverView
@@ -128,6 +142,13 @@ export function WasteDashboard({
           <h1>Biomedical Waste Management</h1>
           <p className="muted">Track, hand over, and dispose of biomedical waste bags.</p>
         </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setIsCreating(true)}
+        >
+          Create Waste Request
+        </button>
       </header>
 
       {/* Summary strip — Stripe-style status badges */}

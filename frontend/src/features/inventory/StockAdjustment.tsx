@@ -1,5 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, HStack, SimpleGrid, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { stockAdjustmentSchema, type StockAdjustmentValues } from "./zodSchema";
 import { useInventoryItems, useInventoryBatches, useCreateStockAdjustment } from "./queries";
 
@@ -50,15 +52,12 @@ export function StockAdjustment() {
         </div>
       )}
 
-      <div className="stock-adjustment__fields">
-        <div className="field">
-          <label htmlFor="adj-itemId">
-            Item <span className="req">*</span>
-          </label>
-          <select
+      <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="stock-adjustment__fields">
+        <FormField label="Item" error={errors.itemId?.message} required>
+          <HimsSelect
             id="adj-itemId"
+            aria-label="Item"
             {...register("itemId", { valueAsNumber: true })}
-            className={errors.itemId ? "input--error" : ""}
           >
             <option value={0}>Select item...</option>
             {items.map((item) => (
@@ -66,83 +65,72 @@ export function StockAdjustment() {
                 {item.name} ({item.code})
               </option>
             ))}
-          </select>
-          {errors.itemId && <span className="field__error">{errors.itemId.message}</span>}
-        </div>
+          </HimsSelect>
+        </FormField>
 
-        <div className="field">
-          <label htmlFor="adj-batchId">Batch (optional)</label>
-          <select id="adj-batchId" {...register("batchId", { valueAsNumber: true })}>
+        <FormField label="Batch (optional)">
+          <HimsSelect id="adj-batchId" aria-label="Batch (optional)" {...register("batchId", { valueAsNumber: true })}>
             <option value="">No specific batch</option>
             {filteredBatches.map((batch) => (
               <option key={batch.id} value={batch.id}>
                 {batch.batchNumber} (Exp: {batch.expiryDate})
               </option>
             ))}
-          </select>
-        </div>
+          </HimsSelect>
+        </FormField>
 
-        <div className="field">
-          <label htmlFor="adj-type">
-            Adjustment Type <span className="req">*</span>
-          </label>
-          <select
+        <FormField label="Adjustment Type" error={errors.adjustmentType?.message} required>
+          <HimsSelect
             id="adj-type"
+            aria-label="Adjustment Type"
             {...register("adjustmentType")}
-            className={errors.adjustmentType ? "input--error" : ""}
           >
             <option value="INCREASE">Increase (Add Stock)</option>
             <option value="DECREASE">Decrease (Remove Stock)</option>
-          </select>
-          {errors.adjustmentType && <span className="field__error">{errors.adjustmentType.message}</span>}
-        </div>
+          </HimsSelect>
+        </FormField>
 
-        <div className="field">
-          <label htmlFor="adj-quantity">
-            Quantity <span className="req">*</span>
-          </label>
-          <input
+        <FormField label="Quantity" error={errors.quantity?.message} required>
+          <TextInput
             id="adj-quantity"
+            aria-label="Quantity"
             type="number"
             min={1}
             {...register("quantity", { valueAsNumber: true })}
-            className={errors.quantity ? "input--error" : ""}
           />
-          {errors.quantity && <span className="field__error">{errors.quantity.message}</span>}
-        </div>
+        </FormField>
 
-        <div className="field">
-          <label htmlFor="adj-reference">Reference / Document No.</label>
-          <input id="adj-reference" type="text" {...register("reference")} />
-        </div>
+        <FormField label="Reference / Document No.">
+          <TextInput id="adj-reference" aria-label="Reference / Document No." type="text" {...register("reference")} />
+        </FormField>
 
-        <div className="field field--full">
-          <label htmlFor="adj-reason">
-            Reason <span className="req">*</span>
-          </label>
-          <textarea
+        <FormField label="Reason" error={errors.reason?.message} required>
+          <Textarea
             id="adj-reason"
+            aria-label="Reason"
             rows={3}
             {...register("reason")}
             placeholder="e.g., Damaged goods, inventory count correction, expiry write-off..."
-            className={errors.reason ? "input--error" : ""}
+            bg="white"
+            borderColor="gray.300"
           />
-          {errors.reason && <span className="field__error">{errors.reason.message}</span>}
-        </div>
-      </div>
+        </FormField>
+      </SimpleGrid>
 
-      <div className="stock-adjustment__actions">
-        <button
+      <HStack gap={2} mt={4} className="stock-adjustment__actions">
+        <Button
           type="submit"
-          className="btn btn--primary"
+          variant="primary"
           disabled={createAdjustment.isPending}
+          loading={createAdjustment.isPending}
+          loadingText="Recording..."
         >
-          {createAdjustment.isPending ? "Recording..." : "Record Adjustment"}
-        </button>
-        <button type="button" className="btn btn--secondary" onClick={() => reset()}>
+          Record Adjustment
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => reset()}>
           Clear
-        </button>
-      </div>
+        </Button>
+      </HStack>
     </form>
   );
 }

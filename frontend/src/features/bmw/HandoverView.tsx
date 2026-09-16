@@ -69,7 +69,6 @@ export function HandoverView({ requestId, unitId, onClose }: HandoverViewProps) 
   // Bag-wise selection state
   const [selectedBags, setSelectedBags] = useState<Record<number, boolean>>({});
   const [bagWeights, setBagWeights] = useState<Record<number, string>>({});
-  const [bagRemarks, setBagRemarks] = useState<Record<number, string>>({});
   const [handedOverToBagwise, setHandedOverToBagwise] = useState("");
 
   const toggleBag = (id: number) =>
@@ -105,7 +104,6 @@ export function HandoverView({ requestId, unitId, onClose }: HandoverViewProps) 
         unitId,
         bagStatus: 2, // ACCEPTED → advance to next
         weight: bagWeights[Number(id)] ? Number(bagWeights[Number(id)]) : undefined,
-        remark: bagRemarks[Number(id)] || undefined,
         handedOverTo: handedOverToBagwise || undefined,
       }));
     if (updates.length === 0) return;
@@ -120,9 +118,6 @@ export function HandoverView({ requestId, unitId, onClose }: HandoverViewProps) 
   };
 
   if (isLoading) return <p className="muted">Loading bag details…</p>;
-
-  const hasAcceptedBags = details.some((d) => d.bagStatus === 2);
-  const hasHandoveredBags = details.some((d) => d.bagStatus === 3);
 
   return (
     <div className="card">

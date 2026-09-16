@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, SimpleGrid, Table } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { useIndents, useCreateIndent, useUpdateIndentStatus } from "./queries";
 
 const STATUSES = ["REQUESTED", "APPROVED", "DISPATCHED", "RECEIVED", "REJECTED"] as const;
@@ -14,34 +16,6 @@ type IndentFormState = {
   units: string;
   note: string;
 };
-
-type FormFieldProps = {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-  error?: string;
-  options?: string[];
-};
-
-function FormField({ label, value, onChange, type = "text", error, options }: FormFieldProps) {
-  return (
-    <label>
-      {label}
-      {type === "select" ? (
-        <select value={value} onChange={(e) => onChange(e.target.value)}>
-          <option value="">Select...</option>
-          {options?.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-      ) : (
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
-      )}
-      {error && <span className="error">{error}</span>}
-    </label>
-  );
-}
 
 export function IndentWorkflow() {
   const { data: indents = [], isLoading } = useIndents();
@@ -87,59 +61,92 @@ export function IndentWorkflow() {
     <section className="page">
       <header className="page-header">
         <h1>Indent Workflow</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <Button variant={showForm ? "secondary" : "primary"} onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Request Blood"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>New Indent Request</h2>
-          <div className="form-grid">
-            <FormField label="Source Store" value={form.sourceStore} onChange={(v) => update({ sourceStore: v })} type="select" error={errors.sourceStore} options={STORES} />
-            <FormField label="Target Store" value={form.targetStore} onChange={(v) => update({ targetStore: v })} type="select" error={errors.targetStore} options={STORES} />
-            <FormField label="Blood Group" value={form.bloodGroup} onChange={(v) => update({ bloodGroup: v })} type="select" error={errors.bloodGroup} options={BLOOD_GROUPS} />
-            <FormField label="Component" value={form.component} onChange={(v) => update({ component: v })} type="select" error={errors.component} options={COMPONENTS} />
-            <FormField label="Units" value={form.units} onChange={(v) => update({ units: v })} type="number" error={errors.units} />
-            <FormField label="Note" value={form.note} onChange={(v) => update({ note: v })} />
-          </div>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={createIndent.isPending}>
-            {createIndent.isPending ? "Submitting..." : "Submit Request"}
-          </button>
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Source Store" error={errors.sourceStore || undefined}>
+              <HimsSelect aria-label="Source Store" value={form.sourceStore} onChange={(e) => update({ sourceStore: e.target.value })}>
+                <option value="">Select...</option>
+                {STORES.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Target Store" error={errors.targetStore || undefined}>
+              <HimsSelect aria-label="Target Store" value={form.targetStore} onChange={(e) => update({ targetStore: e.target.value })}>
+                <option value="">Select...</option>
+                {STORES.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Blood Group" error={errors.bloodGroup || undefined}>
+              <HimsSelect aria-label="Blood Group" value={form.bloodGroup} onChange={(e) => update({ bloodGroup: e.target.value })}>
+                <option value="">Select...</option>
+                {BLOOD_GROUPS.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Component" error={errors.component || undefined}>
+              <HimsSelect aria-label="Component" value={form.component} onChange={(e) => update({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {COMPONENTS.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Units" error={errors.units}>
+              <TextInput aria-label="Units" type="number" value={form.units} onChange={(e) => update({ units: e.target.value })} />
+            </FormField>
+            <FormField label="Note">
+              <TextInput aria-label="Note" value={form.note} onChange={(e) => update({ note: e.target.value })} />
+            </FormField>
+          </SimpleGrid>
+          <Button variant="primary" onClick={handleSubmit} disabled={createIndent.isPending} loading={createIndent.isPending} loadingText="Submitting...">
+            Submit Request
+          </Button>
         </div>
       )}
 
       <div className="card">
         <h2>Inter-Store Requests</h2>
-        <table className="table">
-          <thead>
-            <tr><th>Source</th><th>Target</th><th>Group</th><th>Component</th><th>Units</th><th>Status</th><th>Requested</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Source</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Target</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Group</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Component</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Units</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Requested</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader></Table.Row>
+          </Table.Header>
+          <Table.Body>
             {indents.map((ind) => (
-              <tr key={ind.id}>
-                <td>{ind.sourceStore}</td>
-                <td>{ind.targetStore}</td>
-                <td>{ind.bloodGroup}</td>
-                <td>{ind.component}</td>
-                <td>{ind.units}</td>
-                <td>{ind.status}</td>
-                <td>{new Date(ind.requestedAt).toLocaleString()}</td>
-                <td>
-                  <select
+              <Table.Row key={ind.id}>
+                <Table.Cell>{ind.sourceStore}</Table.Cell>
+                <Table.Cell>{ind.targetStore}</Table.Cell>
+                <Table.Cell>{ind.bloodGroup}</Table.Cell>
+                <Table.Cell>{ind.component}</Table.Cell>
+                <Table.Cell>{ind.units}</Table.Cell>
+                <Table.Cell>{ind.status}</Table.Cell>
+                <Table.Cell>{new Date(ind.requestedAt).toLocaleString()}</Table.Cell>
+                <Table.Cell>
+                  <HimsSelect
+                    aria-label={`Status for indent ${ind.id}`}
                     value={ind.status}
                     onChange={(e) => updateStatus.mutate({ id: ind.id, status: e.target.value as typeof ind.status })}
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
-                </td>
-              </tr>
+                  </HimsSelect>
+                </Table.Cell>
+              </Table.Row>
             ))}
-            {indents.length === 0 && <tr><td colSpan={8} className="muted">No indent requests.</td></tr>}
-          </tbody>
-        </table>
+            {indents.length === 0 && <Table.Row><Table.Cell colSpan={8}>No indent requests.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       </div>
     </section>
   );

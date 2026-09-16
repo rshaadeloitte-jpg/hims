@@ -13,6 +13,8 @@ import {
   type VerificationStep,
   VERIFICATION_STEPS,
 } from "./zodSchema";
+import { FormField, TextInput } from "../../components/ui";
+import { Button, Checkbox, Table } from "@chakra-ui/react";
 import {
   useStartFiveRightsScan,
   useVerifyRight,
@@ -186,52 +188,25 @@ export function ScanWorkflow({ patientId }: { patientId?: number }) {
           aria-label="Start BCMA scan"
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Patient ID *</span>
-              <input
+            <FormField label="Patient ID  {errorsInitial.patientId && ( {errorsInitial.patientId.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...registerInitial("patientId", { valueAsNumber: true })}
                 aria-invalid={errorsInitial.patientId ? "true" : undefined}
-              />
-              {errorsInitial.patientId && (
-                <span className="field-error text-xs text-red-600 mt-1 block">
-                  {errorsInitial.patientId.message}
-                </span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Wristband Barcode *</span>
-              <input
+            <FormField label="Wristband Barcode  {errorsInitial.wristbandBarcode && ( {errorsInitial.wristbandBarcode.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2 font-mono"
                 placeholder="Scan wristband..."
                 {...registerInitial("wristbandBarcode")}
                 aria-invalid={errorsInitial.wristbandBarcode ? "true" : undefined}
-              />
-              {errorsInitial.wristbandBarcode && (
-                <span className="field-error text-xs text-red-600 mt-1 block">
-                  {errorsInitial.wristbandBarcode.message}
-                </span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Drug NDC *</span>
-              <input
+            <FormField label="Drug NDC  {errorsInitial.drugNdc && ( {errorsInitial.drugNdc.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2 font-mono"
                 placeholder="Scan medication..."
                 {...registerInitial("drugNdc")}
                 aria-invalid={errorsInitial.drugNdc ? "true" : undefined}
-              />
-              {errorsInitial.drugNdc && (
-                <span className="field-error text-xs text-red-600 mt-1 block">
-                  {errorsInitial.drugNdc.message}
-                </span>
-              )}
-            </label>
+              /></FormField>
           </div>
 
           {error && (
@@ -241,13 +216,11 @@ export function ScanWorkflow({ patientId }: { patientId?: number }) {
           )}
 
           <div className="flex items-center gap-3">
-            <button
+            <Button variant="primary" loading={!isValidInitial || startScan.isPending} loadingText="Starting..."
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!isValidInitial || startScan.isPending}
-            >
-              {startScan.isPending ? "Starting..." : "Start Verification"}
-            </button>
+              disabled={!isValidInitial || startScan.isPending}>
+              Start Verification
+            </Button>
             <span className="text-xs text-gray-500">
               All fields required · Barcode scanner auto-advances
             </span>
@@ -266,28 +239,28 @@ export function ScanWorkflow({ patientId }: { patientId?: number }) {
           ) : scans.length === 0 ? (
             <p className="text-sm text-gray-400">No verifications yet.</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 px-2">Patient</th>
-                  <th className="py-2 px-2">Drug NDC</th>
-                  <th className="py-2 px-2">Scan Time</th>
-                  <th className="py-2 px-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table.Root size="sm" variant="line">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Drug NDC</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Scan Time</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
                 {scans.slice(0, 5).map((s) => (
-                  <tr key={s.bcmaId} className="border-b">
-                    <td className="py-2 px-2">{s.patientId}</td>
-                    <td className="py-2 px-2 font-mono text-xs">{s.drugNdc}</td>
-                    <td className="py-2 px-2">{new Date(s.scanTime).toLocaleString()}</td>
-                    <td className="py-2 px-2">
+                  <Table.Row key={s.bcmaId}>
+                    <Table.Cell>{s.patientId}</Table.Cell>
+                    <Table.Cell>{s.drugNdc}</Table.Cell>
+                    <Table.Cell>{new Date(s.scanTime).toLocaleString()}</Table.Cell>
+                    <Table.Cell>
                       <StatusBadge verification={s} />
-                    </td>
-                  </tr>
+                    </Table.Cell>
+                  </Table.Row>
                 ))}
-              </tbody>
-            </table>
+              </Table.Body>
+            </Table.Root>
           )}
         </div>
       </div>
@@ -342,61 +315,46 @@ export function ScanWorkflow({ patientId }: { patientId?: number }) {
 
         {step === "PATIENT" && (
           <form onSubmit={handleSubmitPatient((v) => handleStepVerification("PATIENT", v.match))} className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded hover:bg-green-50">
-              <input type="checkbox" {...registerPatient("match")} className="w-5 h-5" />
-              <span className="font-medium">Patient identity verified — wristband matches order</span>
-            </label>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Checkbox.Root><Checkbox.HiddenInput {...registerPatient("match")} /><Checkbox.Control /><Checkbox.Label>Patient identity verified — wristband matches order</Checkbox.Label></Checkbox.Root>
+            <Button variant="primary" type="submit">
               Confirm Right Patient →
-            </button>
+            </Button>
           </form>
         )}
 
         {step === "DRUG" && (
           <form onSubmit={handleSubmitDrug((v) => handleStepVerification("DRUG", v.match))} className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded hover:bg-green-50">
-              <input type="checkbox" {...registerDrug("match")} className="w-5 h-5" />
-              <span className="font-medium">Drug barcode verified — medication matches order</span>
-            </label>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Checkbox.Root><Checkbox.HiddenInput {...registerDrug("match")} /><Checkbox.Control /><Checkbox.Label>Drug barcode verified — medication matches order</Checkbox.Label></Checkbox.Root>
+            <Button variant="primary" type="submit">
               Confirm Right Drug →
-            </button>
+            </Button>
           </form>
         )}
 
         {step === "DOSE" && (
           <form onSubmit={handleSubmitDose((v) => handleStepVerification("DOSE", v.match))} className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded hover:bg-green-50">
-              <input type="checkbox" {...registerDose("match")} className="w-5 h-5" />
-              <span className="font-medium">Dose verified — label matches prescribed amount</span>
-            </label>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Checkbox.Root><Checkbox.HiddenInput {...registerDose("match")} /><Checkbox.Control /><Checkbox.Label>Dose verified — label matches prescribed amount</Checkbox.Label></Checkbox.Root>
+            <Button variant="primary" type="submit">
               Confirm Right Dose →
-            </button>
+            </Button>
           </form>
         )}
 
         {step === "ROUTE" && (
           <form onSubmit={handleSubmitRoute((v) => handleStepVerification("ROUTE", v.match))} className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded hover:bg-green-50">
-              <input type="checkbox" {...registerRoute("match")} className="w-5 h-5" />
-              <span className="font-medium">Route verified — administration route matches order</span>
-            </label>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Checkbox.Root><Checkbox.HiddenInput {...registerRoute("match")} /><Checkbox.Control /><Checkbox.Label>Route verified — administration route matches order</Checkbox.Label></Checkbox.Root>
+            <Button variant="primary" type="submit">
               Confirm Right Route →
-            </button>
+            </Button>
           </form>
         )}
 
         {step === "TIME" && (
           <form onSubmit={handleSubmitTime((v) => handleStepVerification("TIME", v.match))} className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer p-3 border rounded hover:bg-green-50">
-              <input type="checkbox" {...registerTime("match")} className="w-5 h-5" />
-              <span className="font-medium">Time verified — this is the correct administration time</span>
-            </label>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            <Checkbox.Root><Checkbox.HiddenInput {...registerTime("match")} /><Checkbox.Control /><Checkbox.Label>Time verified — this is the correct administration time</Checkbox.Label></Checkbox.Root>
+            <Button variant="primary" type="submit">
               Confirm Right Time
-            </button>
+            </Button>
           </form>
         )}
       </div>
@@ -423,27 +381,22 @@ export function ScanWorkflow({ patientId }: { patientId?: number }) {
 
         {canFinalize && (
           <div className="mt-4 flex gap-3">
-            <button
+            <Button
+              variant="primary"
+              loading={finalize.isPending}
+              loadingText="Finalizing..."
               onClick={handleFinalize}
               disabled={finalize.isPending}
-              className={`px-4 py-2 rounded font-medium ${
-                isAllRightsPassed
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "bg-orange-600 hover:bg-orange-700 text-white"
-              } disabled:opacity-50`}
             >
               {finalize.isPending
                 ? "Finalizing..."
                 : isAllRightsPassed
                 ? "✓ Finalize & Administer"
                 : "Finalize (Override Required)"}
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 border rounded hover:bg-gray-50"
-            >
+            </Button>
+            <Button variant="secondary" onClick={handleReset}>
               Cancel
-            </button>
+            </Button>
           </div>
         )}
       </div>

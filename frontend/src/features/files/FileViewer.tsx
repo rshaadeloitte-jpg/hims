@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { Button, Table } from "@chakra-ui/react";
+import { HimsSelect, TextInput } from "../../components/ui";
 import {
   useFiles,
   useDeleteFile,
@@ -51,7 +53,7 @@ export function FileViewer({
   );
 
   const filesQuery = useFiles(filter);
-  const categoriesQuery = useFileCategories();
+  useFileCategories();
   const deleteFile = useDeleteFile();
 
   const filteredFiles = useMemo(() => {
@@ -97,15 +99,14 @@ export function FileViewer({
       {/* Toolbar */}
       <div className="file-viewer__toolbar">
         <div className="file-viewer__filters">
-          <input
+          <TextInput
             type="text"
             placeholder="Search files…"
-            className="file-viewer__search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Search files"
           />
-          <select
+          <HimsSelect
             value={ownerType}
             onChange={(e) => setOwnerType(e.target.value)}
             aria-label="Filter by owner type"
@@ -114,16 +115,15 @@ export function FileViewer({
             {OWNER_TYPES.map((ot) => (
               <option key={ot} value={ot}>{ot}</option>
             ))}
-          </select>
-          <input
+          </HimsSelect>
+          <TextInput
             type="number"
             placeholder="Owner ID"
-            className="file-viewer__owner-id"
             value={ownerId}
             onChange={(e) => setOwnerId(e.target.value)}
             aria-label="Filter by owner ID"
           />
-          <select
+          <HimsSelect
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             aria-label="Filter by category"
@@ -132,28 +132,30 @@ export function FileViewer({
             {FILE_CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>{cat.replace(/_/g, " ")}</option>
             ))}
-          </select>
+          </HimsSelect>
         </div>
 
         <div className="file-viewer__view-toggle" role="group" aria-label="View mode">
-          <button
+          <Button
             type="button"
-            className={viewMode === "grid" ? "active" : ""}
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setViewMode("grid")}
             aria-pressed={viewMode === "grid"}
             aria-label="Grid view"
           >
             ▦
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className={viewMode === "list" ? "active" : ""}
+            variant={viewMode === "list" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setViewMode("list")}
             aria-pressed={viewMode === "list"}
             aria-label="List view"
           >
             ☰
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -198,9 +200,10 @@ export function FileViewer({
               </div>
               <div className="file-card__actions">
                 {file.fileType.startsWith("image/") && onAnnotate && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-xs btn-secondary"
+                    variant="secondary"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       onAnnotate(file);
@@ -208,7 +211,7 @@ export function FileViewer({
                     aria-label={`Annotate ${file.fileName}`}
                   >
                     Annotate
-                  </button>
+                  </Button>
                 )}
                 <a
                   href={getDownloadUrl(file.fileToken)}
@@ -220,32 +223,36 @@ export function FileViewer({
                 </a>
                 {deleteConfirmId === file.id ? (
                   <div className="file-card__confirm">
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-xs btn-danger"
+                      variant="primary"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(file.id);
                       }}
-                      disabled={deleteFile.isPending}
+                      loading={deleteFile.isPending}
+                      loadingText="Deleting..."
                     >
                       Confirm
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="btn btn-xs btn-secondary"
+                      variant="secondary"
+                      size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteConfirmId(null);
                       }}
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-xs btn-danger"
+                    variant="ghost"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setDeleteConfirmId(file.id);
@@ -253,7 +260,7 @@ export function FileViewer({
                     aria-label={`Delete ${file.fileName}`}
                   >
                     Delete
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -262,39 +269,40 @@ export function FileViewer({
       )}
 
       {filteredFiles.length > 0 && viewMode === "list" && (
-        <table className="file-viewer__table">
-          <thead>
-            <tr>
-              <th>File</th>
-              <th>Type</th>
-              <th>Size</th>
-              <th>Owner</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">File</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Type</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Size</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Owner</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {filteredFiles.map((file) => (
-              <tr key={file.id}>
-                <td>
+              <Table.Row key={file.id}>
+                <Table.Cell>
                   <span className="file-viewer__table-icon" aria-hidden="true">
                     {getFileIcon(file.fileType)}
                   </span>
                   {file.fileName}
-                </td>
-                <td>{file.fileType}</td>
-                <td>{formatFileSize(file.fileSize)}</td>
-                <td>
+                </Table.Cell>
+                <Table.Cell>{file.fileType}</Table.Cell>
+                <Table.Cell>{formatFileSize(file.fileSize)}</Table.Cell>
+                <Table.Cell>
                   {file.ownerType ? `${file.ownerType}:${file.ownerId}` : "—"}
-                </td>
-                <td>
+                </Table.Cell>
+                <Table.Cell>
                   {file.fileType.startsWith("image/") && onAnnotate && (
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-xs btn-secondary mr-1"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => onAnnotate(file)}
                     >
                       Annotate
-                    </button>
+                    </Button>
                   )}
                   <a
                     href={getDownloadUrl(file.fileToken)}
@@ -302,18 +310,19 @@ export function FileViewer({
                   >
                     Download
                   </a>
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-xs btn-danger"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setDeleteConfirmId(file.id)}
                   >
                     Delete
-                  </button>
-                </td>
-              </tr>
+                  </Button>
+                </Table.Cell>
+              </Table.Row>
             ))}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       )}
     </div>
   );

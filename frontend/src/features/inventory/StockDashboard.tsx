@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
+import { Table } from "@chakra-ui/react";
+import { HimsSelect } from "../../components/ui";
 import {
   useItemEnquiry,
   useStockLevelTrend,
-  type ItemEnquiryResult,
 } from "./queries";
 
 /** Vercel-style area chart for stock levels */
@@ -150,10 +151,10 @@ export function StockDashboard() {
       <div className="stock-dashboard__chart-card">
         <div className="stock-dashboard__chart-header">
           <h3 className="stock-dashboard__chart-title">Stock Levels Overview</h3>
-          <select
-            className="stock-dashboard__item-select"
+          <HimsSelect
             value={selectedItemId}
             onChange={(e) => setSelectedItemId(Number(e.target.value))}
+            aria-label="Select item for trend"
           >
             <option value={0}>Select item for trend...</option>
             {items.map((item) => (
@@ -161,7 +162,7 @@ export function StockDashboard() {
                 {item.name} ({item.code})
               </option>
             ))}
-          </select>
+          </HimsSelect>
         </div>
 
         {selectedItemId > 0 && trend.length > 0 ? (
@@ -205,46 +206,45 @@ export function StockDashboard() {
       {/* Stock distribution table */}
       <div className="stock-dashboard__table-card">
         <h3 className="stock-dashboard__section-title">Stock Distribution</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Code</th>
-              <th>Category</th>
-              <th className="cell--num">Current</th>
-              <th className="cell--num">Reorder Lvl</th>
-              <th className="cell--num">Max</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Item</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Category</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Current</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reorder Lvl</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Max</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {items.map((item) => (
-              <tr
+              <Table.Row
                 key={item.id}
-                className={item.currentStock <= item.reorderLevel ? "row--warning" : ""}
               >
-                <td>{item.name}</td>
-                <td>{item.code}</td>
-                <td>{item.category ?? "—"}</td>
-                <td className="cell--num">{item.currentStock}</td>
-                <td className="cell--num">{item.reorderLevel}</td>
-                <td className="cell--num">{item.maxStock}</td>
-                <td>
+                <Table.Cell>{item.name}</Table.Cell>
+                <Table.Cell>{item.code}</Table.Cell>
+                <Table.Cell>{item.category ?? "—"}</Table.Cell>
+                <Table.Cell>{item.currentStock}</Table.Cell>
+                <Table.Cell>{item.reorderLevel}</Table.Cell>
+                <Table.Cell>{item.maxStock}</Table.Cell>
+                <Table.Cell>
                   {item.currentStock <= item.reorderLevel ? (
                     <span className="badge badge--warning">Reorder</span>
                   ) : (
                     <span className="badge badge--success">OK</span>
                   )}
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             ))}
             {items.length === 0 && (
-              <tr>
-                <td colSpan={7} className="muted">No items found.</td>
-              </tr>
+              <Table.Row>
+                <Table.Cell colSpan={7}>No items found.</Table.Cell>
+              </Table.Row>
             )}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
     </div>
   );

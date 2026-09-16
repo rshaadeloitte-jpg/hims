@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, SimpleGrid } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   useChecklists,
-  useChecklistsBySchedule,
   useCreateChecklist,
   useAddChecklistItem,
-  useCompleteChecklistItem,
   useRecordChecklistCompletion,
   type SurgicalChecklist,
-  type ChecklistItem,
 } from "./queries";
 import {
   checklistCreateSchema,
@@ -59,7 +58,6 @@ function ChecklistCard({ checklist }: { checklist: SurgicalChecklist }) {
   const checklistId = checklist.checklistId ?? checklist.id ?? 0;
   const [expanded, setExpanded] = useState(false);
   const addItemMutation = useAddChecklistItem();
-  const completeItemMutation = useCompleteChecklistItem();
   const recordCompletionMutation = useRecordChecklistCompletion();
 
   const {
@@ -101,10 +99,10 @@ function ChecklistCard({ checklist }: { checklist: SurgicalChecklist }) {
 
   return (
     <div className={`border rounded-lg bg-white ${completed ? "border-green-300" : "border-gray-200"}`}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between text-left"
       >
         <div className="flex items-center gap-3">
           <span className={`w-3 h-3 rounded-full ${completed ? "bg-green-500" : "bg-yellow-500"}`} />
@@ -119,7 +117,7 @@ function ChecklistCard({ checklist }: { checklist: SurgicalChecklist }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
-      </button>
+      </Button>
 
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3">
@@ -136,32 +134,30 @@ function ChecklistCard({ checklist }: { checklist: SurgicalChecklist }) {
           {!completed && (
             <>
               <form onSubmit={onAddItem} className="flex gap-2">
-                <input
+                <TextInput
                   type="text"
                   placeholder="Add checklist item..."
-                  className="flex-1 border border-gray-300 rounded px-2 py-1 text-xs"
                   {...registerItem("itemName")}
                 />
-                <input
+                <TextInput
                   type="text"
                   placeholder="Category"
-                  className="w-24 border border-gray-300 rounded px-2 py-1 text-xs"
                   {...registerItem("category")}
                 />
-                <button type="submit" disabled={addItemMutation.isPending} className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50">
+                <Button type="submit" variant="primary" size="sm" loading={addItemMutation.isPending} loadingText="Adding...">
                   Add
-                </button>
+                </Button>
               </form>
 
               <form onSubmit={onRecordCompletion} className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                <select className="border border-gray-300 rounded px-2 py-1 text-xs" {...registerCompletion("overallStatus")}>
+                <HimsSelect {...registerCompletion("overallStatus")}>
                   <option value="COMPLETED">Completed</option>
                   <option value="ABORTED">Aborted</option>
                   <option value="PENDING">Pending</option>
-                </select>
-                <button type="submit" disabled={recordCompletionMutation.isPending} className="px-3 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:opacity-50">
+                </HimsSelect>
+                <Button type="submit" variant="primary" size="sm" loading={recordCompletionMutation.isPending} loadingText="Recording...">
                   Record Completion
-                </button>
+                </Button>
               </form>
             </>
           )}
@@ -195,30 +191,24 @@ function CreateChecklistForm() {
   return (
     <form onSubmit={onSubmit} className="p-4 border border-gray-200 rounded-lg bg-white space-y-3">
       <h3 className="text-sm font-semibold text-gray-900">Create WHO Surgical Checklist</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Schedule ID *</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("scheduleId", { valueAsNumber: true })} />
-          {errors.scheduleId && <p className="text-xs text-red-600">{errors.scheduleId.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Patient ID *</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("patientId", { valueAsNumber: true })} />
-          {errors.patientId && <p className="text-xs text-red-600">{errors.patientId.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Phase *</label>
-          <select className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("phase")}>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
+        <FormField label="Schedule ID *" error={errors.scheduleId?.message} required>
+          <TextInput type="number" {...register("scheduleId", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="Patient ID *" error={errors.patientId?.message} required>
+          <TextInput type="number" {...register("patientId", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="Phase *" error={errors.phase?.message} required>
+          <HimsSelect {...register("phase")}>
             <option value="SIGN_IN">Sign In (Before Induction)</option>
             <option value="TIME_OUT">Time Out (Before Incision)</option>
             <option value="SIGN_OUT">Sign Out (Before Leaving OR)</option>
-          </select>
-          {errors.phase && <p className="text-xs text-red-600">{errors.phase.message}</p>}
-        </div>
-      </div>
-      <button type="submit" disabled={mutation.isPending} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:opacity-50">
-        {mutation.isPending ? "Creating..." : "Create Checklist"}
-      </button>
+          </HimsSelect>
+        </FormField>
+      </SimpleGrid>
+      <Button type="submit" variant="primary" loading={mutation.isPending} loadingText="Creating...">
+        Create Checklist
+      </Button>
     </form>
   );
 }

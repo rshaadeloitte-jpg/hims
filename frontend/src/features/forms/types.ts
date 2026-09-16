@@ -19,7 +19,7 @@ export interface FormSchemaResponse {
   description: string;
   version: number;
   schema: Record<string, unknown>;
-  legacyTiuxmlRef: string;
+  legacyTiuxmlRef?: string | null;
 }
 
 export interface FormSubmission {

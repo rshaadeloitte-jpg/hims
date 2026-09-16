@@ -3,6 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
+import { Button, Text } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../../components/ui";
 import { useIssueToken, useRegisterPatient } from "../api/queries";
 import { useOpSession } from "../store/opSession";
 import { PatientSearch } from "../components/PatientSearch";
@@ -244,50 +246,50 @@ export function WalkinVisitPage() {
           <section className="walkin-form__section" aria-label="Demographics">
             <h2>Demographics</h2>
             <div className="form-row form-row--two-col">
-              <Field label="First name" required error={form.formState.errors.demographics?.firstName?.message}>
-                <input className="form-input" {...form.register("demographics.firstName")} />
-              </Field>
-              <Field label="Middle name" error={form.formState.errors.demographics?.middleName?.message}>
-                <input className="form-input" {...form.register("demographics.middleName")} />
-              </Field>
+              <FormField label="First name" required error={form.formState.errors.demographics?.firstName?.message}>
+                <TextInput {...form.register("demographics.firstName")} />
+              </FormField>
+              <FormField label="Middle name" error={form.formState.errors.demographics?.middleName?.message}>
+                <TextInput {...form.register("demographics.middleName")} />
+              </FormField>
             </div>
             <div className="form-row form-row--two-col">
-              <Field label="Last name" required error={form.formState.errors.demographics?.lastName?.message}>
-                <input className="form-input" {...form.register("demographics.lastName")} />
-              </Field>
-              <Field label="Father / Guardian" error={form.formState.errors.demographics?.fatherName?.message}>
-                <input className="form-input" {...form.register("demographics.fatherName")} />
-              </Field>
+              <FormField label="Last name" required error={form.formState.errors.demographics?.lastName?.message}>
+                <TextInput {...form.register("demographics.lastName")} />
+              </FormField>
+              <FormField label="Father / Guardian" error={form.formState.errors.demographics?.fatherName?.message}>
+                <TextInput {...form.register("demographics.fatherName")} />
+              </FormField>
             </div>
             <div className="form-row form-row--two-col">
-              <Field label="Mother" error={form.formState.errors.demographics?.motherName?.message}>
-                <input className="form-input" {...form.register("demographics.motherName")} />
-              </Field>
-              <Field label="Date of birth" hint="YYYY-MM-DD" error={form.formState.errors.demographics?.dateOfBirth?.message}>
-                <input className="form-input" type="date" {...form.register("demographics.dateOfBirth")} />
-              </Field>
+              <FormField label="Mother" error={form.formState.errors.demographics?.motherName?.message}>
+                <TextInput {...form.register("demographics.motherName")} />
+              </FormField>
+              <FormField label="Date of birth" helper="YYYY-MM-DD" error={form.formState.errors.demographics?.dateOfBirth?.message}>
+                <TextInput type="date" {...form.register("demographics.dateOfBirth")} />
+              </FormField>
             </div>
             <div className="form-row form-row--three-col">
-              <Field label="Age (if DOB unknown)" error={form.formState.errors.demographics?.age?.message}>
-                <input className="form-input" type="number" min={0} max={130} {...form.register("demographics.age")} />
-              </Field>
-              <Field label="Sex" required error={form.formState.errors.demographics?.sex?.message}>
-                <select className="form-input" {...form.register("demographics.sex")}>
+              <FormField label="Age (if DOB unknown)" error={form.formState.errors.demographics?.age?.message}>
+                <TextInput type="number" min={0} max={130} {...form.register("demographics.age")} />
+              </FormField>
+              <FormField label="Sex" required error={form.formState.errors.demographics?.sex?.message}>
+                <HimsSelect {...form.register("demographics.sex")}>
                   {Object.entries(SEX_LABELS).map(([v, l]) => (
                     <option key={v} value={v}>{l}</option>
                   ))}
-                </select>
-              </Field>
-              <Field label="Mobile" error={form.formState.errors.demographics?.mobile?.message}>
-                <input className="form-input" type="tel" {...form.register("demographics.mobile")} />
-              </Field>
+                </HimsSelect>
+              </FormField>
+              <FormField label="Mobile" error={form.formState.errors.demographics?.mobile?.message}>
+                <TextInput type="tel" {...form.register("demographics.mobile")} />
+              </FormField>
             </div>
             <div className="form-row form-row--two-col">
-              <Field label="Aadhaar (12 digits)" hint="Optional" error={form.formState.errors.demographics?.aadhaar?.message}>
-                <input className="form-input" inputMode="numeric" pattern="\d{12}" {...form.register("demographics.aadhaar")} />
-              </Field>
+              <FormField label="Aadhaar (12 digits)" helper="Optional" error={form.formState.errors.demographics?.aadhaar?.message}>
+                <TextInput inputMode="numeric" pattern="\d{12}" {...form.register("demographics.aadhaar")} />
+              </FormField>
               <div className="field">
-                <label className="field-label">Walk-in date</label>
+                <Text fontSize="sm" fontWeight="medium">Walk-in date</Text>
                 <p className="form-readonly">{new Date().toLocaleDateString()}</p>
               </div>
             </div>
@@ -310,12 +312,17 @@ export function WalkinVisitPage() {
           </section>
 
           <footer className="walkin-form__actions">
-            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)} disabled={register.isPending || issueToken.isPending}>
+            <Button type="button" variant="secondary" onClick={() => navigate(-1)} disabled={register.isPending || issueToken.isPending}>
               Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={register.isPending || issueToken.isPending}>
-              {register.isPending || issueToken.isPending ? "Working…" : "Register & Issue Token"}
-            </button>
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={register.isPending || issueToken.isPending}
+              loadingText="Working…"
+            >
+              Register & Issue Token
+            </Button>
           </footer>
         </form>
       ) : null}
@@ -328,28 +335,6 @@ export function WalkinVisitPage() {
           navigate("/m/op/appointmentList");
         }}
       />
-    </div>
-  );
-}
-
-function Field({
-  label, required, hint, error, children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="field">
-      <label className="field-label">
-        {label}
-        {required ? <span className="req"> *</span> : null}
-      </label>
-      {children}
-      {hint && !error ? <p className="field-hint">{hint}</p> : null}
-      {error ? <p className="field-error" role="alert">{error}</p> : null}
     </div>
   );
 }
@@ -398,20 +383,23 @@ function SponsorPicker({ patientId, isNew }: { patientId: number | null; isNew: 
 
   return (
     <div className="sponsor-picker">
-      <label className="field-label" htmlFor="sponsor-select">Sponsor / scheme</label>
-      <select id="sponsor-select" className="form-input" value={selected} onChange={(e) => setSelected(e.target.value)}>
-        <option value="self-pay">Self-pay (no sponsor)</option>
-        {(sponsors ?? []).map((s) => (
-          <option key={s.sponsorId} value={String(s.sponsorId)}>
-            {(s.sponsorName ?? s.sponsorCode ?? "Sponsor") + (s.schemeName ? ` — ${s.schemeName}` : "")}
-          </option>
-        ))}
-      </select>
-      <p className="field-hint">
-        {isNew
-          ? "Sponsor can be attached after the patient is created (no sponsors yet on a new record)."
-          : "Self-pay is the default; pick a sponsor/scheme to route the bill to that party."}
-      </p>
+      <FormField
+        label="Sponsor / scheme"
+        helper={
+          isNew
+            ? "Sponsor can be attached after the patient is created (no sponsors yet on a new record)."
+            : "Self-pay is the default; pick a sponsor/scheme to route the bill to that party."
+        }
+      >
+        <HimsSelect value={selected} onChange={(e) => setSelected(e.target.value)}>
+          <option value="self-pay">Self-pay (no sponsor)</option>
+          {(sponsors ?? []).map((s) => (
+            <option key={s.sponsorId} value={String(s.sponsorId)}>
+              {(s.sponsorName ?? s.sponsorCode ?? "Sponsor") + (s.schemeName ? ` — ${s.schemeName}` : "")}
+            </option>
+          ))}
+        </HimsSelect>
+      </FormField>
     </div>
   );
 }
@@ -430,7 +418,7 @@ function TokenIssuedDialog({ open, token, onClose }: { open: boolean; token: Que
           </>
         ) : null}
         <div className="dialog__actions">
-          <button type="button" className="btn btn-primary" onClick={onClose}>Continue</button>
+          <Button type="button" variant="primary" onClick={onClose}>Continue</Button>
         </div>
       </div>
     </div>

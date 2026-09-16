@@ -87,6 +87,10 @@ export interface PurchaseOrder {
   approvedDatetime?: string;
   issuedAt?: string;
   closedAt?: string;
+  supplierName?: string;
+  totalAmount?: number;
+  status?: string;
+  createdAt?: string;
 }
 
 export interface PurchaseOrderDetail {

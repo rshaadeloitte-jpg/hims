@@ -1,5 +1,6 @@
 import { FormRenderer } from "./FormRenderer";
 import type { FormSchemaResponse } from "./types";
+import { Button } from "@chakra-ui/react";
 
 interface FormRendererPageProps {
   schemaResponse: FormSchemaResponse;
@@ -22,9 +23,9 @@ export function FormRendererPage({ schemaResponse, onBack }: FormRendererPagePro
           <h1>{schemaResponse.name}</h1>
           <p className="muted">{schemaResponse.specialty} • v{schemaResponse.version}</p>
         </div>
-        <button className="btn btn-secondary" onClick={onBack}>
+        <Button variant="secondary" onClick={onBack}>
           ← Back to Forms
-        </button>
+        </Button>
       </header>
 
       <div className="card">

@@ -4,8 +4,11 @@ export const kioskRegistrationSchema = z.object({
   mobileNo: z.string().regex(/^\d{10}$/, "Invalid 10-digit mobile number"),
   firstName: z.string().min(1, "First name required"),
   lastName: z.string().min(1, "Last name required"),
-  gender: z.enum(["M", "F", "O"]),
-  dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be yyyy-MM-dd"),
+  gender: z.enum(["M", "F", "O"]).optional().or(z.literal("")),
+  dob: z
+    .string()
+    .refine((val) => val === "" || /^\d{4}-\d{2}-\d{2}$/.test(val), "Date must be yyyy-MM-dd")
+    .optional(),
 });
 
 export type KioskRegistrationForm = z.infer<typeof kioskRegistrationSchema>;

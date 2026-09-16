@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback } from "react";
+import { Button, HStack } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 /**
  * PhotoCapture — camera capture + file upload for patient photos.
@@ -92,68 +94,70 @@ export function PhotoCapture({
 
   return (
     <div className="photo-capture">
-      <label className="field">
-        <span className="field__label">Patient Photo</span>
+      <FormField label="Patient Photo" error={error}>
         <div className="photo-capture__body">
           {value ? (
             <div className="photo-capture__preview">
               <img src={value} alt="Patient" className="photo-capture__img" />
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm photo-capture__clear"
+                variant="ghost"
+                size="sm"
                 onClick={clear}
                 disabled={disabled}
               >
                 Remove
-              </button>
+              </Button>
             </div>
           ) : isCapturing ? (
             <div className="photo-capture__camera">
               <video ref={videoRef} autoPlay playsInline muted className="photo-capture__video" />
               <canvas ref={canvasRef} className="photo-capture__canvas" aria-hidden="true" />
-              <div className="photo-capture__camera-actions">
-                <button
+              <HStack className="photo-capture__camera-actions">
+                <Button
                   type="button"
-                  className="btn btn-primary"
+                  variant="primary"
                   onClick={capture}
                   disabled={disabled}
                 >
                   Capture
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="btn btn-secondary"
+                  variant="secondary"
                   onClick={stopCamera}
                 >
                   Cancel
-                </button>
-              </div>
+                </Button>
+              </HStack>
             </div>
           ) : (
             <div className="photo-capture__placeholder">
               <span className="photo-capture__icon" aria-hidden="true">📷</span>
-              <div className="photo-capture__actions">
-                <button
+              <HStack className="photo-capture__actions">
+                <Button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  variant="secondary"
+                  size="sm"
                   onClick={startCamera}
                   disabled={disabled}
                 >
                   Open Camera
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={disabled}
                 >
                   Upload File
-                </button>
-              </div>
+                </Button>
+              </HStack>
             </div>
           )}
         </div>
-        <input
+        <TextInput
           ref={fileInputRef}
           type="file"
           accept="image/*"
@@ -162,10 +166,7 @@ export function PhotoCapture({
           disabled={disabled}
           aria-label="Upload patient photo"
         />
-        {error && (
-          <span className="field-error" role="alert">{error}</span>
-        )}
-      </label>
+      </FormField>
     </div>
   );
 }

@@ -7,6 +7,8 @@ import {
   type StockUpdateValues,
   type StockAlertCreateValues,
 } from "./zodSchema";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
+import { Button, Table, Textarea } from "@chakra-ui/react";
 import {
   useStockByDrug,
   useUnresolvedAlerts,
@@ -139,23 +141,19 @@ export function StockView() {
 
       {/* Search bar */}
       <form onSubmit={handleSearch} className="card p-4 flex gap-3 items-end">
-        <label className="text-sm flex-1">
-          <span className="block font-medium mb-1">Search by Drug NDC</span>
-          <input
+        <FormField label="Search by Drug NDC">
+          <TextInput
             type="text"
-            className="w-full border rounded px-3 py-2 font-mono"
             placeholder="Enter NDC to lookup stock..."
             value={drugNdc}
             onChange={(e) => setDrugNdc(e.target.value)}
           />
-        </label>
-        <button
+        </FormField>
+        <Button variant="primary"
           type="submit"
-          disabled={drugNdc.length === 0}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-        >
+          disabled={drugNdc.length === 0}>
           Search
-        </button>
+        </Button>
       </form>
 
       {/* Stock table */}
@@ -173,37 +171,37 @@ export function StockView() {
           <p className="text-sm text-gray-400">No stock found for NDC: {searchNdc}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="py-2 px-2">Drug NDC</th>
-                  <th className="py-2 px-2">Batch</th>
-                  <th className="py-2 px-2">Qty on Hand</th>
-                  <th className="py-2 px-2">Level</th>
-                  <th className="py-2 px-2">Expiry</th>
-                  <th className="py-2 px-2">Location</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table.Root size="sm" variant="line">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Drug NDC</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Batch</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty on Hand</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Level</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Expiry</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Location</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
                 {stock.map((s) => {
                   const level = getStockLevel(s.quantityOnHand);
                   return (
-                    <tr key={s.stockId} className="border-b">
-                      <td className="py-2 px-2 font-mono text-xs">{s.drugNdc}</td>
-                      <td className="py-2 px-2 font-mono text-xs">{s.batchId}</td>
-                      <td className="py-2 px-2 font-medium">{s.quantityOnHand}</td>
-                      <td className="py-2 px-2">
+                    <Table.Row key={s.stockId}>
+                      <Table.Cell>{s.drugNdc}</Table.Cell>
+                      <Table.Cell>{s.batchId}</Table.Cell>
+                      <Table.Cell>{s.quantityOnHand}</Table.Cell>
+                      <Table.Cell>
                         <span className={`px-2 py-0.5 rounded text-xs border ${STOCK_BADGES[level]}`}>
                           {level}
                         </span>
-                      </td>
-                      <td className="py-2 px-2">{s.expiryDate}</td>
-                      <td className="py-2 px-2">{s.storageLocation}</td>
-                    </tr>
+                      </Table.Cell>
+                      <Table.Cell>{s.expiryDate}</Table.Cell>
+                      <Table.Cell>{s.storageLocation}</Table.Cell>
+                    </Table.Row>
                   );
                 })}
-              </tbody>
-            </table>
+              </Table.Body>
+            </Table.Root>
           </div>
         )}
       </div>
@@ -219,83 +217,41 @@ export function StockView() {
           <h3 className="font-medium text-sm">Update Stock Level</h3>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm col-span-2">
-              <span className="block font-medium mb-1">Stock ID *</span>
-              <input
+            <FormField label="Stock ID  {errorsUpdate.stockId && ( {errorsUpdate.stockId.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...registerUpdate("stockId", { valueAsNumber: true })}
                 aria-invalid={errorsUpdate.stockId ? "true" : undefined}
-              />
-              {errorsUpdate.stockId && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.stockId.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm col-span-2">
-              <span className="block font-medium mb-1">Drug NDC *</span>
-              <input
+            <FormField label="Drug NDC  {errorsUpdate.drugNdc && ( {errorsUpdate.drugNdc.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2 font-mono"
                 {...registerUpdate("drugNdc")}
                 aria-invalid={errorsUpdate.drugNdc ? "true" : undefined}
-              />
-              {errorsUpdate.drugNdc && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.drugNdc.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Batch ID *</span>
-              <input
+            <FormField label="Batch ID  {errorsUpdate.batchId && ( {errorsUpdate.batchId.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2"
                 {...registerUpdate("batchId")}
                 aria-invalid={errorsUpdate.batchId ? "true" : undefined}
-              />
-              {errorsUpdate.batchId && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.batchId.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Quantity *</span>
-              <input
+            <FormField label="Quantity  {errorsUpdate.quantityOnHand && ( {errorsUpdate.quantityOnHand.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...registerUpdate("quantityOnHand", { valueAsNumber: true })}
                 aria-invalid={errorsUpdate.quantityOnHand ? "true" : undefined}
-              />
-              {errorsUpdate.quantityOnHand && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.quantityOnHand.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Expiry Date *</span>
-              <input
+            <FormField label="Expiry Date  {errorsUpdate.expiryDate && ( {errorsUpdate.expiryDate.message} )}" required><TextInput
                 type="date"
-                className="w-full border rounded px-3 py-2"
                 {...registerUpdate("expiryDate")}
                 aria-invalid={errorsUpdate.expiryDate ? "true" : undefined}
-              />
-              {errorsUpdate.expiryDate && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.expiryDate.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Storage Location *</span>
-              <input
+            <FormField label="Storage Location  {errorsUpdate.storageLocation && ( {errorsUpdate.storageLocation.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2"
                 {...registerUpdate("storageLocation")}
                 aria-invalid={errorsUpdate.storageLocation ? "true" : undefined}
-              />
-              {errorsUpdate.storageLocation && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsUpdate.storageLocation.message}</span>
-              )}
-            </label>
+              /></FormField>
           </div>
 
           {updateStock.isError && (
@@ -309,13 +265,11 @@ export function StockView() {
             </p>
           )}
 
-          <button
+          <Button variant="primary" loading={!isValidUpdate || updateStock.isPending} loadingText="Updating..."
             type="submit"
-            disabled={!isValidUpdate || updateStock.isPending}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {updateStock.isPending ? "Updating..." : "Update Stock"}
-          </button>
+            disabled={!isValidUpdate || updateStock.isPending}>
+            Update Stock
+          </Button>
         </form>
 
         {/* Create alert form */}
@@ -327,59 +281,34 @@ export function StockView() {
           <h3 className="font-medium text-sm">Create Stock Alert</h3>
 
           <div className="space-y-3">
-            <label className="text-sm block">
-              <span className="block font-medium mb-1">Drug NDC *</span>
-              <input
+            <FormField label="Drug NDC  {errorsAlert.drugNdc && ( {errorsAlert.drugNdc.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2 font-mono"
                 {...registerAlert("drugNdc")}
                 aria-invalid={errorsAlert.drugNdc ? "true" : undefined}
-              />
-              {errorsAlert.drugNdc && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsAlert.drugNdc.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm block">
-              <span className="block font-medium mb-1">Alert Type *</span>
-              <input
+            <FormField label="Alert Type  {errorsAlert.alertType && ( {errorsAlert.alertType.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2"
                 placeholder="e.g. LOW_STOCK, EXPIRY_WARNING"
                 {...registerAlert("alertType")}
                 aria-invalid={errorsAlert.alertType ? "true" : undefined}
-              />
-              {errorsAlert.alertType && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsAlert.alertType.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm block">
-              <span className="block font-medium mb-1">Severity *</span>
-              <select
-                className="w-full border rounded px-3 py-2"
+            <FormField label="Severity" required><HimsSelect
                 {...registerAlert("severity")}
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HIGH">High</option>
                 <option value="CRITICAL">Critical</option>
-              </select>
-            </label>
+              </HimsSelect></FormField>
 
-            <label className="text-sm block">
-              <span className="block font-medium mb-1">Message *</span>
-              <textarea
-                className="w-full border rounded px-3 py-2"
+            <FormField label="Message  {errorsAlert.message && ( {errorsAlert.message.message} )}" required><Textarea bg="white" borderColor="gray.300"
                 rows={3}
                 placeholder="Alert details..."
                 {...registerAlert("message")}
                 aria-invalid={errorsAlert.message ? "true" : undefined}
-              />
-              {errorsAlert.message && (
-                <span className="text-xs text-red-600 mt-1 block">{errorsAlert.message.message}</span>
-              )}
-            </label>
+              /></FormField>
           </div>
 
           {createAlert.isError && (
@@ -393,13 +322,11 @@ export function StockView() {
             </p>
           )}
 
-          <button
+          <Button variant="primary" loading={!isValidAlert || createAlert.isPending} loadingText="Creating..."
             type="submit"
-            disabled={!isValidAlert || createAlert.isPending}
-            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50"
-          >
-            {createAlert.isPending ? "Creating..." : "Create Alert"}
-          </button>
+            disabled={!isValidAlert || createAlert.isPending}>
+            Create Alert
+          </Button>
         </form>
       </div>
 
@@ -438,13 +365,13 @@ export function StockView() {
                       {new Date(alert.createdAt).toLocaleString()}
                     </p>
                   </div>
-                  <button
+                  <Button variant="secondary"
                     onClick={() => handleResolveAlert(alert.alertId)}
                     disabled={resolveAlert.isPending}
                     className="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 shrink-0 disabled:opacity-50"
                   >
                     Resolve
-                  </button>
+                  </Button>
                 </div>
               ))}
           </div>

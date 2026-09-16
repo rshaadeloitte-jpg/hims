@@ -117,16 +117,19 @@ export function ClinicalWorkflow() {
         ) : definitions.length === 0 ? (
           <p className="muted">No {activeTab.toUpperCase()} definitions configured.</p>
         ) : (
-          definitions.map((def) => (
-            <article key={def.cwfId ?? def.scwfId} className="workflow-card">
-              <div className="workflow-card__header">
-                <h3>{def.cwfName ?? def.scwfName}</h3>
-                <span
-                  className={`workflow-card__status workflow-card__status--${def.status.toLowerCase()}`}
-                >
-                  {def.status}
-                </span>
-              </div>
+          definitions.map((def) => {
+            const defId = "cwfId" in def ? def.cwfId : def.scwfId;
+            const defName = "cwfName" in def ? def.cwfName : def.scwfName;
+            return (
+              <article key={defId} className="workflow-card">
+                <div className="workflow-card__header">
+                  <h3>{defName}</h3>
+                  <span
+                    className={`workflow-card__status workflow-card__status--${def.status.toLowerCase()}`}
+                  >
+                    {def.status}
+                  </span>
+                </div>
               <div className="workflow-card__meta">
                 <span className="badge">{def.serviceType}</span>
                 {"condition" in def && (
@@ -161,13 +164,14 @@ export function ClinicalWorkflow() {
                 <button
                   type="button"
                   className="btn btn--ghost btn--sm"
-                  onClick={() => handleEdit(def.cwfId ?? def.scwfId)}
+                  onClick={() => handleEdit(defId)}
                 >
                   Edit
                 </button>
               </div>
             </article>
-          ))
+            );
+          })
         )}
       </section>
 
@@ -254,7 +258,6 @@ function WorkflowForm({
     register,
     handleSubmit,
     control,
-    formState: { errors },
   } = useForm<CwfDefinitionForm | ScwfDefinitionForm>({
     resolver: zodResolver(isScwf ? scwfDefinitionSchema : cwfDefinitionSchema),
     defaultValues: isScwf

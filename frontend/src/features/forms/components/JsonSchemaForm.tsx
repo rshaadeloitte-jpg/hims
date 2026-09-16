@@ -1,4 +1,6 @@
 import type { ChangeEvent } from "react";
+import { HimsSelect, TextInput } from "../../../components/ui";
+import { Button, Text, Textarea } from "@chakra-ui/react";
 
 interface JsonSchemaFormProps {
   /** JSON Schema object (type: object with properties). */
@@ -63,7 +65,7 @@ export function JsonSchemaForm({ schema, data, onChange, _prefix = "" }: JsonSch
           const isObjectArray = items.type === "object" && items.properties;
           return (
             <div key={path} className="json-schema-form__array">
-              <label className="json-schema-form__label">{label}{isRequired ? <span className="required">*</span> : ""}</label>
+              <Text fontSize="sm" fontWeight="medium">{label}{isRequired ? <span className="required">*</span> : ""}</Text>
               {arr.map((item, i) => (
                 <div key={i} className="json-schema-form__array-item">
                   {isObjectArray ? (
@@ -84,34 +86,32 @@ export function JsonSchemaForm({ schema, data, onChange, _prefix = "" }: JsonSch
                       items={items}
                     />
                   )}
-                  <button
+                  <Button variant="ghost" size="sm"
                     type="button"
-                    className="btn btn--small btn--danger"
                     onClick={() => setValue(key, arr.filter((_, j) => j !== i))}
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
               ))}
-              <button
+              <Button variant="secondary" size="sm"
                 type="button"
-                className="btn btn--small"
                 onClick={() => {
                   const next = [...arr, isObjectArray ? {} : ""];
                   setValue(key, next);
                 }}
               >
                 + Add
-              </button>
+              </Button>
             </div>
           );
         }
 
         return (
           <div key={path} className="json-schema-form__field">
-            <label className="json-schema-form__label">
+            <Text fontSize="sm" fontWeight="medium">
               {label}{isRequired ? <span className="required">*</span> : ""}
-            </label>
+            </Text>
             <FieldInput
               prop={p}
               value={value}
@@ -150,12 +150,12 @@ function FieldInput({ prop, value, onChange }: {
 
   if (enumVals) {
     return (
-      <select value={String(value ?? "")} onChange={(e) => onChange(e.target.value)}>
+      <HimsSelect value={String(value ?? "")} onChange={(e) => onChange(e.target.value)}>
         <option value="">— Select —</option>
         {enumVals.map((opt) => (
           <option key={String(opt)} value={String(opt)}>{String(opt)}</option>
         ))}
-      </select>
+      </HimsSelect>
     );
   }
 
@@ -173,7 +173,7 @@ function FieldInput({ prop, value, onChange }: {
     const inputType = ptype === "integer" ? "number" : "number";
     const step = ptype === "number" ? "0.01" : "1";
     return (
-      <input
+      <TextInput
         type={inputType}
         step={step}
         value={String(value ?? "")}
@@ -184,7 +184,7 @@ function FieldInput({ prop, value, onChange }: {
 
   if (ptype === "array" && !prop.items) {
     return (
-      <textarea
+      <Textarea bg="white" borderColor="gray.300"
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
@@ -195,7 +195,7 @@ function FieldInput({ prop, value, onChange }: {
   // default: string
   if (format === "date-time") {
     return (
-      <input
+      <TextInput
         type="datetime-local"
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
@@ -204,7 +204,7 @@ function FieldInput({ prop, value, onChange }: {
   }
   if (format === "date") {
     return (
-      <input
+      <TextInput
         type="date"
         value={String(value ?? "")}
         onChange={(e) => onChange(e.target.value)}
@@ -213,7 +213,7 @@ function FieldInput({ prop, value, onChange }: {
   }
 
   return (
-    <input
+    <TextInput
       type="text"
       value={String(value ?? "")}
       onChange={(e) => onChange(e.target.value)}
@@ -229,16 +229,16 @@ function ArrayItemInput({ value, onChange, items }: {
   const enumVals = items.enum as unknown[] | undefined;
   if (enumVals) {
     return (
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <HimsSelect value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— Select —</option>
         {enumVals.map((opt) => (
           <option key={String(opt)} value={String(opt)}>{String(opt)}</option>
         ))}
-      </select>
+      </HimsSelect>
     );
   }
   return (
-    <input
+    <TextInput
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}

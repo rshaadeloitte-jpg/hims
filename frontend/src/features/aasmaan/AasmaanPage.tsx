@@ -3,6 +3,7 @@ import { CaseTracker } from "./CaseTracker";
 import { DeviceMonitor } from "./DeviceMonitor";
 import { ETicketForm } from "./ETicketForm";
 import { useFieldRecords } from "./queries";
+import { Button, Table } from "@chakra-ui/react";
 
 type AasmaanTab = "cases" | "devices" | "tickets";
 
@@ -28,72 +29,60 @@ export function AasmaanPage() {
         {isLoading ? (
           <div className="p-4 text-center text-gray-500">Loading field records…</div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Worker</th>
-                <th>Village</th>
-                <th>Status</th>
-                <th>Synced At</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Worker</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Village</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Synced At</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {records.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.fieldWorker}</td>
-                  <td>{r.village}</td>
-                  <td>{r.syncStatus}</td>
-                  <td>{r.syncedAt}</td>
-                </tr>
+                <Table.Row key={r.id}>
+                  <Table.Cell>{r.fieldWorker}</Table.Cell>
+                  <Table.Cell>{r.village}</Table.Cell>
+                  <Table.Cell>{r.syncStatus}</Table.Cell>
+                  <Table.Cell>{r.syncedAt}</Table.Cell>
+                </Table.Row>
               ))}
               {records.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="muted">
+                <Table.Row>
+                  <Table.Cell colSpan={4}>
                     No records.
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               )}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         )}
       </div>
 
       {/* Tab navigation */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex gap-4" aria-label="Aasmaan Sections">
-          <button
-            type="button"
-            className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "cases"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+          <Button
+            variant={activeTab === "cases" ? "solid" : "outline"}
+            size="sm"
             onClick={() => setActiveTab("cases")}
           >
             Field Cases
-          </button>
-          <button
-            type="button"
-            className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "devices"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+          </Button>
+          <Button
+            variant={activeTab === "devices" ? "solid" : "outline"}
+            size="sm"
             onClick={() => setActiveTab("devices")}
           >
             IoT Monitor
-          </button>
-          <button
-            type="button"
-            className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === "tickets"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+          </Button>
+          <Button
+            variant={activeTab === "tickets" ? "solid" : "outline"}
+            size="sm"
             onClick={() => setActiveTab("tickets")}
           >
             E-Tickets
-          </button>
+          </Button>
         </nav>
       </div>
 

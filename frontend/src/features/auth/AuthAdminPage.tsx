@@ -3,6 +3,8 @@ import { useUsers, useCreateUser, useRoles, useCreateRole, usePermissions, useCr
 import { userSchema, roleSchema, permissionSchema, notifTemplateSchema, type UserValues, type RoleValues, type PermissionValues, type NotifTemplateValues } from "./zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { HimsSelect, TextInput } from "../../components/ui";
+import { Button, Table, Textarea } from "@chakra-ui/react";
 
 export function AuthAdminPage() {
   const [tab, setTab] = useState<"users" | "roles" | "permissions" | "templates">("users");
@@ -12,9 +14,14 @@ export function AuthAdminPage() {
       <header className="page__header"><h1>IAM Administration</h1></header>
       <nav className="tabs">
         {(["users", "roles", "permissions", "templates"] as const).map((t) => (
-          <button key={t} className={`btn ${tab === t ? "btn--primary" : ""}`} onClick={() => setTab(t)}>
+          <Button
+            variant={tab === t ? "solid" : "outline"}
+            size="sm"
+            key={t}
+            onClick={() => setTab(t)}
+          >
             {t === "templates" ? "Notification Templates" : t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
+          </Button>
         ))}
       </nav>
       {tab === "users" && <UserTab />}
@@ -45,29 +52,29 @@ function UserTab() {
     <>
       <h2>Users</h2>
       <form className="inline-form" onSubmit={form.handleSubmit(submit)}>
-        <input placeholder="Username" {...form.register("username")} />
-        <input type="password" placeholder="Password (min 8)" {...form.register("password")} />
-        <input placeholder="Full name" {...form.register("fullName")} />
-        <input placeholder="Email" {...form.register("email")} />
-        <input type="number" placeholder="Employee ID" {...form.register("employeeId")} />
-        <button type="submit" className="btn" disabled={createUser.isPending}>+ Create</button>
+        <TextInput placeholder="Username" {...form.register("username")} />
+        <TextInput type="password" placeholder="Password (min 8)" {...form.register("password")} />
+        <TextInput placeholder="Full name" {...form.register("fullName")} />
+        <TextInput placeholder="Email" {...form.register("email")} />
+        <TextInput type="number" placeholder="Employee ID" {...form.register("employeeId")} />
+        <Button variant="primary" loading={createUser.isPending} type="submit" disabled={createUser.isPending}>+ Create</Button>
       </form>
       {err && <p className="error">{err}</p>}
       {isLoading ? <p>Loading…</p> : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Email</th><th>Status</th><th>Roles</th></tr></thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Username</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Email</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Roles</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Body>
             {users.map((u) => (
-              <tr key={u.id}>
-                <td>{u.id}</td><td>{u.username}</td><td>{u.fullName ?? "—"}</td>
-                <td>{u.email ?? "—"}</td>
-                <td>{u.status ? "Active" : "Inactive"}</td>
-                <td>{(u.roles ?? []).join(", ")}</td>
-              </tr>
+              <Table.Row key={u.id ?? u.userId ?? u.username}>
+                <Table.Cell>{u.id ?? u.userId}</Table.Cell><Table.Cell>{u.username}</Table.Cell><Table.Cell>{u.fullName ?? "—"}</Table.Cell>
+                <Table.Cell>{u.email ?? "—"}</Table.Cell>
+                <Table.Cell>{typeof u.status === "string" ? u.status : (u.status ?? u.isActive) ? "Active" : "Inactive"}</Table.Cell>
+                <Table.Cell>{(u.roles ?? []).join(", ")}</Table.Cell>
+              </Table.Row>
             ))}
-            {users.length === 0 && <tr><td colSpan={6} className="muted">No users.</td></tr>}
-          </tbody>
-        </table>
+            {users.length === 0 && <Table.Row><Table.Cell colSpan={6}>No users.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       )}
     </>
   );
@@ -93,21 +100,21 @@ function RoleTab() {
     <>
       <h2>Roles</h2>
       <form className="inline-form" onSubmit={form.handleSubmit(submit)}>
-        <input placeholder="Role name" {...form.register("roleName")} />
-        <input placeholder="Description" {...form.register("description")} />
-        <button type="submit" className="btn" disabled={createRole.isPending}>+ Create</button>
+        <TextInput placeholder="Role name" {...form.register("roleName")} />
+        <TextInput placeholder="Description" {...form.register("description")} />
+        <Button variant="primary" loading={createRole.isPending} type="submit" disabled={createRole.isPending}>+ Create</Button>
       </form>
       {err && <p className="error">{err}</p>}
       {isLoading ? <p>Loading…</p> : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Role</th><th>Description</th></tr></thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Role</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Description</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Body>
             {roles.map((r) => (
-              <tr key={r.roleId}><td>{r.roleId}</td><td>{r.roleName}</td><td>{r.description ?? "—"}</td></tr>
+              <Table.Row key={r.roleId}><Table.Cell>{r.roleId}</Table.Cell><Table.Cell>{r.roleName}</Table.Cell><Table.Cell>{r.description ?? "—"}</Table.Cell></Table.Row>
             ))}
-            {roles.length === 0 && <tr><td colSpan={3} className="muted">No roles.</td></tr>}
-          </tbody>
-        </table>
+            {roles.length === 0 && <Table.Row><Table.Cell colSpan={3}>No roles.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       )}
     </>
   );
@@ -133,22 +140,22 @@ function PermissionTab() {
     <>
       <h2>Permissions</h2>
       <form className="inline-form" onSubmit={form.handleSubmit(submit)}>
-        <input placeholder="Permission name" {...form.register("permissionName")} />
-        <input placeholder="Module" {...form.register("module")} />
-        <input placeholder="Description" {...form.register("description")} />
-        <button type="submit" className="btn" disabled={createPerm.isPending}>+ Create</button>
+        <TextInput placeholder="Permission name" {...form.register("permissionName")} />
+        <TextInput placeholder="Module" {...form.register("module")} />
+        <TextInput placeholder="Description" {...form.register("description")} />
+        <Button variant="primary" loading={createPerm.isPending} type="submit" disabled={createPerm.isPending}>+ Create</Button>
       </form>
       {err && <p className="error">{err}</p>}
       {isLoading ? <p>Loading…</p> : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Permission</th><th>Module</th></tr></thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Permission</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Module</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Body>
             {perms.map((p) => (
-              <tr key={p.permissionId}><td>{p.permissionId}</td><td>{p.permissionName}</td><td>{p.module}</td></tr>
+              <Table.Row key={p.permissionId}><Table.Cell>{p.permissionId}</Table.Cell><Table.Cell>{p.permissionName}</Table.Cell><Table.Cell>{p.module}</Table.Cell></Table.Row>
             ))}
-            {perms.length === 0 && <tr><td colSpan={3} className="muted">No permissions.</td></tr>}
-          </tbody>
-        </table>
+            {perms.length === 0 && <Table.Row><Table.Cell colSpan={3}>No permissions.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       )}
     </>
   );
@@ -176,31 +183,31 @@ function TemplateTab() {
       <form className="form" onSubmit={form.handleSubmit(submit)}>
         <fieldset>
           <legend>New Template</legend>
-          <input placeholder="Template name" {...form.register("name")} />
-          <input placeholder="Event type" {...form.register("eventType")} />
-          <select {...form.register("channel")}>
+          <TextInput placeholder="Template name" {...form.register("name")} />
+          <TextInput placeholder="Event type" {...form.register("eventType")} />
+          <HimsSelect {...form.register("channel")}>
             <option value="SMS">SMS</option>
             <option value="EMAIL">Email</option>
             <option value="WHATSAPP">WhatsApp</option>
             <option value="PUSH">Push</option>
-          </select>
-          <textarea placeholder="Template body (use {placeholders})" {...form.register("template")} />
-          <button type="submit" className="btn" disabled={createTemplate.isPending}>+ Create</button>
+          </HimsSelect>
+          <Textarea bg="white" borderColor="gray.300" placeholder="Template body (use {placeholders})" {...form.register("template")} />
+          <Button variant="primary" loading={createTemplate.isPending} type="submit" disabled={createTemplate.isPending}>+ Create</Button>
         </fieldset>
       </form>
       {err && <p className="error">{err}</p>}
       {isLoading ? <p>Loading…</p> : (
-        <table className="table">
-          <thead><tr><th>Name</th><th>Event</th><th>Channel</th><th>Active</th></tr></thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Event</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Channel</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Active</Table.ColumnHeader></Table.Row></Table.Header>
+          <Table.Body>
             {templates.map((t) => (
-              <tr key={t.templateId}>
-                <td>{t.name}</td><td>{t.eventType}</td><td>{t.channel}</td><td>{t.isActive ? "Yes" : "No"}</td>
-              </tr>
+              <Table.Row key={t.templateId}>
+                <Table.Cell>{t.name ?? t.templateCode}</Table.Cell><Table.Cell>{t.eventType ?? t.channel}</Table.Cell><Table.Cell>{t.channel}</Table.Cell><Table.Cell>{t.isActive ? "Yes" : "No"}</Table.Cell>
+              </Table.Row>
             ))}
-            {templates.length === 0 && <tr><td colSpan={4} className="muted">No templates.</td></tr>}
-          </tbody>
-        </table>
+            {templates.length === 0 && <Table.Row><Table.Cell colSpan={4}>No templates.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       )}
     </>
   );

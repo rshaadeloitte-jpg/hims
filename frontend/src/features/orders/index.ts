@@ -15,5 +15,6 @@ export { ClinicalWorkflow } from "./ClinicalWorkflow";
 export { OrderDetail } from "./OrderDetail";
 export { OrdersPage } from "./OrdersPage";
 
+export type { CwfStep, OrderSetItem, WorkflowStepStatus } from "./queries";
 export * from "./queries";
 export * from "./zodSchema";

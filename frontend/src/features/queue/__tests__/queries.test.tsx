@@ -102,7 +102,7 @@ describe("useCabinBoard", () => {
 describe("useDoctorBatch", () => {
   it("is disabled when doctorId is 0", () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => [] });
-    const { result } = renderHook(() => useDoctorBatch(0), { wrapper: wrapper() });
+    renderHook(() => useDoctorBatch(0), { wrapper: wrapper() });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

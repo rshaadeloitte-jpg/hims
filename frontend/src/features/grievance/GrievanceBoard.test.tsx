@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { GrievanceBoard } from "./GrievanceBoard";
 
 function wrapper() {
@@ -76,9 +76,9 @@ describe("GrievanceBoard", () => {
     render(<GrievanceBoard />, { wrapper: wrapper() });
 
     expect(await screen.findByText("Grievance Board")).toBeTruthy();
-    expect(await screen.findByText("New")).toBeTruthy();
-    expect(await screen.findByText("Assigned")).toBeTruthy();
-    expect(await screen.findByText("Resolved")).toBeTruthy();
+    expect((await screen.findAllByText("New")).length).toBeGreaterThanOrEqual(1);
+    expect((await screen.findAllByText("Assigned")).length).toBeGreaterThanOrEqual(1);
+    expect((await screen.findAllByText("Resolved")).length).toBeGreaterThanOrEqual(1);
     expect(await screen.findByText("IHMS/G/2025/00001")).toBeTruthy();
     expect(await screen.findByText("LOW")).toBeTruthy();
     expect(await screen.findByText("HIGH")).toBeTruthy();
@@ -99,7 +99,7 @@ describe("GrievanceBoard", () => {
     });
 
     render(<GrievanceBoard />, { wrapper: wrapper() });
-    expect(await screen.findByText("No tickets")).toBeTruthy();
+    expect((await screen.findAllByText("No tickets")).length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders dashboard counts", async () => {

@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { Button } from "@chakra-ui/react";
+import { TextInput } from "../../components/ui";
 import { usePatientSearch, type PatientSearchHit } from "./queries";
 
 /**
@@ -70,10 +72,9 @@ export function PatientSearch({
   return (
     <div className="patient-search" role="search" aria-label="Patient search">
       <div className="patient-search__input-wrap">
-        <input
+        <TextInput
           ref={inputRef}
           type="text"
-          className="patient-search__input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -92,14 +93,15 @@ export function PatientSearch({
           </span>
         )}
         {query && (
-          <button
+          <Button
             type="button"
-            className="patient-search__clear"
+            variant="ghost"
+            size="sm"
             onClick={() => { setQuery(""); setActiveIndex(-1); }}
             aria-label="Clear search"
           >
             ×
-          </button>
+          </Button>
         )}
       </div>
 
@@ -112,13 +114,14 @@ export function PatientSearch({
           ) : hits.length === 0 ? (
             <div className="patient-search__empty">
               <p className="patient-search__hint">No patients found for "{debouncedQuery}"</p>
-              <button
+              <Button
                 type="button"
-                className="btn btn-primary btn-sm"
+                variant="primary"
+                size="sm"
                 onClick={() => onSelect({ patientId: 0, mrNo: "", firstName: "", mobileNo: "" })}
               >
                 + Register New Patient
-              </button>
+              </Button>
             </div>
           ) : (
             <ul ref={listRef} className="patient-search__hits" role="presentation">

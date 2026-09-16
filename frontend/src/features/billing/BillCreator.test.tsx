@@ -5,10 +5,10 @@ import { MemoryRouter } from "react-router-dom";
 import { BillCreator } from "./BillCreator";
 
 const mockMutateAsync = vi.fn();
-const mockUsePatientSearch = vi.fn(() => ({ data: [] }));
-const mockUseConcessionPlans = vi.fn(() => ({ data: [] }));
-const mockUseAvailablePackages = vi.fn(() => ({ data: [] }));
-const mockUseSponsorCompanies = vi.fn(() => ({ data: [] }));
+const mockUsePatientSearch = vi.fn((): { data: any[] } => ({ data: [] }));
+const mockUseConcessionPlans = vi.fn((): { data: any[] } => ({ data: [] }));
+const mockUseAvailablePackages = vi.fn((): { data: any[] } => ({ data: [] }));
+const mockUseSponsorCompanies = vi.fn((): { data: any[] } => ({ data: [] }));
 
 vi.mock("./queries", () => ({
   useCreateBill: () => ({ mutateAsync: mockMutateAsync, isPending: false, isError: false, error: null }),

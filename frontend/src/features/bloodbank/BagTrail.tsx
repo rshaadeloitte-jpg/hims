@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Box, Text } from "@chakra-ui/react";
+import { FormField, HimsSelect } from "../../components/ui";
 import { useBloodBags, useBloodBag, useBagEvents } from "./queries";
 
 const EVENT_META: Record<string, { icon: string; color: string }> = {
@@ -34,17 +36,22 @@ export function BagTrail() {
 
       <div className="card">
         <h2>Select Bag</h2>
-        <select
-          value={selectedBagId ?? ""}
-          onChange={(e) => setSelectedBagId(e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">Select a bag...</option>
-          {bags.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.bagNo} — {b.bloodGroup} / {b.component} [{b.status}]
-            </option>
-          ))}
-        </select>
+        <Box maxW="480px">
+          <FormField label="Select Bag">
+            <HimsSelect
+              aria-label="Select Bag"
+              value={selectedBagId ?? ""}
+              onChange={(e) => setSelectedBagId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">Select a bag...</option>
+              {bags.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.bagNo} — {b.bloodGroup} / {b.component} [{b.status}]
+                </option>
+              ))}
+            </HimsSelect>
+          </FormField>
+        </Box>
       </div>
 
       {selected?.data && (
@@ -52,10 +59,10 @@ export function BagTrail() {
           <h2>
             {selected.data.bagNo} — {selected.data.bloodGroup} / {selected.data.component}
           </h2>
-          <p className="muted">
+          <Text fontSize="sm" color="gray.600" className="muted">
             Donor #{selected.data.donorId} · Collected {selected.data.collectionDate} · Expires {selected.data.expiryDate} ·{" "}
             <strong>{selected.data.status}</strong>
-          </p>
+          </Text>
         </div>
       )}
 

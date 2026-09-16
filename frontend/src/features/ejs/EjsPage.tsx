@@ -3,6 +3,7 @@ import "../../styles/ejs.css";
 import { AshaWork } from "./AshaWork";
 import { IncentiveDashboard } from "./IncentiveDashboard";
 import { GeographyMaster } from "./GeographyMaster";
+import { Button } from "@chakra-ui/react";
 
 type EjsTab = "asha-work" | "incentives" | "geography";
 
@@ -32,13 +33,14 @@ export function EjsPage() {
       <section className="card toolbar" aria-label="Modules">
         <div className="tab-group">
           {tabs.map((t) => (
-            <button
+            <Button
+              variant={tab === t.value ? "solid" : "outline"}
+              size="sm"
               key={t.value}
-              className={`tab ${tab === t.value ? "tab--active" : ""}`}
               onClick={() => setTab(t.value)}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
       </section>

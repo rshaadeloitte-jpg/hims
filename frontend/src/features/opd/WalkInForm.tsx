@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, SimpleGrid, Text } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { walkinSchema, type WalkinValues } from "./zodSchema";
 import { useWalkin } from "./queries";
 import { PatientSearch } from "../patient/PatientSearch";
@@ -58,91 +60,75 @@ export function WalkInForm({
 
       {!kioskMode && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Search Patient</label>
+          <Text fontSize="sm" fontWeight="medium">Search Patient</Text>
           <PatientSearch onSelect={(p) => setPatient(p as PatientSearchHit)} />
           {patient && (
             <div className="p-3 bg-green-50 border border-green-200 rounded text-sm">
               Selected: <strong>{patient.firstName} {patient.lastName}</strong>{" "}
               (MRN {patient.mrNo})
-              <button
+              <Button
                 type="button"
-                className="ml-2 text-blue-600 underline text-xs"
+                variant="ghost"
+                size="sm"
                 onClick={() => { setPatient(null); setValue("patientId" as any, undefined); }}
               >
                 Change
-              </button>
+              </Button>
             </div>
           )}
         </div>
       )}
 
       {kioskMode && (
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Patient ID *</label>
-          <input
+        <FormField label="Patient ID" required error={errors.patientId?.message}>
+          <TextInput
             type="number"
-            className="w-full border rounded px-2 py-1.5"
             placeholder="Enter patient ID"
             {...register("patientId")}
           />
-          {errors.patientId && (
-            <p className="text-xs text-red-600">{errors.patientId.message}</p>
-          )}
-        </div>
+        </FormField>
       )}
 
       <form onSubmit={onSubmit} className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <label className="text-sm space-y-1">
-            <span className="font-medium">Doctor ID *</span>
-            <input
+        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={3}>
+          <FormField label="Doctor ID" required error={errors.doctorId?.message}>
+            <TextInput
               type="number"
-              className="w-full border rounded px-2 py-1.5"
               placeholder="Doctor ID"
               {...register("doctorId")}
             />
-            {errors.doctorId && (
-              <p className="text-xs text-red-600">{errors.doctorId.message}</p>
-            )}
-          </label>
+          </FormField>
 
-          <label className="text-sm space-y-1">
-            <span className="font-medium">Department ID</span>
-            <input
+          <FormField label="Department ID" error={errors.departmentId?.message}>
+            <TextInput
               type="number"
-              className="w-full border rounded px-2 py-1.5"
               {...register("departmentId")}
             />
-          </label>
+          </FormField>
 
-          <label className="text-sm space-y-1">
-            <span className="font-medium">Unit ID</span>
-            <input
+          <FormField label="Unit ID" error={errors.unitId?.message}>
+            <TextInput
               type="number"
-              className="w-full border rounded px-2 py-1.5"
               {...register("unitId")}
             />
-          </label>
+          </FormField>
 
-          <label className="text-sm space-y-1">
-            <span className="font-medium">Visit Type</span>
-            <select className="w-full border rounded px-2 py-1.5" {...register("visitType")}>
+          <FormField label="Visit Type">
+            <HimsSelect {...register("visitType")}>
               <option value="WALK_IN">Walk-in</option>
               <option value="EMERGENCY">Emergency</option>
               <option value="APPOINTMENT">Appointment</option>
-            </select>
-          </label>
-        </div>
+            </HimsSelect>
+          </FormField>
+        </SimpleGrid>
 
-        <label className="text-sm space-y-1">
-          <span className="font-medium">Cabin</span>
-          <input
+        <FormField label="Cabin">
+          <TextInput
             type="text"
-            className="w-full sm:w-48 border rounded px-2 py-1.5"
             placeholder="e.g. Cabin 3A"
             {...register("cabin")}
           />
-        </label>
+        </FormField>
 
         {walkin.isError && (
           <p className="text-sm text-red-600">
@@ -150,13 +136,15 @@ export function WalkInForm({
           </p>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 font-medium"
-          disabled={(!kioskMode && !patient) || isSubmitting || walkin.isPending}
+          variant="primary"
+          disabled={(!kioskMode && !patient) || isSubmitting}
+          loading={walkin.isPending}
+          loadingText="Checking in…"
         >
-          {walkin.isPending ? "Checking in…" : "Check In"}
-        </button>
+          Check In
+        </Button>
       </form>
     </div>
   );

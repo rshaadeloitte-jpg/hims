@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, Table } from "@chakra-ui/react";
+import { TextInput } from "../../components/ui";
 import {
   useCarePlans,
   useCreateCarePlan,
@@ -41,57 +43,57 @@ export function NursingCarePage() {
     <section className="page">
       <header className="page__header"><h1>Nursing — Care Plans & Handovers</h1></header>
       <div className="row">
-        <input type="number" placeholder="Admission ID" value={admissionId || ""} onChange={(e) => setAdmissionId(Number(e.target.value))} />
+        <TextInput type="number" placeholder="Admission ID" value={admissionId || ""} onChange={(e) => setAdmissionId(Number(e.target.value))} />
       </div>
 
       <h2>Care Plans</h2>
-      <table className="table">
-        <thead><tr><th>Title</th><th>Admission</th><th>Goals</th><th>Status</th><th></th></tr></thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Title</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Admission</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Goals</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Body>
           {carePlans.map((p) => (
-            <tr key={p.carePlanId}>
-              <td>{p.title}</td>
-              <td>{p.admissionId}</td>
-              <td>{p.goals?.length ?? 0}</td>
-              <td>{p.resolved ? "Resolved" : "Active"}</td>
-              <td>{!p.resolved && <button className="btn" onClick={() => resolvePlan.mutate(p.carePlanId)}>Resolve</button>}</td>
-            </tr>
+            <Table.Row key={p.carePlanId}>
+              <Table.Cell>{p.title}</Table.Cell>
+              <Table.Cell>{p.admissionId}</Table.Cell>
+              <Table.Cell>{p.goals?.length ?? 0}</Table.Cell>
+              <Table.Cell>{p.resolved ? "Resolved" : "Active"}</Table.Cell>
+              <Table.Cell>{!p.resolved && <Button variant="secondary" size="sm" onClick={() => resolvePlan.mutate(p.carePlanId)}>Resolve</Button>}</Table.Cell>
+            </Table.Row>
           ))}
-          {carePlans.length === 0 && <tr><td colSpan={5} className="muted">No care plans.</td></tr>}
-        </tbody>
-      </table>
+          {carePlans.length === 0 && <Table.Row><Table.Cell colSpan={5}>No care plans.</Table.Cell></Table.Row>}
+        </Table.Body>
+      </Table.Root>
       <form className="inline-form" onSubmit={planForm.handleSubmit(submitPlan)}>
-        <input type="number" placeholder="Admission ID" {...planForm.register("admissionId")} />
-        <input type="number" placeholder="Patient ID" {...planForm.register("patientId")} />
-        <input placeholder="Title" {...planForm.register("title")} />
-        <input placeholder="Description" {...planForm.register("description")} />
-        <button type="submit" className="btn" disabled={createPlan.isPending}>+ Add Plan</button>
+        <TextInput type="number" placeholder="Admission ID" {...planForm.register("admissionId")} />
+        <TextInput type="number" placeholder="Patient ID" {...planForm.register("patientId")} />
+        <TextInput placeholder="Title" {...planForm.register("title")} />
+        <TextInput placeholder="Description" {...planForm.register("description")} />
+        <Button type="submit" variant="primary" size="sm" loading={createPlan.isPending} loadingText="+ Add Plan" disabled={createPlan.isPending}>+ Add Plan</Button>
       </form>
 
       <h2>Shift Handovers</h2>
-      <table className="table">
-        <thead><tr><th>Shift</th><th>From</th><th>To</th><th>Admission</th><th>Signed</th><th></th></tr></thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Shift</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">From</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">To</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Admission</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Signed</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Body>
           {handovers.map((h) => (
-            <tr key={h.handoverId}>
-              <td>{h.shift}</td>
-              <td>{h.fromNurseId}</td>
-              <td>{h.toNurseId}</td>
-              <td>{h.admissionId}</td>
-              <td>{h.signed ? "Yes" : "No"}</td>
-              <td>{!h.signed && <button className="btn" onClick={() => signHandover.mutate(h.handoverId)}>Sign</button>}</td>
-            </tr>
+            <Table.Row key={h.handoverId}>
+              <Table.Cell>{h.shift}</Table.Cell>
+              <Table.Cell>{h.fromNurseId}</Table.Cell>
+              <Table.Cell>{h.toNurseId}</Table.Cell>
+              <Table.Cell>{h.admissionId}</Table.Cell>
+              <Table.Cell>{h.signed ? "Yes" : "No"}</Table.Cell>
+              <Table.Cell>{!h.signed && <Button variant="secondary" size="sm" onClick={() => signHandover.mutate(h.handoverId)}>Sign</Button>}</Table.Cell>
+            </Table.Row>
           ))}
-          {handovers.length === 0 && <tr><td colSpan={6} className="muted">No handovers.</td></tr>}
-        </tbody>
-      </table>
+          {handovers.length === 0 && <Table.Row><Table.Cell colSpan={6}>No handovers.</Table.Cell></Table.Row>}
+        </Table.Body>
+      </Table.Root>
       <form className="inline-form" onSubmit={handoverForm.handleSubmit(submitHandover)}>
-        <input type="number" placeholder="Admission ID" {...handoverForm.register("admissionId")} />
-        <input type="number" placeholder="Patient ID" {...handoverForm.register("patientId")} />
-        <input type="number" placeholder="From Nurse ID" {...handoverForm.register("fromNurseId")} />
-        <input type="number" placeholder="To Nurse ID" {...handoverForm.register("toNurseId")} />
-        <input placeholder="Shift" {...handoverForm.register("shift")} />
-        <button type="submit" className="btn" disabled={createHandover.isPending}>+ Handover</button>
+        <TextInput type="number" placeholder="Admission ID" {...handoverForm.register("admissionId")} />
+        <TextInput type="number" placeholder="Patient ID" {...handoverForm.register("patientId")} />
+        <TextInput type="number" placeholder="From Nurse ID" {...handoverForm.register("fromNurseId")} />
+        <TextInput type="number" placeholder="To Nurse ID" {...handoverForm.register("toNurseId")} />
+        <TextInput placeholder="Shift" {...handoverForm.register("shift")} />
+        <Button type="submit" variant="primary" size="sm" loading={createHandover.isPending} loadingText="+ Handover" disabled={createHandover.isPending}>+ Handover</Button>
       </form>
     </section>
   );

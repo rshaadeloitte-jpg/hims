@@ -1,4 +1,5 @@
 import { useSaleReturns, useCompleteSaleReturn, useRejectSaleReturn } from "./queries";
+import { Button, Table } from "@chakra-ui/react";
 
 export function SaleReturnsPage() {
   const { data: returns = [], isLoading } = useSaleReturns();
@@ -12,29 +13,29 @@ export function SaleReturnsPage() {
   return (
     <section className="page">
       <header className="page__header"><h1>Sale Returns</h1></header>
-      <table className="table">
-        <thead><tr><th>#</th><th>Original Sale</th><th>Patient</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">#</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Original Sale</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reason</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Body>
           {returns.map((r) => (
-            <tr key={r.returnId}>
-              <td>{r.returnId}</td>
-              <td>{r.originalSaleId}</td>
-              <td>{r.patientId}</td>
-              <td>{r.returnReason}</td>
-              <td>{statusLabel(r.status)}</td>
-              <td>
+            <Table.Row key={r.returnId}>
+              <Table.Cell>{r.returnId}</Table.Cell>
+              <Table.Cell>{r.originalSaleId}</Table.Cell>
+              <Table.Cell>{r.patientId}</Table.Cell>
+              <Table.Cell>{r.returnReason}</Table.Cell>
+              <Table.Cell>{statusLabel(r.status)}</Table.Cell>
+              <Table.Cell>
                 {r.status === 1 && (
                   <>
-                    <button className="btn" onClick={() => complete.mutate(r.returnId)}>Complete</button>
-                    <button className="btn" onClick={() => reject.mutate(r.returnId)}>Reject</button>
+                    <Button variant="primary" size="sm" onClick={() => complete.mutate(r.returnId)}>Complete</Button>
+                    <Button variant="secondary" size="sm" onClick={() => reject.mutate(r.returnId)}>Reject</Button>
                   </>
                 )}
-              </td>
-            </tr>
+              </Table.Cell>
+            </Table.Row>
           ))}
-          {returns.length === 0 && <tr><td colSpan={6} className="muted">No returns.</td></tr>}
-        </tbody>
-      </table>
+          {returns.length === 0 && <Table.Row><Table.Cell colSpan={6} className="muted">No returns.</Table.Cell></Table.Row>}
+        </Table.Body>
+      </Table.Root>
     </section>
   );
 }

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AddAppointmentPage } from "./AddAppointmentPage";
+import "../__tests__/setup";
 
 const wrap = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -28,28 +29,29 @@ describe("AddAppointmentPage", () => {
 
   it("disables the Department select until departments are loaded (cascade rule)", async () => {
     render(wrap());
-    // The Department select is enabled once the departments query resolves
-    // (departments.data is set). The cascade rule is: doctor slot unavailable
-    // until department picked — but the department select itself is enabled
-    // when the query data arrives.
-    const dept = await screen.findByLabelText(/department/i) as HTMLSelectElement;
-    expect(dept.options.length).toBeGreaterThan(1);
+    const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => {
+      expect(dept.options.length).toBeGreaterThan(1);
+    });
   });
 
   it("picks Department then Doctor — doctor select enables", async () => {
     render(wrap());
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
     fireEvent.change(dept, { target: { value: "1" } });
     const doctor = (await screen.findByLabelText(/doctor/i)) as HTMLSelectElement;
+    await waitFor(() => expect(doctor.options.length).toBeGreaterThan(1));
     expect(doctor.disabled).toBe(false);
-    expect(doctor.options.length).toBeGreaterThan(1);
   });
 
   it("disables the slot picker until doctor + date are picked", async () => {
     render(wrap());
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
     fireEvent.change(dept, { target: { value: "1" } });
     const doctor = (await screen.findByLabelText(/doctor/i)) as HTMLSelectElement;
+    await waitFor(() => expect(doctor.options.length).toBeGreaterThan(1));
     fireEvent.change(doctor, { target: { value: "100" } });
     // The default date is today — slots should be fetched.
     await waitFor(() => {
@@ -62,13 +64,13 @@ describe("AddAppointmentPage", () => {
   it("blocks submit when no patient is picked", async () => {
     render(wrap());
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
     fireEvent.change(dept, { target: { value: "1" } });
     const doctor = (await screen.findByLabelText(/doctor/i)) as HTMLSelectElement;
+    await waitFor(() => expect(doctor.options.length).toBeGreaterThan(1));
     fireEvent.change(doctor, { target: { value: "100" } });
-    await waitFor(() => {
-      expect(screen.getByRole("radio", { name: /09:00/i })).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole("radio", { name: /09:00/i }));
+    const slot = await screen.findByRole("radio", { name: /09:00/i });
+    fireEvent.click(slot);
     const submit = screen.getByRole("button", { name: /book appointment/i }) as HTMLButtonElement;
     expect(submit.disabled).toBe(true);
   });
@@ -80,8 +82,10 @@ describe("AddAppointmentPage", () => {
     fireEvent.click(await screen.findByText("Asha Verma"));
     // 2) Pick department + doctor
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
     fireEvent.change(dept, { target: { value: "1" } });
     const doctor = (await screen.findByLabelText(/doctor/i)) as HTMLSelectElement;
+    await waitFor(() => expect(doctor.options.length).toBeGreaterThan(1));
     fireEvent.change(doctor, { target: { value: "100" } });
     // 3) Pick a slot
     const slot = await screen.findByRole("radio", { name: /09:00/i });

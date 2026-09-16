@@ -85,6 +85,8 @@ export const wasteBagLineSchema = z.object({
   remark: z.string().max(200).optional(),
 });
 
+export type WasteBagLine = z.infer<typeof wasteBagLineSchema>;
+
 /**
  * WasteRequest form (Stripe-style: progressive, validates bag lines + barcode
  * presence). The request itself only carries unit/store/date; the bag details

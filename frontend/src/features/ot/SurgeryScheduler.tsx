@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Checkbox, HStack, SimpleGrid } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 import {
   useOtSchedules,
   useCreateOtSchedule,
@@ -8,7 +10,6 @@ import {
   useCompleteSurgery,
   useCancelSurgery,
   type OtSchedule,
-  type OtProcedure,
 } from "./queries";
 import { otScheduleSchema, type OtScheduleForm } from "./zodSchema";
 
@@ -83,13 +84,13 @@ function CalendarGrid({ selectedDate, onSelectDate, schedules }: CalendarGridPro
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-white" role="grid" aria-label="surgery-calendar">
       <div className="flex items-center justify-between mb-4">
-        <button type="button" onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded" aria-label="Previous month">
+        <Button type="button" variant="ghost" size="sm" onClick={prevMonth} aria-label="Previous month">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        </button>
+        </Button>
         <h3 className="text-sm font-semibold text-gray-900">{MONTH_NAMES[viewMonth]} {viewYear}</h3>
-        <button type="button" onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded" aria-label="Next month">
+        <Button type="button" variant="ghost" size="sm" onClick={nextMonth} aria-label="Next month">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </button>
+        </Button>
       </div>
       <div className="grid grid-cols-7 gap-1 mb-2">
         {DAY_LABELS.map((d) => (
@@ -104,17 +105,14 @@ function CalendarGrid({ selectedDate, onSelectDate, schedules }: CalendarGridPro
           const isToday = new Date(iso + "T00:00:00").getTime() === today.getTime();
           const count = scheduleDates.get(iso) ?? 0;
           return (
-            <button
+            <Button
               key={iso}
               type="button"
+              variant={isSelected ? "primary" : "ghost"}
+              size="sm"
+              bg={isSelected ? undefined : isToday ? "blue.50" : undefined}
+              color={isSelected ? undefined : isToday ? "blue.700" : undefined}
               onClick={() => onSelectDate(iso)}
-              className={`h-10 rounded-md text-sm relative flex flex-col items-center justify-center transition-colors ${
-                isSelected
-                  ? "bg-blue-600 text-white font-semibold"
-                  : isToday
-                    ? "bg-blue-50 text-blue-700 font-medium hover:bg-blue-100"
-                    : "text-gray-700 hover:bg-gray-100"
-              }`}
               aria-label={`${day} ${MONTH_NAMES[viewMonth]}`}
               aria-selected={isSelected}
             >
@@ -122,7 +120,7 @@ function CalendarGrid({ selectedDate, onSelectDate, schedules }: CalendarGridPro
               {count > 0 && (
                 <span className={`absolute bottom-0.5 w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-blue-500"}`} />
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -162,13 +160,11 @@ function SlotGrid({
         const start = s.scheduledStart ? new Date(s.scheduledStart).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
         const end = s.scheduledEnd ? new Date(s.scheduledEnd).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
         return (
-          <button
+          <Button
             key={id}
             type="button"
+            variant={isSelected ? "secondary" : "ghost"}
             onClick={() => onSelectSlot(s)}
-            className={`w-full text-left p-3 border rounded-lg transition-colors ${
-              isSelected ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500" : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-            }`}
             aria-pressed={isSelected}
           >
             <div className="flex items-center justify-between">
@@ -188,7 +184,7 @@ function SlotGrid({
                 {s.details.map((d) => d.procedureName).join(", ")}
               </div>
             )}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -212,6 +208,7 @@ export function SurgeryScheduler() {
     formState: { errors },
     reset,
     setValue,
+    watch,
   } = useForm<OtScheduleForm>({
     resolver: zodResolver(otScheduleSchema),
     defaultValues: {
@@ -223,6 +220,8 @@ export function SurgeryScheduler() {
       procedures: [],
     },
   });
+
+  const preBilling = watch("preBilling");
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -256,113 +255,93 @@ export function SurgeryScheduler() {
           <h2 className="text-xl font-semibold text-gray-900">Surgery Scheduler</h2>
           <p className="text-sm text-gray-500">Linear calendar view — book OT slots by date</p>
         </div>
-        <button
+        <Button
           type="button"
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          variant="primary"
           onClick={() => setShowForm(!showForm)}
         >
           {showForm ? "Cancel" : "+ New Surgery"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Schedule New Surgery</h3>
           <form onSubmit={onSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Patient ID *</label>
-                <input
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+              <FormField label="Patient ID *" error={errors.patientId?.message} required>
+                <TextInput
                   type="number"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("patientId", { valueAsNumber: true })}
                 />
-                {errors.patientId && <p className="text-xs text-red-600 mt-1">{errors.patientId.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">OT Table *</label>
-                <input
+              </FormField>
+              <FormField label="OT Table *" error={errors.otTable?.message} required>
+                <TextInput
                   type="text"
                   placeholder="e.g. OT-1"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("otTable")}
                 />
-                {errors.otTable && <p className="text-xs text-red-600 mt-1">{errors.otTable.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
-                <input
+              </FormField>
+              <FormField label="Start Time *" error={errors.scheduledStart?.message} required>
+                <TextInput
                   type="datetime-local"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("scheduledStart")}
                 />
-                {errors.scheduledStart && <p className="text-xs text-red-600 mt-1">{errors.scheduledStart.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
-                <input
+              </FormField>
+              <FormField label="End Time *" error={errors.scheduledEnd?.message} required>
+                <TextInput
                   type="datetime-local"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("scheduledEnd")}
                 />
-                {errors.scheduledEnd && <p className="text-xs text-red-600 mt-1">{errors.scheduledEnd.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Surgeon ID</label>
-                <input
+              </FormField>
+              <FormField label="Surgeon ID">
+                <TextInput
                   type="number"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("surgeonId", { valueAsNumber: true })}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Anesthetist ID</label>
-                <input
+              </FormField>
+              <FormField label="Anesthetist ID">
+                <TextInput
                   type="number"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("anesthetistId", { valueAsNumber: true })}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Encounter ID</label>
-                <input
+              </FormField>
+              <FormField label="Encounter ID" error={errors.encounterId?.message}>
+                <TextInput
                   type="number"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("encounterId", { valueAsNumber: true })}
                 />
-                {errors.encounterId && <p className="text-xs text-red-600 mt-1">{errors.encounterId.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Admission ID</label>
-                <input
+              </FormField>
+              <FormField label="Admission ID" error={errors.admissionId?.message}>
+                <TextInput
                   type="number"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   {...register("admissionId", { valueAsNumber: true })}
                 />
-                {errors.admissionId && <p className="text-xs text-red-600 mt-1">{errors.admissionId.message}</p>}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="preBilling" className="rounded border-gray-300" {...register("preBilling")} />
-              <label htmlFor="preBilling" className="text-sm text-gray-700">Pre-billing (BR-OT-002)</label>
-            </div>
+              </FormField>
+            </SimpleGrid>
+            <Checkbox.Root checked={!!preBilling} onCheckedChange={(e) => setValue("preBilling", !!e.checked, { shouldValidate: true })}>
+              <Checkbox.HiddenInput {...register("preBilling")} />
+              <Checkbox.Control />
+              <Checkbox.Label>Pre-billing (BR-OT-002)</Checkbox.Label>
+            </Checkbox.Root>
             {errors.root && <p className="text-xs text-red-600">{errors.root.message}</p>}
-            <div className="flex gap-3 pt-2">
-              <button
+            <HStack gap={3} pt={2}>
+              <Button
                 type="submit"
-                disabled={createMutation.isPending}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                variant="primary"
+                loading={createMutation.isPending}
+                loadingText="Scheduling..."
               >
-                {createMutation.isPending ? "Scheduling..." : "Schedule Surgery"}
-              </button>
-              <button
+                Schedule Surgery
+              </Button>
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => { setShowForm(false); reset(); }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
-              </button>
-            </div>
+              </Button>
+            </HStack>
           </form>
         </div>
       )}
@@ -394,34 +373,37 @@ export function SurgeryScheduler() {
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Selected Slot Actions</h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedSlot.status === 1 && (
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
                       onClick={() => startMutation.mutate(selectedSlot.scheduleId ?? selectedSlot.id ?? 0)}
-                      disabled={startMutation.isPending}
-                      className="px-3 py-1.5 bg-yellow-500 text-white text-xs font-medium rounded hover:bg-yellow-600 disabled:opacity-50"
+                      loading={startMutation.isPending}
+                      loadingText="Starting..."
                     >
                       Start Surgery
-                    </button>
+                    </Button>
                   )}
                   {selectedSlot.status === 2 && (
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
                       onClick={() => completeMutation.mutate(selectedSlot.scheduleId ?? selectedSlot.id ?? 0)}
-                      disabled={completeMutation.isPending}
-                      className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:opacity-50"
+                      loading={completeMutation.isPending}
+                      loadingText="Completing..."
                     >
                       Complete
-                    </button>
+                    </Button>
                   )}
                   {(selectedSlot.status === 1 || selectedSlot.status === 2) && (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
                       onClick={() => cancelMutation.mutate(selectedSlot.scheduleId ?? selectedSlot.id ?? 0)}
-                      disabled={cancelMutation.isPending}
-                      className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 disabled:opacity-50"
+                      loading={cancelMutation.isPending}
+                      loadingText="Cancelling..."
                     >
                       Cancel
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

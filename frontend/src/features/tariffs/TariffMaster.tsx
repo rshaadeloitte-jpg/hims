@@ -9,7 +9,6 @@ import {
 } from "./queries";
 import {
   tariffSchema,
-  tariffFilterSchema,
   type TariffValues,
   type TariffFilterValues,
 } from "./zodSchema";
@@ -38,7 +37,7 @@ export function TariffMaster() {
   const handleCategorySelect = useCallback((category: string) => {
     setFilter((prev) => ({
       ...prev,
-      serviceCategory: prev.serviceCategory === category ? "" : category,
+      serviceCategory: (prev.serviceCategory === category ? "" : category) as TariffFilterValues["serviceCategory"],
       page: 0,
     }));
   }, []);
@@ -227,7 +226,7 @@ export function TariffMaster() {
 
 interface TariffFormProps {
   editingId: number | null;
-  defaultCategory?: string;
+  defaultCategory?: TariffValues["serviceCategory"];
   onSubmit: (values: TariffValues) => Promise<void>;
   onCancel: () => void;
   isPending: boolean;
@@ -240,8 +239,8 @@ function TariffForm({
   onCancel,
   isPending,
 }: TariffFormProps) {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<TariffValues>({
-    resolver: zodResolver(tariffSchema),
+  const { register, handleSubmit, formState: { errors } } = useForm<TariffValues>({
+    resolver: zodResolver(tariffSchema) as any,
     defaultValues: {
       serviceId: 0,
       serviceName: "",

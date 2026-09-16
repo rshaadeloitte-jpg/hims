@@ -1,4 +1,5 @@
 import { useBills } from "./queries";
+import { Text } from "@chakra-ui/react";
 
 export function BillingDashboard() {
   const { data: bills = [], isLoading } = useBills({ page: 0, size: 100 });
@@ -20,12 +21,12 @@ export function BillingDashboard() {
     <section className="page">
       <h1>Billing Dashboard</h1>
       <div className="card-grid">
-        <div className="card"><label>Total Bills</label><strong>{totalBills}</strong></div>
-        <div className="card"><label>Settled</label><strong>{settled}</strong></div>
-        <div className="card"><label>Interim</label><strong>{interim}</strong></div>
-        <div className="card"><label>Cancelled</label><strong>{cancelled}</strong></div>
-        <div className="card"><label>Revenue (Settled)</label><strong>{totalRevenue.toFixed(2)}</strong></div>
-        <div className="card"><label>Outstanding</label><strong>{totalOutstanding.toFixed(2)}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Total Bills</Text><strong>{totalBills}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Settled</Text><strong>{settled}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Interim</Text><strong>{interim}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Cancelled</Text><strong>{cancelled}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Revenue (Settled)</Text><strong>{totalRevenue.toFixed(2)}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Outstanding</Text><strong>{totalOutstanding.toFixed(2)}</strong></div>
       </div>
     </section>
   );

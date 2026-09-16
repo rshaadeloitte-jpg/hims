@@ -75,7 +75,7 @@ describe("TariffMaster", () => {
 
   it("shows category cards", () => {
     renderTariffMaster();
-    expect(screen.getByText("CONSULTATION")).toBeInTheDocument();
+    expect(screen.getAllByText("CONSULTATION").length).toBeGreaterThan(0);
     expect(screen.getByText("DIAGNOSTIC")).toBeInTheDocument();
     expect(screen.getByText("PROCEDURE")).toBeInTheDocument();
   });

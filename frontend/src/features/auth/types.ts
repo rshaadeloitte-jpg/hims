@@ -1,13 +1,16 @@
 export interface User {
-  userId: number;
+  userId?: number;
+  id?: number;
   username: string;
-  fullName: string;
+  fullName?: string;
   email?: string;
   mobileNo?: string;
   storeId?: number;
   wardId?: number;
   departmentId?: number;
-  isActive: boolean;
+  isActive?: boolean;
+  status?: boolean | string;
+  roles?: string[];
 }
 
 export interface Role {
@@ -33,10 +36,13 @@ export interface Permission {
 
 export interface NotificationTemplate {
   templateId: number;
-  templateCode: string;
-  channel: 'SMS' | 'EMAIL' | 'WHATSAPP';
+  templateCode?: string;
+  name?: string;
+  eventType?: string;
+  channel: 'SMS' | 'EMAIL' | 'WHATSAPP' | 'PUSH';
   subject?: string;
-  bodyTemplate: string;
+  bodyTemplate?: string;
+  template?: string;
   isActive: boolean;
 }
 

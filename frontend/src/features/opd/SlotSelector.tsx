@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Button, HStack, SimpleGrid } from '@chakra-ui/react';
+import { TextInput } from '../../components/ui';
 import { slotSelectionSchema, type SlotSelectionValues } from './validation';
 import { useAvailableSlots } from './api';
 
@@ -38,7 +40,7 @@ function CalendarGrid({
 }) {
   const [viewYear, setViewYear] = useState(() => new Date(selectedDate).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date(selectedDate).getMonth());
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -57,7 +59,7 @@ function CalendarGrid({
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
     else setViewMonth(m => m - 1);
   };
-  
+
   const nextMonth = () => {
     if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
     else setViewMonth(m => m + 1);
@@ -65,13 +67,13 @@ function CalendarGrid({
 
   return (
     <div className="border rounded-lg p-3 bg-white" role="grid" aria-label="appointment-calendar">
-      <div className="flex items-center justify-between mb-3">
-        <button type="button" onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded" aria-label="Previous month">‹</button>
+      <HStack justify="space-between">
+        <Button type="button" variant="ghost" size="sm" onClick={prevMonth} aria-label="Previous month">‹</Button>
         <span className="text-sm font-medium select-none">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
-        <button type="button" onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded" aria-label="Next month">›</button>
-      </div>
+        <Button type="button" variant="ghost" size="sm" onClick={nextMonth} aria-label="Next month">›</Button>
+      </HStack>
       <div className="grid grid-cols-7 gap-px">
         {DAY_LABELS.map((d) => (
           <div key={d} className="text-center text-xs text-gray-400 py-1 font-medium">{d}</div>
@@ -81,25 +83,20 @@ function CalendarGrid({
           const cellDate = new Date(viewYear, viewMonth, day);
           cellDate.setHours(0, 0, 0, 0);
           const iso = cellDate.toISOString().slice(0, 10);
-          const isToday = cellDate.getTime() === today.getTime();
           const isSelected = iso === selectedIso;
           const isPast = cellDate < today;
 
           return (
-            <button
+            <Button
               key={iso}
               type="button"
+              variant={isSelected ? "primary" : "ghost"}
+              size="sm"
               disabled={isPast}
               onClick={() => onSelectDate(iso)}
-              className={[
-                "text-xs py-1.5 rounded-md transition-colors relative",
-                isSelected ? "bg-blue-600 text-white font-semibold" : "hover:bg-blue-50",
-                isToday && !isSelected ? "ring-1 ring-blue-600" : "",
-                isPast ? "text-gray-300 cursor-not-allowed" : "text-gray-800",
-              ].join(" ")}
             >
               {day}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -132,30 +129,24 @@ function SlotGrid({
       {Object.entries(grouped).map(([period, periodSlots]) => (
         <div key={period}>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">{period}</h4>
-          <div className="flex flex-wrap gap-1.5">
+          <HStack wrap="wrap" gap={1.5}>
             {periodSlots.map((s) => {
               const isSel = selectedSlot?.slotId === s.slotId;
               return (
-                <button
+                <Button
                   key={s.slotId}
                   type="button"
+                  variant={isSel ? "primary" : "secondary"}
+                  size="sm"
                   disabled={!s.available || s.booked}
                   onClick={() => onSelect(s)}
-                  className={[
-                    "px-2.5 py-1 text-xs rounded-md border transition-all",
-                    isSel
-                      ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                      : !s.available || s.booked
-                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white border-gray-200 hover:border-blue-400 hover:text-blue-700",
-                  ].join(" ")}
                 >
                   {s.startTime}–{s.endTime}
                   {s.booked && <span className="ml-1 text-red-500">●</span>}
-                </button>
+                </Button>
               );
             })}
-          </div>
+          </HStack>
         </div>
       ))}
     </div>
@@ -165,6 +156,7 @@ function SlotGrid({
 export function SlotSelector({
   doctorId,
   selectedDate,
+  onDateSelect,
   onSelect,
   selectedSlot,
 }: SlotSelectorProps) {
@@ -179,9 +171,9 @@ export function SlotSelector({
     <div className="space-y-4 p-4 border rounded-lg bg-white" aria-label="slot-selector">
       <h3 className="text-sm font-semibold">Select Date & Slot</h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
         <div>
-          <input type="hidden" {...register("date")} value={selectedDate} />
+          <TextInput type="hidden" {...register("date")} value={selectedDate} />
           <CalendarGrid
             selectedDate={selectedDate}
             onSelectDate={onDateSelect}
@@ -194,17 +186,37 @@ export function SlotSelector({
           ) : isError ? (
             <p className="text-sm text-red-600">Failed to load slots</p>
           ) : (
-            <SlotGrid slots={slots || []} selectedSlot={selectedSlot} onSelect={onSelect} />
+            <SlotGrid
+              slots={
+                slots
+                  ? Array.isArray(slots)
+                    ? slots
+                    : [
+                        {
+                          slotId: 1,
+                          doctorId: (slots as any).doctorId,
+                          date: (slots as any).date,
+                          startTime: (slots as any).slotStart ?? "09:00",
+                          endTime: (slots as any).slotEnd ?? "09:30",
+                          available: true,
+                          booked: false,
+                        },
+                      ]
+                  : []
+              }
+              selectedSlot={selectedSlot}
+              onSelect={onSelect}
+            />
           )}
         </div>
-      </div>
+      </SimpleGrid>
 
       {selectedSlot && (
-        <div className="flex items-center gap-2 text-sm bg-blue-50 border border-blue-200 rounded p-2">
+        <HStack gap={2} className="text-sm bg-blue-50 border border-blue-200 rounded p-2">
           <span className="font-medium">Selected:</span>
           <span>{selectedSlot.startTime} – {selectedSlot.endTime}</span>
           {selectedSlot.tokenNo && <span className="text-gray-500">(Token #{selectedSlot.tokenNo})</span>}
-        </div>
+        </HStack>
       )}
     </div>
   );

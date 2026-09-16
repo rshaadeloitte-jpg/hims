@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Box, Button, HStack, SimpleGrid, Table } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { quotationSchema, type QuotationForm } from "./zodSchema";
 import { useSuppliers, useItems, useCreateQuotation, useQuotationCompare, type QuotationCompareRow } from "./queries";
 
@@ -41,104 +43,100 @@ export function QuotationComparison() {
           <h1>Quotation Comparison</h1>
           <p className="muted">Compare quotations side-by-side for each item</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <Button variant={showForm ? "secondary" : "primary"} onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "New Quotation"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>New Quotation</h2>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="form-grid">
-              <div className="field">
-                <label htmlFor="supplierId">Supplier <span className="req">*</span></label>
-                <select id="supplierId" {...register("supplierId")}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+              <FormField label="Supplier" error={errors.supplierId?.message} required>
+                <HimsSelect id="supplierId" aria-label="Supplier" {...register("supplierId")}>
                   <option value={0}>Select supplier</option>
                   {(suppliers.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.code} - {s.description}</option>)}
-                </select>
-                {errors.supplierId && <span className="field-error">{errors.supplierId.message}</span>}
-              </div>
+                </HimsSelect>
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="enquiryRef">Enquiry Reference</label>
-                <input id="enquiryRef" type="text" {...register("enquiryRef")} />
-              </div>
+              <FormField label="Enquiry Reference">
+                <TextInput id="enquiryRef" aria-label="Enquiry Reference" type="text" {...register("enquiryRef")} />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="validUntil">Valid Until</label>
-                <input id="validUntil" type="date" {...register("validUntil")} />
-              </div>
+              <FormField label="Valid Until">
+                <TextInput id="validUntil" aria-label="Valid Until" type="date" {...register("validUntil")} />
+              </FormField>
 
-              <div className="field">
-                <label htmlFor="remarks">Remarks</label>
-                <input id="remarks" type="text" {...register("remarks")} />
-              </div>
-            </div>
+              <FormField label="Remarks">
+                <TextInput id="remarks" aria-label="Remarks" type="text" {...register("remarks")} />
+              </FormField>
+            </SimpleGrid>
 
             <h3 style={{ marginTop: "1.5rem" }}>Line Items</h3>
             <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Item <span className="req">*</span></th>
-                    <th>Qty <span className="req">*</span></th>
-                    <th>Unit Price <span className="req">*</span></th>
-                    <th>Tax %</th>
-                    <th>Lead Days</th>
-                    <th>Remarks</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table.Root size="sm" variant="line">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Item *</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty *</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Unit Price *</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Tax %</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Lead Days</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Remarks</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {fields.map((field, idx) => (
-                    <tr key={field.id}>
-                      <td>
-                        <select {...register(`lines.${idx}.itemId`)}>
+                    <Table.Row key={field.id}>
+                      <Table.Cell>
+                        <HimsSelect aria-label={`Line ${idx + 1} item`} {...register(`lines.${idx}.itemId`)}>
                           <option value={0}>Select item</option>
                           {(items.data ?? []).map((i) => <option key={i.id} value={i.id}>{i.itemName}</option>)}
-                        </select>
+                        </HimsSelect>
                         {errors.lines?.[idx]?.itemId && <span className="field-error">{errors.lines[idx].itemId?.message}</span>}
-                      </td>
-                      <td>
-                        <input type="number" step="0.0001" {...register(`lines.${idx}.quantity`)} />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <TextInput type="number" step="0.0001" aria-label={`Line ${idx + 1} quantity`} {...register(`lines.${idx}.quantity`)} />
                         {errors.lines?.[idx]?.quantity && <span className="field-error">{errors.lines[idx].quantity?.message}</span>}
-                      </td>
-                      <td>
-                        <input type="number" step="0.01" {...register(`lines.${idx}.unitPrice`)} />
+                      </Table.Cell>
+                      <Table.Cell>
+                        <TextInput type="number" step="0.01" aria-label={`Line ${idx + 1} unit price`} {...register(`lines.${idx}.unitPrice`)} />
                         {errors.lines?.[idx]?.unitPrice && <span className="field-error">{errors.lines[idx].unitPrice?.message}</span>}
-                      </td>
-                      <td><input type="number" step="0.01" {...register(`lines.${idx}.taxPercent`)} /></td>
-                      <td><input type="number" {...register(`lines.${idx}.leadTimeDays`)} /></td>
-                      <td><input type="text" {...register(`lines.${idx}.remarks`)} /></td>
-                      <td>{fields.length > 1 && <button type="button" className="btn btn-sm btn-secondary" onClick={() => remove(idx)}>Remove</button>}</td>
-                    </tr>
+                      </Table.Cell>
+                      <Table.Cell><TextInput type="number" step="0.01" aria-label={`Line ${idx + 1} tax percent`} {...register(`lines.${idx}.taxPercent`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="number" aria-label={`Line ${idx + 1} lead days`} {...register(`lines.${idx}.leadTimeDays`)} /></Table.Cell>
+                      <Table.Cell><TextInput type="text" aria-label={`Line ${idx + 1} remarks`} {...register(`lines.${idx}.remarks`)} /></Table.Cell>
+                      <Table.Cell>{fields.length > 1 && <Button type="button" variant="secondary" size="sm" onClick={() => remove(idx)}>Remove</Button>}</Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
+                </Table.Body>
+              </Table.Root>
             </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => append({ itemId: 0, quantity: 1, unitPrice: 0, taxPercent: 0 })} style={{ marginTop: "0.75rem" }}>
+            <Button type="button" variant="secondary" size="sm" onClick={() => append({ itemId: 0, quantity: 1, unitPrice: 0, taxPercent: 0 })} style={{ marginTop: "0.75rem" }}>
               + Add Line
-            </button>
+            </Button>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Quotation"}
-              </button>
-            </div>
+            <HStack gap={2} mt={4} className="form-actions">
+              <Button type="submit" variant="primary" disabled={isSubmitting} loading={isSubmitting} loadingText="Creating...">
+                Create Quotation
+              </Button>
+            </HStack>
           </form>
         </div>
       )}
 
       <div className="card">
         <h2>Compare Quotations</h2>
-        <div className="field" style={{ maxWidth: 320 }}>
-          <label htmlFor="compareItemId">Item to Compare</label>
-          <select id="compareItemId" value={compareItemId} onChange={(e) => setCompareItemId(Number(e.target.value))}>
-            <option value={0}>Select item</option>
-            {(items.data ?? []).map((i) => <option key={i.id} value={i.id}>{i.itemName}</option>)}
-          </select>
-        </div>
+        <Box maxW="320px" className="field" style={{ maxWidth: 320 }}>
+          <FormField label="Item to Compare">
+            <HimsSelect id="compareItemId" aria-label="Item to Compare" value={compareItemId} onChange={(e) => setCompareItemId(Number(e.target.value))}>
+              <option value={0}>Select item</option>
+              {(items.data ?? []).map((i) => <option key={i.id} value={i.id}>{i.itemName}</option>)}
+            </HimsSelect>
+          </FormField>
+        </Box>
 
         {compare.isLoading && <p className="muted">Loading comparison...</p>}
         {compare.isError && <div className="alert alert--error">Failed to load comparison</div>}
@@ -148,32 +146,32 @@ export function QuotationComparison() {
 
         {Object.keys(groupedCompare).length > 0 && (
           <div className="table-wrap" style={{ marginTop: "1rem" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Quotation No</th>
-                  <th>Supplier</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Tax %</th>
-                  <th>Lead Days</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table.Root size="sm" variant="line">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Quotation No</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Supplier</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Unit Price</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Tax %</Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Lead Days</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
                 {Object.entries(groupedCompare).map(([quotationId, rows]) => (
                   rows.map((row, idx) => (
-                    <tr key={`${quotationId}-${idx}`}>
-                      <td>{row.quotationNo}</td>
-                      <td>{row.supplierName ?? row.supplierCode ?? `Supplier ${row.supplierId}`}</td>
-                      <td className="cell cell--num">{row.quantity}</td>
-                      <td className="cell cell--num">{row.unitPrice}</td>
-                      <td className="cell cell--num">{row.taxPercent}%</td>
-                      <td>{row.leadTimeDays ?? "-"}</td>
-                    </tr>
+                    <Table.Row key={`${quotationId}-${idx}`}>
+                      <Table.Cell>{row.quotationNo}</Table.Cell>
+                      <Table.Cell>{row.supplierName ?? row.supplierCode ?? `Supplier ${row.supplierId}`}</Table.Cell>
+                      <Table.Cell>{row.quantity}</Table.Cell>
+                      <Table.Cell>{row.unitPrice}</Table.Cell>
+                      <Table.Cell>{row.taxPercent}%</Table.Cell>
+                      <Table.Cell>{row.leadTimeDays ?? "-"}</Table.Cell>
+                    </Table.Row>
                   ))
                 ))}
-              </tbody>
-            </table>
+              </Table.Body>
+            </Table.Root>
           </div>
         )}
       </div>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, SimpleGrid } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { walkinSchema, type WalkinValues } from "./zodSchema";
 import { useWalkin } from "./queries";
 import { PatientSearch } from "../patient/PatientSearch";
@@ -48,36 +50,34 @@ export function WalkinDesk({ onCheckedIn }: { onCheckedIn?: (appointmentId: numb
       )}
 
       <form onSubmit={onSubmit} className="space-y-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <label className="text-sm">
-            <span className="block font-medium">Doctor ID *</span>
-            <input type="number" className="w-full border rounded px-2 py-1" {...register("doctorId")} />
-            {errors.doctorId && <span className="text-red-600 text-xs">{errors.doctorId.message}</span>}
-          </label>
-          <label className="text-sm">
-            <span className="block font-medium">Department ID</span>
-            <input type="number" className="w-full border rounded px-2 py-1" {...register("departmentId")} />
-          </label>
-          <label className="text-sm">
-            <span className="block font-medium">Visit type</span>
-            <select className="w-full border rounded px-2 py-1" {...register("visitType")}>
+        <SimpleGrid columns={{ base: 1, sm: 3 }} gap={2}>
+          <FormField label="Doctor ID" required error={errors.doctorId?.message}>
+            <TextInput type="number" {...register("doctorId")} />
+          </FormField>
+          <FormField label="Department ID" error={errors.departmentId?.message}>
+            <TextInput type="number" {...register("departmentId")} />
+          </FormField>
+          <FormField label="Visit type">
+            <HimsSelect {...register("visitType")}>
               <option value="WALK_IN">Walk-in</option>
               <option value="EMERGENCY">Emergency</option>
-            </select>
-          </label>
-        </div>
+            </HimsSelect>
+          </FormField>
+        </SimpleGrid>
 
         {walkin.isError && (
           <p className="text-sm text-red-600">{(walkin.error as Error).message}</p>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-          disabled={!patient || isSubmitting || walkin.isPending}
+          variant="primary"
+          disabled={!patient || isSubmitting}
+          loading={walkin.isPending}
+          loadingText="Checking in..."
         >
-          {walkin.isPending ? "Checking in..." : "Check In"}
-        </button>
+          Check In
+        </Button>
       </form>
     </div>
   );

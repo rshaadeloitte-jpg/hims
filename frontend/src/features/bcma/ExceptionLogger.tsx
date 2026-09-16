@@ -9,6 +9,8 @@ import {
   type ExceptionOverrideValues,
   type ExceptionResponse,
 } from "./zodSchema";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
+import { Button, Textarea } from "@chakra-ui/react";
 import {
   useCreateException,
   useOverrideException,
@@ -92,13 +94,13 @@ export function ExceptionLogger({ patientId }: { patientId?: number }) {
             Document and override BCMA verification exceptions
           </p>
         </div>
-        <button
+        <Button variant="secondary"
           onClick={() => setShowForm(!showForm)}
           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
           aria-expanded={showForm}
         >
           {showForm ? "Cancel" : "+ Log Exception"}
-        </button>
+        </Button>
       </header>
 
       {/* Create exception form */}
@@ -109,36 +111,19 @@ export function ExceptionLogger({ patientId }: { patientId?: number }) {
           aria-label="Create BCMA exception"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Patient ID *</span>
-              <input
+            <FormField label="Patient ID  {errors.patientId && ( {errors.patientId.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...register("patientId", { valueAsNumber: true })}
                 aria-invalid={errors.patientId ? "true" : undefined}
-              />
-              {errors.patientId && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.patientId.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Drug NDC *</span>
-              <input
+            <FormField label="Drug NDC  {errors.drugNdc && ( {errors.drugNdc.message} )}" required><TextInput
                 type="text"
-                className="w-full border rounded px-3 py-2 font-mono"
                 {...register("drugNdc")}
                 aria-invalid={errors.drugNdc ? "true" : undefined}
-              />
-              {errors.drugNdc && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.drugNdc.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Exception Type *</span>
-              <select
-                className="w-full border rounded px-3 py-2"
+            <FormField label="Exception Type  {errors.exceptionType && ( {errors.exceptionType.message} )}" required><HimsSelect
                 {...register("exceptionType")}
                 aria-invalid={errors.exceptionType ? "true" : undefined}
               >
@@ -148,64 +133,32 @@ export function ExceptionLogger({ patientId }: { patientId?: number }) {
                     {t.replace(/_/g, " ")}
                   </option>
                 ))}
-              </select>
-              {errors.exceptionType && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.exceptionType.message}</span>
-              )}
-            </label>
+              </HimsSelect></FormField>
 
-            <label className="text-sm sm:col-span-2 lg:col-span-3">
-              <span className="block font-medium mb-1">Reason *</span>
-              <textarea
-                className="w-full border rounded px-3 py-2"
+            <FormField label="Reason  {errors.reason && ( {errors.reason.message} )}" required><Textarea bg="white" borderColor="gray.300"
                 rows={3}
                 placeholder="Describe the exception in detail..."
                 {...register("reason")}
                 aria-invalid={errors.reason ? "true" : undefined}
-              />
-              {errors.reason && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.reason.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Override Nurse ID *</span>
-              <input
+            <FormField label="Override Nurse ID  {errors.overrideNurse && ( {errors.overrideNurse.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...register("overrideNurse", { valueAsNumber: true })}
                 aria-invalid={errors.overrideNurse ? "true" : undefined}
-              />
-              {errors.overrideNurse && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.overrideNurse.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Ward ID *</span>
-              <input
+            <FormField label="Ward ID  {errors.wardId && ( {errors.wardId.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...register("wardId", { valueAsNumber: true })}
                 aria-invalid={errors.wardId ? "true" : undefined}
-              />
-              {errors.wardId && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.wardId.message}</span>
-              )}
-            </label>
+              /></FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium mb-1">Scanned By *</span>
-              <input
+            <FormField label="Scanned By  {errors.scannedBy && ( {errors.scannedBy.message} )}" required><TextInput
                 type="number"
-                className="w-full border rounded px-3 py-2"
                 {...register("scannedBy", { valueAsNumber: true })}
                 aria-invalid={errors.scannedBy ? "true" : undefined}
-              />
-              {errors.scannedBy && (
-                <span className="text-xs text-red-600 mt-1 block">{errors.scannedBy.message}</span>
-              )}
-            </label>
+              /></FormField>
           </div>
 
           {/* Contextual help based on exception type */}
@@ -222,20 +175,18 @@ export function ExceptionLogger({ patientId }: { patientId?: number }) {
           )}
 
           <div className="flex gap-3">
-            <button
+            <Button variant="primary" loading={!isValid || createException.isPending} loadingText="Logging..."
               type="submit"
-              disabled={!isValid || createException.isPending}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {createException.isPending ? "Logging..." : "Log Exception"}
-            </button>
-            <button
+              disabled={!isValid || createException.isPending}>
+              Log Exception
+            </Button>
+            <Button variant="secondary"
               type="button"
               onClick={() => { reset(); setShowForm(false); }}
               className="px-4 py-2 border rounded hover:bg-gray-50"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -328,12 +279,10 @@ function ExceptionCard({
         </div>
 
         {!exc.overridden && !isOverriding && (
-          <button
-            onClick={onStartOverride}
-            className="bg-orange-600 text-white px-3 py-1.5 rounded text-xs hover:bg-orange-700 shrink-0"
-          >
+          <Button variant="secondary"
+            onClick={onStartOverride}>
             Override
-          </button>
+          </Button>
         )}
       </div>
 
@@ -344,48 +293,30 @@ function ExceptionCard({
           className="mt-3 pt-3 border-t border-current/20 space-y-3"
           aria-label="Override exception"
         >
-          <label className="text-sm block">
-            <span className="block font-medium mb-1">Justification *</span>
-            <textarea
-              className="w-full border rounded px-3 py-2 text-sm bg-white"
+          <FormField label="Justification  {errors.justification && ( {errors.justification.message} )}" required><Textarea bg="white" borderColor="gray.300"
               rows={2}
               placeholder="Clinical justification for override..."
               {...register("justification")}
               aria-invalid={errors.justification ? "true" : undefined}
-            />
-            {errors.justification && (
-              <span className="text-xs text-red-600 mt-1 block">{errors.justification.message}</span>
-            )}
-          </label>
+            /></FormField>
 
-          <label className="text-sm block">
-            <span className="block font-medium mb-1">Override Nurse ID *</span>
-            <input
+          <FormField label="Override Nurse ID  {errors.overrideNurse && ( {errors.overrideNurse.message} )}" required><TextInput
               type="number"
-              className="w-full border rounded px-3 py-2 text-sm bg-white"
               {...register("overrideNurse", { valueAsNumber: true })}
               aria-invalid={errors.overrideNurse ? "true" : undefined}
-            />
-            {errors.overrideNurse && (
-              <span className="text-xs text-red-600 mt-1 block">{errors.overrideNurse.message}</span>
-            )}
-          </label>
+            /></FormField>
 
           <div className="flex gap-2">
-            <button
+            <Button variant="primary" loading={!isValid || isPending} loadingText="Applying..."
               type="submit"
-              disabled={!isValid || isPending}
-              className="bg-orange-600 text-white px-3 py-1.5 rounded text-xs hover:bg-orange-700 disabled:opacity-50"
-            >
-              {isPending ? "Applying..." : "Apply Override"}
-            </button>
-            <button
+              disabled={!isValid || isPending}>
+              Apply Override
+            </Button>
+            <Button variant="secondary"
               type="button"
-              onClick={onCancelOverride}
-              className="px-3 py-1.5 border rounded text-xs hover:bg-white/50"
-            >
+              onClick={onCancelOverride}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}

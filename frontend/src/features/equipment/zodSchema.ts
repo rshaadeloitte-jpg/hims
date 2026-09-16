@@ -13,7 +13,6 @@ import { z } from "zod";
 
 // ---- Shared preprocess helpers --------------------------------------------
 
-const emptyToUndefined = (v: unknown): unknown => (v === "" || v == null ? undefined : v);
 
 const optionalNumber = z.preprocess(
   (v) => (v === "" || v == null ? undefined : v),

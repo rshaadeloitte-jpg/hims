@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { Button } from "@chakra-ui/react";
+import { TextInput } from "../../components/ui";
 import { useFileAnnotation, useSaveAnnotation, useDownloadFileBase64 } from "./queries";
 import { annotationSchema } from "./zodSchema";
 
@@ -348,10 +350,11 @@ export function AnnotatedImageViewer({
       <div className="annotated-viewer__toolbar">
         <div className="annotated-viewer__tools">
           {(["rectangle", "circle", "arrow", "freehand", "text", "select"] as AnnotationTool[]).map((t) => (
-            <button
+            <Button
               key={t}
               type="button"
-              className={`annotated-viewer__tool-btn${tool === t ? " active" : ""}`}
+              variant={tool === t ? "primary" : "ghost"}
+              size="sm"
               onClick={() => setTool(t)}
               aria-pressed={tool === t}
               aria-label={`${t} tool`}
@@ -363,16 +366,17 @@ export function AnnotatedImageViewer({
               {t === "freehand" && "✎"}
               {t === "text" && "T"}
               {t === "select" && "↖"}
-            </button>
+            </Button>
           ))}
         </div>
 
         <div className="annotated-viewer__colors">
           {COLORS.map((c) => (
-            <button
+            <Button
               key={c}
               type="button"
-              className={`annotated-viewer__color-btn${color === c ? " active" : ""}`}
+              variant="ghost"
+              size="sm"
               style={{ backgroundColor: c }}
               onClick={() => setColor(c)}
               aria-label={`Color ${c}`}
@@ -383,43 +387,46 @@ export function AnnotatedImageViewer({
 
         <div className="annotated-viewer__stroke-widths">
           {STROKE_WIDTHS.map((w) => (
-            <button
+            <Button
               key={w}
               type="button"
-              className={`annotated-viewer__stroke-btn${strokeWidth === w ? " active" : ""}`}
+              variant={strokeWidth === w ? "secondary" : "ghost"}
+              size="sm"
               onClick={() => setStrokeWidth(w)}
               aria-label={`Stroke width ${w}`}
               aria-pressed={strokeWidth === w}
             >
               <span style={{ width: w * 3, height: w * 3, borderRadius: "50%", backgroundColor: "currentColor", display: "inline-block" }} />
-            </button>
+            </Button>
           ))}
         </div>
 
         <div className="annotated-viewer__actions">
-          <button type="button" className="btn btn-sm btn-secondary" onClick={undo} disabled={historyIndex <= 0}>
+          <Button type="button" variant="secondary" size="sm" onClick={undo} disabled={historyIndex <= 0}>
             Undo
-          </button>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={redo} disabled={historyIndex >= history.length - 1}>
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1}>
             Redo
-          </button>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={clearAll}>
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={clearAll}>
             Clear
-          </button>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={handleExport}>
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={handleExport}>
             Export
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-sm btn-primary"
+            variant="primary"
+            size="sm"
             onClick={handleSave}
-            disabled={saveAnnotation.isPending}
+            loading={saveAnnotation.isPending}
+            loadingText="Saving…"
           >
-            {saveAnnotation.isPending ? "Saving…" : "Save"}
-          </button>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={onClose}>
+            Save
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -444,7 +451,7 @@ export function AnnotatedImageViewer({
       {/* Text input dialog */}
       {showTextDialog && (
         <div className="annotated-viewer__text-dialog">
-          <input
+          <TextInput
             type="text"
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
@@ -455,12 +462,12 @@ export function AnnotatedImageViewer({
               if (e.key === "Escape") setShowTextDialog(false);
             }}
           />
-          <button type="button" className="btn btn-sm btn-primary" onClick={handleTextSubmit}>
+          <Button type="button" variant="primary" size="sm" onClick={handleTextSubmit}>
             Add
-          </button>
-          <button type="button" className="btn btn-sm btn-secondary" onClick={() => setShowTextDialog(false)}>
+          </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setShowTextDialog(false)}>
             Cancel
-          </button>
+          </Button>
         </div>
       )}
     </div>

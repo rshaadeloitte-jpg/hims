@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, Textarea } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../../components/ui";
 import {
   useAbhaForPatient,
   useConfirmAbhaLink,
@@ -113,22 +115,24 @@ export function AbhaPage() {
               uses the same two channels; ABHA M1 (07 §ABDM) is implemented here.
             </p>
             <div className="form-row form-row--two-col">
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="secondary"
                 onClick={() => startAadhaar("aadhaar")}
-                disabled={start.isPending}
+                loading={start.isPending}
+                loadingText="Sending…"
               >
-                {start.isPending ? "Sending…" : "Send OTP to Aadhaar mobile"}
-              </button>
-              <button
+                Send OTP to Aadhaar mobile
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="secondary"
                 onClick={() => startAadhaar("mobile")}
-                disabled={start.isPending}
+                loading={start.isPending}
+                loadingText="Sending…"
               >
-                {start.isPending ? "Sending…" : "Send OTP to registered mobile"}
-              </button>
+                Send OTP to registered mobile
+              </Button>
             </div>
             {current ? (
               <p className="muted small">
@@ -137,11 +141,8 @@ export function AbhaPage() {
             ) : null}
             {status === "PENDING_OTP" && current ? (
               <div className="form-row form-row--two-col">
-                <div className="field">
-                  <label htmlFor="abha-otp" className="field-label">Enter 6-digit OTP</label>
-                  <input
-                    id="abha-otp"
-                    className="form-input"
+                <FormField label="Enter 6-digit OTP">
+                  <TextInput
                     type="text"
                     inputMode="numeric"
                     pattern="\d{6}"
@@ -149,16 +150,18 @@ export function AbhaPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                   />
-                </div>
+                </FormField>
                 <div className="field field--end">
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-primary"
+                    variant="primary"
                     onClick={submitOtp}
-                    disabled={verify.isPending || otp.length < 6}
+                    disabled={otp.length < 6}
+                    loading={verify.isPending}
+                    loadingText="Verifying…"
                   >
-                    {verify.isPending ? "Verifying…" : "Verify OTP"}
-                  </button>
+                    Verify OTP
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -170,21 +173,24 @@ export function AbhaPage() {
               Paste the raw PHR address / QR payload below; the interop service will resolve
               it and offer the discovered ABHA address for confirm-link.
             </p>
-            <textarea
-              className="form-textarea"
+            <Textarea
+              bg="white"
+              borderColor="gray.300"
               rows={3}
               value={qrInput}
               onChange={(e) => setQrInput(e.target.value)}
               placeholder="PHR payload (e.g. 'abha://...?token=...')"
             />
-            <button
+            <Button
               type="button"
-              className="btn btn-primary"
+              variant="primary"
               onClick={submitQr}
-              disabled={scan.isPending || !qrInput.trim()}
+              disabled={!qrInput.trim()}
+              loading={scan.isPending}
+              loadingText="Scanning…"
             >
-              {scan.isPending ? "Scanning…" : "Scan"}
-            </button>
+              Scan
+            </Button>
           </section>
 
           {status === "LINKED" && current ? (

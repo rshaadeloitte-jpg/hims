@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, HStack, SimpleGrid, Table, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   useComplaints,
   useRaiseComplaint,
@@ -131,238 +133,263 @@ export function ComplaintTracker() {
     <section className="page">
       <header className="page-header">
         <h1>Complaint Tracker</h1>
-        <div className="header-actions">
-          <button
-            className={`btn ${showKanban ? "btn-secondary" : "btn-outline"}`}
+        <HStack gap={2} className="header-actions">
+          <Button
+            variant={showKanban ? "secondary" : "ghost"}
             onClick={() => setShowKanban(!showKanban)}
           >
             {showKanban ? "Table View" : "Kanban View"}
-          </button>
-          <button
-            className="btn btn-primary"
+          </Button>
+          <Button
+            variant={showForm ? "secondary" : "primary"}
             onClick={() => {
               setShowForm(!showForm);
               setResolvingId(null);
             }}
           >
             {showForm ? "Cancel" : "Raise Complaint"}
-          </button>
-        </div>
+          </Button>
+        </HStack>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>Raise New Complaint</h2>
-          <div className="form-grid">
-            <label htmlFor="cmp-equipmentId">
-              Equipment ID *
-              {complaintErrors.equipmentId && (
-                <span className="error">{complaintErrors.equipmentId}</span>
-              )}
-            </label>
-            <input
-              id="cmp-equipmentId"
-              type="number"
-              value={complaintForm.equipmentId || ""}
-              onChange={(e) =>
-                setComplaintForm({ ...complaintForm, equipmentId: Number(e.target.value) })
-              }
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Equipment ID" error={complaintErrors.equipmentId} required>
+              <TextInput
+                id="cmp-equipmentId"
+                aria-label="Equipment ID"
+                type="number"
+                value={complaintForm.equipmentId || ""}
+                onChange={(e) =>
+                  setComplaintForm({ ...complaintForm, equipmentId: Number(e.target.value) })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-categoryId">Category ID</label>
-            <input
-              id="cmp-categoryId"
-              type="number"
-              value={complaintForm.categoryId ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  categoryId: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Category ID">
+              <TextInput
+                id="cmp-categoryId"
+                aria-label="Category ID"
+                type="number"
+                value={complaintForm.categoryId ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    categoryId: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-complaintTypeId">Complaint Type ID</label>
-            <input
-              id="cmp-complaintTypeId"
-              type="number"
-              value={complaintForm.complaintTypeId ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  complaintTypeId: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Complaint Type ID">
+              <TextInput
+                id="cmp-complaintTypeId"
+                aria-label="Complaint Type ID"
+                type="number"
+                value={complaintForm.complaintTypeId ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    complaintTypeId: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-severityId">Severity ID</label>
-            <input
-              id="cmp-severityId"
-              type="number"
-              value={complaintForm.severityId ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  severityId: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Severity ID">
+              <TextInput
+                id="cmp-severityId"
+                aria-label="Severity ID"
+                type="number"
+                value={complaintForm.severityId ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    severityId: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-description">
-              Description *
-              {complaintErrors.description && (
-                <span className="error">{complaintErrors.description}</span>
-              )}
-            </label>
-            <textarea
-              id="cmp-description"
-              value={complaintForm.description}
-              onChange={(e) => setComplaintForm({ ...complaintForm, description: e.target.value })}
-            />
+            <FormField label="Description" error={complaintErrors.description} required>
+              <Textarea
+                id="cmp-description"
+                aria-label="Description"
+                value={complaintForm.description}
+                onChange={(e) => setComplaintForm({ ...complaintForm, description: e.target.value })}
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="cmp-reportedBy">Reported By (User ID)</label>
-            <input
-              id="cmp-reportedBy"
-              type="number"
-              value={complaintForm.reportedBy ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  reportedBy: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Reported By (User ID)">
+              <TextInput
+                id="cmp-reportedBy"
+                aria-label="Reported By (User ID)"
+                type="number"
+                value={complaintForm.reportedBy ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    reportedBy: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-roomNo">Room No.</label>
-            <input
-              id="cmp-roomNo"
-              value={complaintForm.roomNo ?? ""}
-              onChange={(e) => setComplaintForm({ ...complaintForm, roomNo: e.target.value })}
-            />
+            <FormField label="Room No.">
+              <TextInput
+                id="cmp-roomNo"
+                aria-label="Room No."
+                value={complaintForm.roomNo ?? ""}
+                onChange={(e) => setComplaintForm({ ...complaintForm, roomNo: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="cmp-extensionNo">Extension No.</label>
-            <input
-              id="cmp-extensionNo"
-              value={complaintForm.extensionNo ?? ""}
-              onChange={(e) => setComplaintForm({ ...complaintForm, extensionNo: e.target.value })}
-            />
+            <FormField label="Extension No.">
+              <TextInput
+                id="cmp-extensionNo"
+                aria-label="Extension No."
+                value={complaintForm.extensionNo ?? ""}
+                onChange={(e) => setComplaintForm({ ...complaintForm, extensionNo: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="cmp-assignedTo">Assigned To (User ID)</label>
-            <input
-              id="cmp-assignedTo"
-              type="number"
-              value={complaintForm.assignedTo ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  assignedTo: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Assigned To (User ID)">
+              <TextInput
+                id="cmp-assignedTo"
+                aria-label="Assigned To (User ID)"
+                type="number"
+                value={complaintForm.assignedTo ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    assignedTo: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="cmp-expectedResolutionDate">Expected Resolution Date</label>
-            <input
-              id="cmp-expectedResolutionDate"
-              type="date"
-              value={complaintForm.expectedResolutionDate ?? ""}
-              onChange={(e) =>
-                setComplaintForm({
-                  ...complaintForm,
-                  expectedResolutionDate: e.target.value,
-                })
-              }
-            />
-          </div>
-          <button className="btn btn-primary" onClick={handleRaise} disabled={raise.isPending}>
-            {raise.isPending ? "Raising…" : "Submit Complaint"}
-          </button>
+            <FormField label="Expected Resolution Date">
+              <TextInput
+                id="cmp-expectedResolutionDate"
+                aria-label="Expected Resolution Date"
+                type="date"
+                value={complaintForm.expectedResolutionDate ?? ""}
+                onChange={(e) =>
+                  setComplaintForm({
+                    ...complaintForm,
+                    expectedResolutionDate: e.target.value,
+                  })
+                }
+              />
+            </FormField>
+          </SimpleGrid>
+          <Button variant="primary" onClick={handleRaise} disabled={raise.isPending} loading={raise.isPending} loadingText="Raising…">
+            Submit Complaint
+          </Button>
         </div>
       )}
 
       {resolvingId && (
         <div className="card">
           <h2>Resolve Complaint #{resolvingId}</h2>
-          <div className="form-grid">
-            <label htmlFor="res-resolutionNotes">
-              Resolution Notes *
-              {resolutionErrors.resolutionNotes && (
-                <span className="error">{resolutionErrors.resolutionNotes}</span>
-              )}
-            </label>
-            <textarea
-              id="res-resolutionNotes"
-              value={resolutionForm.resolutionNotes}
-              onChange={(e) =>
-                setResolutionForm({ ...resolutionForm, resolutionNotes: e.target.value })
-              }
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Resolution Notes" error={resolutionErrors.resolutionNotes} required>
+              <Textarea
+                id="res-resolutionNotes"
+                aria-label="Resolution Notes"
+                value={resolutionForm.resolutionNotes}
+                onChange={(e) =>
+                  setResolutionForm({ ...resolutionForm, resolutionNotes: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="res-partsReplaced">Parts Replaced</label>
-            <textarea
-              id="res-partsReplaced"
-              value={resolutionForm.partsReplaced ?? ""}
-              onChange={(e) =>
-                setResolutionForm({ ...resolutionForm, partsReplaced: e.target.value })
-              }
-            />
+            <FormField label="Parts Replaced">
+              <Textarea
+                id="res-partsReplaced"
+                aria-label="Parts Replaced"
+                value={resolutionForm.partsReplaced ?? ""}
+                onChange={(e) =>
+                  setResolutionForm({ ...resolutionForm, partsReplaced: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="res-serviceAgentId">Service Agent ID</label>
-            <input
-              id="res-serviceAgentId"
-              type="number"
-              value={resolutionForm.serviceAgentId ?? ""}
-              onChange={(e) =>
-                setResolutionForm({
-                  ...resolutionForm,
-                  serviceAgentId: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Service Agent ID">
+              <TextInput
+                id="res-serviceAgentId"
+                aria-label="Service Agent ID"
+                type="number"
+                value={resolutionForm.serviceAgentId ?? ""}
+                onChange={(e) =>
+                  setResolutionForm({
+                    ...resolutionForm,
+                    serviceAgentId: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="res-assignedTo">Assigned To</label>
-            <input
-              id="res-assignedTo"
-              type="number"
-              value={resolutionForm.assignedTo ?? ""}
-              onChange={(e) =>
-                setResolutionForm({
-                  ...resolutionForm,
-                  assignedTo: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Assigned To">
+              <TextInput
+                id="res-assignedTo"
+                aria-label="Assigned To"
+                type="number"
+                value={resolutionForm.assignedTo ?? ""}
+                onChange={(e) =>
+                  setResolutionForm({
+                    ...resolutionForm,
+                    assignedTo: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="res-resolvedStatus">Resolved Status</label>
-            <select
-              id="res-resolvedStatus"
-              value={resolutionForm.resolvedStatus}
-              onChange={(e) =>
-                setResolutionForm({ ...resolutionForm, resolvedStatus: Number(e.target.value) })
-              }
-            >
-              <option value={1}>Open</option>
-              <option value={2}>In Progress</option>
-              <option value={3}>Resolved</option>
-              <option value={4}>Closed</option>
-            </select>
+            <FormField label="Resolved Status">
+              <HimsSelect
+                id="res-resolvedStatus"
+                aria-label="Resolved Status"
+                value={resolutionForm.resolvedStatus}
+                onChange={(e) =>
+                  setResolutionForm({ ...resolutionForm, resolvedStatus: Number(e.target.value) })
+                }
+              >
+                <option value={1}>Open</option>
+                <option value={2}>In Progress</option>
+                <option value={3}>Resolved</option>
+                <option value={4}>Closed</option>
+              </HimsSelect>
+            </FormField>
 
-            <label htmlFor="res-resolutionDate">Resolution Date</label>
-            <input
-              id="res-resolutionDate"
-              type="date"
-              value={resolutionForm.resolutionDate ?? ""}
-              onChange={(e) =>
-                setResolutionForm({ ...resolutionForm, resolutionDate: e.target.value })
-              }
-            />
-          </div>
-          <button
-            className="btn btn-primary"
+            <FormField label="Resolution Date">
+              <TextInput
+                id="res-resolutionDate"
+                aria-label="Resolution Date"
+                type="date"
+                value={resolutionForm.resolutionDate ?? ""}
+                onChange={(e) =>
+                  setResolutionForm({ ...resolutionForm, resolutionDate: e.target.value })
+                }
+              />
+            </FormField>
+          </SimpleGrid>
+          <Button
+            variant="primary"
             onClick={handleResolve}
             disabled={addResolution.isPending}
+            loading={addResolution.isPending}
+            loadingText="Saving…"
           >
-            {addResolution.isPending ? "Saving…" : "Record Resolution"}
-          </button>
+            Record Resolution
+          </Button>
         </div>
       )}
 
@@ -391,57 +418,60 @@ export function ComplaintTracker() {
         </div>
       ) : (
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Complaint No.</th>
-                <th>Equipment</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Reported</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Complaint No.</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Equipment</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Description</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reported</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {complaints.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.complaintNo ?? "—"}</td>
-                  <td>{c.equipmentId}</td>
-                  <td>{c.description}</td>
-                  <td>
+                <Table.Row key={c.id}>
+                  <Table.Cell>{c.id}</Table.Cell>
+                  <Table.Cell>{c.complaintNo ?? "—"}</Table.Cell>
+                  <Table.Cell>{c.equipmentId}</Table.Cell>
+                  <Table.Cell>{c.description}</Table.Cell>
+                  <Table.Cell>
                     <span
                       className={`badge ${STATUS_BADGE[c.complaintStatus] ?? "badge-muted"}`}
                     >
                       {COMPLAINT_STATUS_LABELS[c.complaintStatus] ?? c.complaintStatus}
                     </span>
-                  </td>
-                  <td>{c.reportedDate ?? "—"}</td>
-                  <td>
-                    <button
-                      className="btn btn-sm"
-                      onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
-                    >
-                      {expandedId === c.id ? "Hide" : "Detail"}
-                    </button>{" "}
-                    {c.complaintStatus < 3 && (
-                      <button className="btn btn-sm btn-success" onClick={() => setResolvingId(c.id)}>
-                        Resolve
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                  </Table.Cell>
+                  <Table.Cell>{c.reportedDate ?? "—"}</Table.Cell>
+                  <Table.Cell>
+                    <HStack gap={1}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                      >
+                        {expandedId === c.id ? "Hide" : "Detail"}
+                      </Button>
+                      {c.complaintStatus < 3 && (
+                        <Button variant="primary" size="sm" onClick={() => setResolvingId(c.id)}>
+                          Resolve
+                        </Button>
+                      )}
+                    </HStack>
+                  </Table.Cell>
+                </Table.Row>
               ))}
               {complaints.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="muted">
+                <Table.Row>
+                  <Table.Cell colSpan={7}>
                     No complaints.
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               )}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       )}
 
@@ -457,30 +487,30 @@ export function ComplaintTracker() {
           {complaintDetail.resolutions.length > 0 && (
             <>
               <h3>Resolutions</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Notes</th>
-                    <th>Parts Replaced</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table.Root size="sm" variant="line">
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Notes</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Parts Replaced</Table.ColumnHeader>
+                    <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {complaintDetail.resolutions.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.resolutionDate ?? "—"}</td>
-                      <td>{r.resolutionNotes}</td>
-                      <td>{r.partsReplaced ?? "—"}</td>
-                      <td>
+                    <Table.Row key={r.id}>
+                      <Table.Cell>{r.resolutionDate ?? "—"}</Table.Cell>
+                      <Table.Cell>{r.resolutionNotes}</Table.Cell>
+                      <Table.Cell>{r.partsReplaced ?? "—"}</Table.Cell>
+                      <Table.Cell>
                         <span className="badge badge-success">
                           {COMPLAINT_STATUS_LABELS[r.resolvedStatus] ?? r.resolvedStatus}
                         </span>
-                      </td>
-                    </tr>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </tbody>
-              </table>
+                </Table.Body>
+              </Table.Root>
             </>
           )}
         </div>
@@ -517,16 +547,16 @@ function ComplaintCard({
           <p className="kanban-card-meta">Acc: {complaint.accessionNo}</p>
         )}
       </div>
-      <div className="kanban-card-actions">
-        <button className="btn btn-sm" onClick={onExpand}>
+      <HStack gap={1} className="kanban-card-actions">
+        <Button variant="secondary" size="sm" onClick={onExpand}>
           {expanded ? "Hide" : "View"}
-        </button>
+        </Button>
         {complaint.complaintStatus < 3 && (
-          <button className="btn btn-sm btn-success" onClick={onResolve}>
+          <Button variant="primary" size="sm" onClick={onResolve}>
             Resolve
-          </button>
+          </Button>
         )}
-      </div>
+      </HStack>
       {expanded && detail && detail.resolutions.length > 0 && (
         <div className="kanban-card-detail">
           <small>

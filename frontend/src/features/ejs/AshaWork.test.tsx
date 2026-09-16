@@ -38,48 +38,54 @@ function renderAshaWork() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  queries.useAshaWorkers.mockResolvedValue([
-    { ashaId: 10, ashaName: "Sunita Devi" },
-    { ashaId: 11, ashaName: "Meena Yadav" },
-  ]);
+  queries.useAshaWorkers.mockReturnValue({
+    data: [
+      { ashaId: 10, ashaName: "Sunita Devi" },
+      { ashaId: 11, ashaName: "Meena Yadav" },
+    ],
+    isLoading: false,
+  });
 });
 
 describe("AshaWork", () => {
   it("renders tracking type tabs and records", async () => {
-    queries.useAshaWorkList.mockResolvedValue([
-      {
-        id: 1,
-        beneficiaryId: 101,
-        beneficiaryName: "Priya Sharma",
-        trackingType: "ANC",
-        visitDate: "2026-09-15",
-        ashaId: 10,
-        ashaName: "Sunita Devi",
-        status: "SCHEDULED",
-        gestationalWeek: 24,
-        createdAt: "2026-09-01T00:00:00Z",
-        updatedAt: "2026-09-01T00:00:00Z",
-      },
-      {
-        id: 2,
-        beneficiaryId: 102,
-        beneficiaryName: "Anjali Kumari",
-        trackingType: "PNC",
-        visitDate: "2026-09-10",
-        ashaId: 11,
-        ashaName: "Meena Yadav",
-        status: "COMPLETED",
-        createdAt: "2026-09-01T00:00:00Z",
-        updatedAt: "2026-09-01T00:00:00Z",
-      },
-    ]);
+    queries.useAshaWorkList.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          beneficiaryId: 101,
+          beneficiaryName: "Priya Sharma",
+          trackingType: "ANC",
+          visitDate: "2026-09-15",
+          ashaId: 10,
+          ashaName: "Sunita Devi",
+          status: "SCHEDULED",
+          gestationalWeek: 24,
+          createdAt: "2026-09-01T00:00:00Z",
+          updatedAt: "2026-09-01T00:00:00Z",
+        },
+        {
+          id: 2,
+          beneficiaryId: 102,
+          beneficiaryName: "Anjali Kumari",
+          trackingType: "PNC",
+          visitDate: "2026-09-10",
+          ashaId: 11,
+          ashaName: "Meena Yadav",
+          status: "COMPLETED",
+          createdAt: "2026-09-01T00:00:00Z",
+          updatedAt: "2026-09-01T00:00:00Z",
+        },
+      ],
+      isLoading: false,
+    });
 
     renderAshaWork();
 
     // Tracking type tabs
     expect(screen.getByText("All")).toBeInTheDocument();
-    expect(screen.getByText("ANC")).toBeInTheDocument();
-    expect(screen.getByText("PNC")).toBeInTheDocument();
+    expect(screen.getAllByText("ANC").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("PNC").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Child Care")).toBeInTheDocument();
 
     // Records
@@ -95,7 +101,7 @@ describe("AshaWork", () => {
   });
 
   it("shows empty state when no records", async () => {
-    queries.useAshaWorkList.mockResolvedValue([]);
+    queries.useAshaWorkList.mockReturnValue({ data: [], isLoading: false });
 
     renderAshaWork();
 
@@ -111,7 +117,7 @@ describe("AshaWork", () => {
   });
 
   it("renders ASHA worker filter options", async () => {
-    queries.useAshaWorkList.mockResolvedValue([]);
+    queries.useAshaWorkList.mockReturnValue({ data: [], isLoading: false });
 
     renderAshaWork();
 

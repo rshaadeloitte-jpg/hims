@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { WasteDashboard } from "./WasteDashboard";
 import { WasteRequest } from "./WasteRequest";
+import { Button } from "@chakra-ui/react";
 
 /**
  * BmwPage — entry page for the M18 Biomedical Waste feature.
@@ -40,12 +41,11 @@ export function BmwPage() {
       )}
 
       {!showForm && (
-        <button
-          className="btn btn-primary bmw-page__create-btn"
+        <Button variant="primary"
           onClick={() => setShowForm(true)}
         >
           + Create Waste Request
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -3,7 +3,6 @@ import { z } from "zod";
 /** M07 Pharmacy schemas — mirror the pharmacy-service request DTOs. */
 
 const optionalNumber = z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().optional());
-const optionalString = z.preprocess((v) => (v === "" ? undefined : v), z.string().optional());
 
 /** Create item sale (POST /api/v1/item-sales). */
 export const itemSaleSchema = z.object({
@@ -35,9 +34,11 @@ export type DispenseValues = z.infer<typeof dispenseSchema>;
 
 /** Drug allergy form validation */
 export const drugAllergySchema = z.object({
-  drugId: z.coerce.number().int().positive(),
-  allergyType: z.string().min(1, "Allergy type required"),
+  drugId: z.coerce.number().int().positive().optional(),
+  allergen: z.string().min(1, "Allergen required"),
+  allergyType: z.string().optional(),
   severity: z.enum(["MILD", "MODERATE", "SEVERE"]).default("MODERATE"),
+  reaction: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -45,10 +46,10 @@ export type DrugAllergyValues = z.infer<typeof drugAllergySchema>;
 
 /** Drug interaction form validation */
 export const drugInteractionSchema = z.object({
-  drugIdA: z.coerce.number().int().positive(),
-  drugIdB: z.coerce.number().int().positive(),
-  interactionType: z.string().min(1, "Interaction type required"),
-  severity: z.enum(["MINOR", "MODERATE", "MAJOR"]).default("MODERATE"),
+  drug1Id: z.coerce.number().int().positive(),
+  drug2Id: z.coerce.number().int().positive(),
+  interactionType: z.string().optional(),
+  severity: z.enum(["MILD", "MODERATE", "SEVERE"]).default("MODERATE"),
   notes: z.string().optional(),
 });
 

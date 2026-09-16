@@ -28,7 +28,7 @@ export const doctorShareQueryKeys = {
   all: ["doctor-shares"] as const,
   list: (filter: PayoutFilterValues) => ["doctor-shares", "list", filter] as const,
   detail: (id: string) => ["doctor-shares", id] as const,
-  payouts: (filter: PayoutFilterValues) => ["doctor-shares", "payouts", filter] as const,
+  payouts: (filter?: Partial<PayoutFilterValues>) => ["doctor-shares", "payouts", filter] as const,
   calculator: (params: { doctorId: number; service: string; baseAmount: number }) =>
     ["doctor-shares", "calculator", params] as const,
 } as const;

@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Textarea } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 import {
   useCarePlansByAdmission,
   useCreateCareGoal,
@@ -48,20 +50,22 @@ function GoalCard({ goal, onStatusChange }: { goal: CareGoal; onStatusChange: (i
         <span className="wl-muted">Added: {new Date(goal.createdAt).toLocaleDateString()}</span>
         {goal.status === "ACTIVE" && (
           <div className="wl-card__actions">
-            <button
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--success"
+              variant="primary"
+              size="sm"
               onClick={() => onStatusChange(goal.goalId, "ACHIEVED")}
             >
               Mark Achieved
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => onStatusChange(goal.goalId, "DISCONTINUED")}
             >
               Discontinue
-            </button>
+            </Button>
           </div>
         )}
         {goal.achievedAt && goal.status === "ACHIEVED" && (
@@ -94,30 +98,33 @@ function InterventionCard({
         <span className="wl-muted">Added: {new Date(intervention.createdAt).toLocaleDateString()}</span>
         {intervention.status === "SCHEDULED" && (
           <div className="wl-card__actions">
-            <button
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--primary"
+              variant="primary"
+              size="sm"
               onClick={() => onStatusChange(intervention.interventionId, "IN_PROGRESS")}
             >
               Start
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="wl-btn wl-btn--sm wl-btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => onStatusChange(intervention.interventionId, "SKIPPED")}
             >
               Skip
-            </button>
+            </Button>
           </div>
         )}
         {intervention.status === "IN_PROGRESS" && (
-          <button
+          <Button
             type="button"
-            className="wl-btn wl-btn--sm wl-btn--success"
+            variant="primary"
+            size="sm"
             onClick={() => onStatusChange(intervention.interventionId, "COMPLETED")}
           >
             Complete
-          </button>
+          </Button>
         )}
         {intervention.completedAt && intervention.status === "COMPLETED" && (
           <span className="wl-text--success">
@@ -154,30 +161,28 @@ function GoalCreateForm({ carePlanId, onClose }: { carePlanId: number; onClose: 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="wl-form">
       <div className="wl-form__row">
-        <label htmlFor="goalText" className="wl-form__label">
-          Goal *
-        </label>
-        <textarea
-          id="goalText"
-          className="wl-form__textarea"
-          placeholder="Describe the care goal..."
-          {...register("goalText")}
-        />
-        {errors.goalText && <span className="wl-form__error">{errors.goalText.message}</span>}
+        <FormField label="Goal *" error={errors.goalText?.message} required>
+          <Textarea
+            id="goalText"
+            bg="white"
+            borderColor="gray.300"
+            placeholder="Describe the care goal..."
+            {...register("goalText")}
+          />
+        </FormField>
       </div>
       <div className="wl-form__row">
-        <label htmlFor="targetDate" className="wl-form__label">
-          Target Date
-        </label>
-        <input id="targetDate" type="date" className="wl-form__input" {...register("targetDate")} />
+        <FormField label="Target Date">
+          <TextInput id="targetDate" type="date" {...register("targetDate")} />
+        </FormField>
       </div>
       <div className="wl-form__actions">
-        <button type="submit" className="wl-btn wl-btn--primary" disabled={createGoal.isPending}>
-          {createGoal.isPending ? "Adding…" : "Add Goal"}
-        </button>
-        <button type="button" className="wl-btn wl-btn--ghost" onClick={onClose}>
+        <Button type="submit" variant="primary" loading={createGoal.isPending} loadingText="Adding…">
+          Add Goal
+        </Button>
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
-        </button>
+        </Button>
       </div>
       {createGoal.isError && (
         <div className="wl-form__error-banner">Failed to create goal. Please try again.</div>
@@ -211,37 +216,32 @@ function InterventionCreateForm({ carePlanId, onClose }: { carePlanId: number; o
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="wl-form">
       <div className="wl-form__row">
-        <label htmlFor="interventionText" className="wl-form__label">
-          Intervention *
-        </label>
-        <textarea
-          id="interventionText"
-          className="wl-form__textarea"
-          placeholder="Describe the intervention..."
-          {...register("interventionText")}
-        />
-        {errors.interventionText && (
-          <span className="wl-form__error">{errors.interventionText.message}</span>
-        )}
+        <FormField label="Intervention *" error={errors.interventionText?.message} required>
+          <Textarea
+            id="interventionText"
+            bg="white"
+            borderColor="gray.300"
+            placeholder="Describe the intervention..."
+            {...register("interventionText")}
+          />
+        </FormField>
       </div>
       <div className="wl-form__row">
-        <label htmlFor="scheduledTime" className="wl-form__label">
-          Scheduled Time
-        </label>
-        <input
-          id="scheduledTime"
-          type="datetime-local"
-          className="wl-form__input"
-          {...register("scheduledTime")}
-        />
+        <FormField label="Scheduled Time">
+          <TextInput
+            id="scheduledTime"
+            type="datetime-local"
+            {...register("scheduledTime")}
+          />
+        </FormField>
       </div>
       <div className="wl-form__actions">
-        <button type="submit" className="wl-btn wl-btn--primary" disabled={createIntervention.isPending}>
-          {createIntervention.isPending ? "Adding…" : "Add Intervention"}
-        </button>
-        <button type="button" className="wl-btn wl-btn--ghost" onClick={onClose}>
+        <Button type="submit" variant="primary" loading={createIntervention.isPending} loadingText="Adding…">
+          Add Intervention
+        </Button>
+        <Button type="button" variant="ghost" onClick={onClose}>
           Cancel
-        </button>
+        </Button>
       </div>
       {createIntervention.isError && (
         <div className="wl-form__error-banner">Failed to create intervention. Please try again.</div>
@@ -300,24 +300,26 @@ function CarePlanSection({ carePlan }: { carePlan: CarePlan }) {
 
       {/* Tabs */}
       <nav className="wl-tabs" role="tablist">
-        <button
+        <Button
           role="tab"
           aria-selected={activeTab === "goals"}
-          className={`wl-tab ${activeTab === "goals" ? "wl-tab--active" : ""}`}
+          variant={activeTab === "goals" ? "primary" : "ghost"}
+          size="sm"
           onClick={() => setActiveTab("goals")}
         >
           Goals
           <span className="wl-tab__badge">{activeGoals}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           role="tab"
           aria-selected={activeTab === "interventions"}
-          className={`wl-tab ${activeTab === "interventions" ? "wl-tab--active" : ""}`}
+          variant={activeTab === "interventions" ? "primary" : "ghost"}
+          size="sm"
           onClick={() => setActiveTab("interventions")}
         >
           Interventions
           <span className="wl-tab__badge">{activeInterventions}</span>
-        </button>
+        </Button>
       </nav>
 
       {/* Goals tab */}
@@ -326,13 +328,14 @@ function CarePlanSection({ carePlan }: { carePlan: CarePlan }) {
           <div className="wl-tab-panel__header">
             <h4>Care Goals ({sortedGoals.length})</h4>
             {!showGoalForm && (
-              <button
+              <Button
                 type="button"
-                className="wl-btn wl-btn--sm wl-btn--primary"
+                variant="primary"
+                size="sm"
                 onClick={() => setShowGoalForm(true)}
               >
                 + New Goal
-              </button>
+              </Button>
             )}
           </div>
           {showGoalForm && (
@@ -353,13 +356,14 @@ function CarePlanSection({ carePlan }: { carePlan: CarePlan }) {
           <div className="wl-tab-panel__header">
             <h4>Interventions ({sortedInterventions.length})</h4>
             {!showInterventionForm && (
-              <button
+              <Button
                 type="button"
-                className="wl-btn wl-btn--sm wl-btn--primary"
+                variant="primary"
+                size="sm"
                 onClick={() => setShowInterventionForm(true)}
               >
                 + New Intervention
-              </button>
+              </Button>
             )}
           </div>
           {showInterventionForm && (

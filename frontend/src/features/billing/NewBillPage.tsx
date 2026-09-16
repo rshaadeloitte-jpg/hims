@@ -9,6 +9,8 @@ import { type ChargeValues } from "./zodSchema";
 import { createBillSchema, chargeSchema, type CreateBillValues } from "./zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Button, Checkbox, Table } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 export function NewBillPage() {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ export function NewBillPage() {
 
   const createBill = useCreateBill();
   const createCharge = useCreateCharge();
+  const isSelfCompany = billForm.watch("isSelfCompany");
 
   const handleAddCharge = (charge: ChargeValues) => {
     setCharges((prev) => [...prev, charge]);
@@ -57,7 +60,7 @@ export function NewBillPage() {
           <legend>Patient</legend>
           {!selectedPatient ? (
             <>
-              <input
+              <TextInput
                 type="text"
                 placeholder="Search by name, mobile, ABHA..."
                 value={patientQuery}
@@ -79,57 +82,58 @@ export function NewBillPage() {
           ) : (
             <div className="selected-patient">
               {selectedPatient.name} (ID: {selectedPatient.id})
-              <button type="button" onClick={() => {
+              <Button type="button" variant="ghost" size="sm" onClick={() => {
                 setSelectedPatient(null);
                 billForm.setValue("patientId", undefined as any);
-              }}>Change</button>
+              }}>Change</Button>
             </div>
           )}
         </fieldset>
 
         <fieldset>
           <legend>Bill Options</legend>
-          <label>
-            Encounter ID
-            <input type="number" {...billForm.register("encounterId")} />
-          </label>
-          <label>
-            Admission ID
-            <input type="number" {...billForm.register("admissionId")} />
-          </label>
-          <label>
-            Prescriber Doctor
-            <input type="number" {...billForm.register("prescriberDoctorId")} />
-          </label>
-          <label>
-            <input type="checkbox" {...billForm.register("isSelfCompany")} />
-            Self Company
-          </label>
+          <FormField label="Encounter ID">
+            <TextInput type="number" {...billForm.register("encounterId")} />
+          </FormField>
+          <FormField label="Admission ID">
+            <TextInput type="number" {...billForm.register("admissionId")} />
+          </FormField>
+          <FormField label="Prescriber Doctor">
+            <TextInput type="number" {...billForm.register("prescriberDoctorId")} />
+          </FormField>
+          <Checkbox.Root
+            checked={!!isSelfCompany}
+            onCheckedChange={(e) => billForm.setValue("isSelfCompany", !!e.checked, { shouldValidate: true })}
+          >
+            <Checkbox.HiddenInput {...billForm.register("isSelfCompany")} />
+            <Checkbox.Control />
+            <Checkbox.Label>Self Company</Checkbox.Label>
+          </Checkbox.Root>
         </fieldset>
 
         <fieldset>
           <legend>Charges</legend>
           <ChargeEntryForm onAdd={handleAddCharge} />
           {charges.length > 0 && (
-            <table className="table">
-              <thead><tr><th>Service</th><th>Rate</th><th>Qty</th><th></th></tr></thead>
-              <tbody>
+            <Table.Root size="sm" variant="line">
+              <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Service</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Rate</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+              <Table.Body>
                 {charges.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.serviceName}</td>
-                    <td>{c.rate?.toFixed(2)}</td>
-                    <td>{c.qty}</td>
-                    <td><button type="button" onClick={() => handleRemoveCharge(i)}>✕</button></td>
-                  </tr>
+                  <Table.Row key={i}>
+                    <Table.Cell>{c.serviceName}</Table.Cell>
+                    <Table.Cell>{c.rate?.toFixed(2)}</Table.Cell>
+                    <Table.Cell>{c.qty}</Table.Cell>
+                    <Table.Cell><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveCharge(i)}>✕</Button></Table.Cell>
+                  </Table.Row>
                 ))}
-              </tbody>
-            </table>
+              </Table.Body>
+            </Table.Root>
           )}
         </fieldset>
 
-        <button type="submit" className="btn btn--primary" disabled={createBill.isPending || !selectedPatient}>
-          {createBill.isPending ? "Creating..." : "Create Bill"}
-        </button>
+        <Button type="submit" variant="primary" disabled={createBill.isPending || !selectedPatient} loading={createBill.isPending} loadingText="Creating...">
+          Create Bill
+        </Button>
       </form>
     </section>
   );
@@ -148,11 +152,11 @@ function ChargeEntryForm({ onAdd }: { onAdd: (c: ChargeValues) => void }) {
 
   return (
     <form className="inline-form" onSubmit={handleSubmit(submit)}>
-      <input type="number" placeholder="Service ID" {...register("serviceId")} />
-      <input placeholder="Service Name" {...register("serviceName")} />
-      <input type="number" step="0.01" placeholder="Rate" {...register("rate")} />
-      <input type="number" placeholder="Qty" {...register("qty")} />
-      <button type="submit" className="btn">+ Add</button>
+      <TextInput type="number" placeholder="Service ID" {...register("serviceId")} />
+      <TextInput placeholder="Service Name" {...register("serviceName")} />
+      <TextInput type="number" step="0.01" placeholder="Rate" {...register("rate")} />
+      <TextInput type="number" placeholder="Qty" {...register("qty")} />
+      <Button type="submit" variant="primary">+ Add</Button>
     </form>
   );
 }

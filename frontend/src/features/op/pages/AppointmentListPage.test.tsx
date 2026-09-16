@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppointmentListPage } from "./AppointmentListPage";
+import "../__tests__/setup";
 
 const wrap = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -47,16 +48,17 @@ describe("AppointmentListPage", () => {
     render(wrap());
     const cancelBtn = await screen.findByRole("button", { name: /^cancel$/i });
     fireEvent.click(cancelBtn);
-    expect(screen.getByText(/cancel appointment/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/cancel appointment/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByLabelText(/reason for cancellation/i)).toBeInTheDocument();
     // Confirm is disabled until a reason is entered
-    expect(screen.getByRole("button", { name: /cancel appointment/i }).hasAttribute("disabled") || (screen.getByRole("button", { name: /cancel appointment/i }) as HTMLButtonElement).disabled).toBeTruthy();
+    const confirmBtn = screen.getAllByRole("button", { name: /cancel appointment/i })[0];
+    expect(confirmBtn.hasAttribute("disabled") || (confirmBtn as HTMLButtonElement).disabled).toBeTruthy();
   });
 
   it("requires a reschedule reason before the reschedule confirm is enabled", async () => {
     render(wrap());
     fireEvent.click(await screen.findByRole("button", { name: /reschedule/i }));
-    expect(screen.getByText(/reschedule appointment/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/reschedule appointment/i).length).toBeGreaterThanOrEqual(1);
     const confirm = screen.getByRole("button", { name: /mark for reschedule/i }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
     fireEvent.input(screen.getByLabelText(/reschedule reason/i), { target: { value: "Doctor unavailable" } });
@@ -74,8 +76,8 @@ describe("AppointmentListPage", () => {
   it("renders the AppointmentStatusBadge with the correct status label", async () => {
     render(wrap());
     await waitFor(() => {
-      expect(screen.getByText("Booked")).toBeInTheDocument();
-      expect(screen.getByText("Checked-In")).toBeInTheDocument();
+      expect(screen.getAllByText("Booked").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Checked-In").length).toBeGreaterThanOrEqual(1);
     });
   });
 

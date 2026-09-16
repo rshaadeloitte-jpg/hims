@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Button, Table } from '@chakra-ui/react';
+import { TextInput } from "../../components/ui";
 import { useLabOrder, useEnterResults } from './queries';
 import { useResultValidation } from './useResultValidation';
-import type { LabDetail, LabTest } from './types';
 
 interface ResultEntryProps {
   orderId: number;
@@ -13,7 +14,6 @@ export function ResultEntry({ orderId, onCompleted }: ResultEntryProps) {
   const enterResults = useEnterResults();
   const [resultValues, setResultValues] = useState<Record<number, string>>({});
   const [remarks, setRemarks] = useState<Record<number, string>>({});
-  const testMap = new Map<number, LabTest>();
   const { validate } = useResultValidation();
 
   const handleSubmit = async () => {
@@ -56,46 +56,46 @@ export function ResultEntry({ orderId, onCompleted }: ResultEntryProps) {
           <h2 className="text-xl font-semibold text-gray-900">Result Entry</h2>
           <p className="text-sm text-gray-500">Order #{orderId}</p>
         </div>
-        <button onClick={handleSubmit} disabled={!hasValues || enterResults.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors">
+        <Button variant="primary" size="sm" onClick={handleSubmit} loading={enterResults.isPending} loadingText="Saving..." disabled={!hasValues || enterResults.isPending}>
           {enterResults.isPending ? 'Saving...' : 'Save Results'}
-        </button>
+        </Button>
       </header>
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
         <p className="text-sm text-gray-600 mb-2">Drag and drop result files here, or</p>
-        <button className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium text-gray-700">Browse Files</button>
+        <Button variant="secondary" size="sm">Browse Files</Button>
         <p className="text-xs text-gray-500 mt-2">Supported formats: PDF, CSV, Excel (Max 10MB)</p>
       </div>
       <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference Range</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result Value</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Test</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reference Range</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Result Value</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Remarks</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {pendingDetails.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No tests pending result entry</td></tr>
+              <Table.Row><Table.Cell colSpan={5}>No tests pending result entry</Table.Cell></Table.Row>
             ) : pendingDetails.map((detail) => {
               const validation = validate(resultValues[detail.detailId] || '');
               return (
-                <tr key={detail.detailId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3"><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></td>
-                  <td className="px-4 py-3"><span className="font-mono text-sm text-gray-600">{detail.referenceRange || 'N/A'}</span></td>
-                  <td className="px-4 py-3">
-                    <input type="text" value={resultValues[detail.detailId] || ''} onChange={(e) => setResultValues(prev => ({ ...prev, [detail.detailId]: e.target.value }))} placeholder="Enter value" className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 font-mono text-sm ${validation.isCritical ? 'border-red-500 focus:ring-red-500 bg-red-50' : validation.isAbnormal ? 'border-yellow-500 focus:ring-yellow-500 bg-yellow-50' : 'border-gray-300 focus:ring-blue-500'}`} />
+                <Table.Row key={detail.detailId}>
+                  <Table.Cell><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></Table.Cell>
+                  <Table.Cell><span className="font-mono text-sm text-gray-600">{detail.referenceRange || 'N/A'}</span></Table.Cell>
+                  <Table.Cell>
+                    <TextInput type="text" value={resultValues[detail.detailId] || ''} onChange={(e) => setResultValues(prev => ({ ...prev, [detail.detailId]: e.target.value }))} placeholder="Enter value" />
                     {validation.message && <div className={`text-xs ${validation.isCritical ? 'text-red-700 font-semibold' : validation.isAbnormal ? 'text-yellow-700' : 'text-green-700'}`}>{validation.message}</div>}
-                  </td>
-                  <td className="px-4 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${detail.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>{detail.status}</span></td>
-                  <td className="px-4 py-3"><input type="text" value={remarks[detail.detailId] || ''} onChange={(e) => setRemarks(prev => ({ ...prev, [detail.detailId]: e.target.value }))} placeholder="Optional remarks" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" /></td>
-                </tr>
+                  </Table.Cell>
+                  <Table.Cell><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${detail.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>{detail.status}</span></Table.Cell>
+                  <Table.Cell><TextInput type="text" value={remarks[detail.detailId] || ''} onChange={(e) => setRemarks(prev => ({ ...prev, [detail.detailId]: e.target.value }))} placeholder="Optional remarks" /></Table.Cell>
+                </Table.Row>
               );
             })}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
     </section>
   );

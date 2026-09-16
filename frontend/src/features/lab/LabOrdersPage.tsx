@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, Table } from "@chakra-ui/react";
+import { TextInput } from "../../components/ui";
 import {
   useLabOrders,
   useLabOrder,
@@ -41,64 +43,64 @@ export function LabOrdersPage() {
   return (
     <section className="page">
       <header className="page__header"><h1>Lab Orders</h1></header>
-      <table className="table">
-        <thead><tr><th>#</th><th>Patient</th><th>Status</th><th>Outsourced</th><th>Date</th></tr></thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">#</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Outsourced</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Body>
           {orders.map((o) => (
-            <tr key={o.orderId} className={selectedId === o.orderId ? "row-selected" : ""} onClick={() => setSelectedId(o.orderId)}>
-              <td>{o.orderId}</td>
-              <td>{o.patientId}</td>
-              <td>{o.status}</td>
-              <td>{o.isOutSourced ? "Yes" : "No"}</td>
-              <td>{o.orderDate?.slice(0, 10)}</td>
-            </tr>
+            <Table.Row key={o.orderId} onClick={() => setSelectedId(o.orderId)}>
+              <Table.Cell>{o.orderId}</Table.Cell>
+              <Table.Cell>{o.patientId}</Table.Cell>
+              <Table.Cell>{o.status}</Table.Cell>
+              <Table.Cell>{o.isOutSourced ? "Yes" : "No"}</Table.Cell>
+              <Table.Cell>{o.orderDate?.slice(0, 10)}</Table.Cell>
+            </Table.Row>
           ))}
-          {orders.length === 0 && <tr><td colSpan={5} className="muted">No orders.</td></tr>}
-        </tbody>
-      </table>
+          {orders.length === 0 && <Table.Row><Table.Cell colSpan={5}>No orders.</Table.Cell></Table.Row>}
+        </Table.Body>
+      </Table.Root>
 
       {order && (
         <>
           <h2>Order #{order.orderId} — Workflow</h2>
           <div className="row">
-            <button className="btn" onClick={() => collect.mutate(order.orderId)}>Collect</button>
-            <button className="btn" onClick={() => start.mutate(order.orderId)}>Start</button>
-            <button className="btn" onClick={() => cancel.mutate(order.orderId)}>Cancel</button>
+            <Button variant="secondary" onClick={() => collect.mutate(order.orderId)}>Collect</Button>
+            <Button variant="secondary" onClick={() => start.mutate(order.orderId)}>Start</Button>
+            <Button variant="secondary" onClick={() => cancel.mutate(order.orderId)}>Cancel</Button>
           </div>
-          <table className="table">
-            <thead><tr><th>Test</th><th>Status</th><th>Barcode</th><th>Actions</th><th>Result</th></tr></thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Test</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Barcode</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Result</Table.ColumnHeader></Table.Row></Table.Header>
+            <Table.Body>
               {order.details?.map((d) => (
-                <tr key={d.detailId}>
-                  <td>{d.testName}</td>
-                  <td>{d.status}{d.verified ? " (verified)" : ""}{d.critical ? " ⚠ critical" : ""}</td>
-                  <td>{d.barcode ?? "—"}</td>
-                  <td>
-                    <button className="btn btn--small" onClick={() => barcode.mutate({ id: order.orderId, detailId: d.detailId })}>Barcode</button>
-                    <button className="btn btn--small" onClick={() => accept.mutate({ id: order.orderId, detailId: d.detailId })}>Accept</button>
-                    <button className="btn btn--small" onClick={() => reject.mutate({ id: order.orderId, detailId: d.detailId })}>Reject</button>
-                    <button className="btn btn--small" onClick={() => finalize.mutate({ id: order.orderId, detailId: d.detailId })}>Finalize</button>
-                    <button className="btn btn--small" onClick={() => verify.mutate({ id: order.orderId, detailId: d.detailId })}>Verify</button>
-                    <button className="btn btn--small" onClick={() => notifyCritical.mutate({ id: order.orderId, detailId: d.detailId })}>Notify Critical</button>
-                  </td>
-                  <td>
+                <Table.Row key={d.detailId}>
+                  <Table.Cell>{d.testName}</Table.Cell>
+                  <Table.Cell>{d.status}{d.verified ? " (verified)" : ""}{d.critical ? " ⚠ critical" : ""}</Table.Cell>
+                  <Table.Cell>{d.barcode ?? "—"}</Table.Cell>
+                  <Table.Cell>
+                    <Button variant="secondary" size="sm" onClick={() => barcode.mutate({ id: order.orderId, detailId: d.detailId })}>Barcode</Button>
+                    <Button variant="secondary" size="sm" onClick={() => accept.mutate({ id: order.orderId, detailId: d.detailId })}>Accept</Button>
+                    <Button variant="secondary" size="sm" onClick={() => reject.mutate({ id: order.orderId, detailId: d.detailId })}>Reject</Button>
+                    <Button variant="secondary" size="sm" onClick={() => finalize.mutate({ id: order.orderId, detailId: d.detailId })}>Finalize</Button>
+                    <Button variant="secondary" size="sm" onClick={() => verify.mutate({ id: order.orderId, detailId: d.detailId })}>Verify</Button>
+                    <Button variant="secondary" size="sm" onClick={() => notifyCritical.mutate({ id: order.orderId, detailId: d.detailId })}>Notify Critical</Button>
+                  </Table.Cell>
+                  <Table.Cell>
                     <div className="row">
-                      <input
+                      <TextInput
                         type="text"
                         placeholder="Result value"
                         value={resultValues[d.detailId] ?? ""}
                         onChange={(e) => setResultValues((prev) => ({ ...prev, [d.detailId]: e.target.value }))}
                       />
-                      <button className="btn btn--small" onClick={() => submitResults(d.detailId)}>Enter</button>
+                      <Button variant="secondary" size="sm" onClick={() => submitResults(d.detailId)}>Enter</Button>
                     </div>
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
               {!order.details || order.details.length === 0 ? (
-                <tr><td colSpan={5} className="muted">No test details.</td></tr>
+                <Table.Row><Table.Cell colSpan={5}>No test details.</Table.Cell></Table.Row>
               ) : null}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </>
       )}
     </section>

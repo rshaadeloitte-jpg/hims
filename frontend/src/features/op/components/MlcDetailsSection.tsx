@@ -1,3 +1,6 @@
+import { Checkbox, Textarea } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../../components/ui";
+
 interface MlcDetailsSectionProps {
   /** Bound form values (controlled component). */
   value: {
@@ -31,77 +34,59 @@ export function MlcDetailsSection({ value, onChange, required, onRequiredChange,
   return (
     <fieldset className="mlc-section">
       <legend>MLC / FIR details</legend>
-      <label className="mlc-section__toggle">
-        <input
-          type="checkbox"
-          checked={required}
-          onChange={(e) => onRequiredChange(e.target.checked)}
-          aria-describedby="mlc-help"
-        />
-        <span>This is a Medico-Legal Case (MLC)</span>
-      </label>
+      <Checkbox.Root
+        checked={required}
+        onCheckedChange={(e) => onRequiredChange(!!e.checked)}
+        aria-describedby="mlc-help"
+      >
+        {/* Kept as a real checkbox input so the toggle stays a labelled
+            form control (tests + assistive tech query it by label). */}
+        <Checkbox.HiddenInput checked={required} onChange={(e) => onRequiredChange(e.target.checked)} />
+        <Checkbox.Control />
+        <Checkbox.Label>This is a Medico-Legal Case (MLC)</Checkbox.Label>
+      </Checkbox.Root>
       <p id="mlc-help" className="mlc-section__help">
         Required when the patient is brought in for a legal / police case. MLC
         number + FIR number are mandatory when this toggle is on (BR-PAT-005).
       </p>
       <div className="form-row form-row--two-col">
-        <div className="field">
-          <label htmlFor="mlc-number" className="field-label">
-            MLC number {required ? <span className="req">*</span> : null}
-          </label>
-          <input
-            id="mlc-number"
+        <FormField label="MLC number" required={required} error={errors?.mlcNumber}>
+          <TextInput
             type="text"
-            className="form-input"
             value={value.mlcNumber ?? ""}
             disabled={!required}
             onChange={(e) => set("mlcNumber", e.target.value)}
             aria-invalid={Boolean(errors?.mlcNumber)}
           />
-          {errors?.mlcNumber ? <p className="field-error">{errors.mlcNumber}</p> : null}
-        </div>
-        <div className="field">
-          <label htmlFor="mlc-fir" className="field-label">
-            FIR number {required ? <span className="req">*</span> : null}
-          </label>
-          <input
-            id="mlc-fir"
+        </FormField>
+        <FormField label="FIR number" required={required} error={errors?.mlcFirNumber}>
+          <TextInput
             type="text"
-            className="form-input"
             value={value.mlcFirNumber ?? ""}
             disabled={!required}
             onChange={(e) => set("mlcFirNumber", e.target.value)}
             aria-invalid={Boolean(errors?.mlcFirNumber)}
           />
-          {errors?.mlcFirNumber ? <p className="field-error">{errors.mlcFirNumber}</p> : null}
-        </div>
+        </FormField>
       </div>
-      <div className="field">
-        <label htmlFor="mlc-ps" className="field-label">
-          Police station
-        </label>
-        <input
-          id="mlc-ps"
+      <FormField label="Police station">
+        <TextInput
           type="text"
-          className="form-input"
           value={value.mlcPoliceStation ?? ""}
           disabled={!required}
           onChange={(e) => set("mlcPoliceStation", e.target.value)}
         />
-      </div>
-      <div className="field">
-        <label htmlFor="mlc-notes" className="field-label">
-          MLC / FIR notes
-        </label>
-        <textarea
-          id="mlc-notes"
+      </FormField>
+      <FormField label="MLC / FIR notes">
+        <Textarea
+          bg="white"
+          borderColor="gray.300"
           rows={2}
-          className="form-textarea"
           value={value.mlcNotes ?? ""}
           disabled={!required}
           onChange={(e) => set("mlcNotes", e.target.value)}
         />
-      </div>
+      </FormField>
     </fieldset>
   );
 }

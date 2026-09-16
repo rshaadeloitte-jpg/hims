@@ -4,6 +4,8 @@ import { useBills, type BillFilter } from "./queries";
 import { billFilterSchema, type BillFilterValues } from "./zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { Button, Table } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 
 const statusBadge = (label: string, tone: "green" | "red" | "yellow" | "gray") => (
   <span className={`badge badge--${tone}`}>{label}</span>
@@ -43,59 +45,55 @@ export function BillListPage() {
       </header>
 
       <form className="filters" onSubmit={handleSubmit(onSubmit)}>
-        <label>
-          Patient ID
-          <input type="number" {...register("patientId")} />
-        </label>
-        <label>
-          From
-          <input type="date" {...register("fromDate")} />
-        </label>
-        <label>
-          To
-          <input type="date" {...register("toDate")} />
-        </label>
-        <label>
-          Status
-          <select {...register("isSettled")}>
+        <FormField label="Patient ID">
+          <TextInput type="number" {...register("patientId")} />
+        </FormField>
+        <FormField label="From">
+          <TextInput type="date" {...register("fromDate")} />
+        </FormField>
+        <FormField label="To">
+          <TextInput type="date" {...register("toDate")} />
+        </FormField>
+        <FormField label="Status">
+          <HimsSelect {...register("isSettled")}>
             <option value="">All</option>
             <option value="true">Settled</option>
             <option value="false">Unsettled</option>
-          </select>
-        </label>
-        <button type="submit" className="btn">Search</button>
+          </HimsSelect>
+        </FormField>
+        <Button type="submit" variant="primary">Search</Button>
       </form>
 
       {isLoading && <p>Loading…</p>}
       {isError && <p className="error">{(error as Error).message}</p>}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Bill No</th>
-            <th>Patient</th>
-            <th>Total</th>
-            <th>Balance</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Bill No</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Total</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Balance</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {bills.map((b) => (
-            <tr key={b.billId}>
-              <td><Link to={`/billing/${b.billId}`}>{b.billNo}</Link></td>
-              <td>{b.patientId}</td>
-              <td>{b.totalAmount?.toFixed(2)}</td>
-              <td>{(b.balanceSelf + b.balanceNonSelf).toFixed(2)}</td>
-              <td>{billStatus(b)}</td>
-              <td>{b.finalizedAt?.slice(0, 10) ?? "—"}</td>
-            </tr>
+            <Table.Row key={b.billId}>
+              <Table.Cell><Link to={`/billing/${b.billId}`}>{b.billNo}</Link></Table.Cell>
+              <Table.Cell>{b.patientId}</Table.Cell>
+              <Table.Cell>{b.totalAmount?.toFixed(2)}</Table.Cell>
+              <Table.Cell>{(b.balanceSelf + b.balanceNonSelf).toFixed(2)}</Table.Cell>
+              <Table.Cell>{billStatus(b)}</Table.Cell>
+              <Table.Cell>{b.finalizedAt?.slice(0, 10) ?? "—"}</Table.Cell>
+            </Table.Row>
           ))}
           {bills.length === 0 && !isLoading && (
-            <tr><td colSpan={6} className="muted">No bills found.</td></tr>
+            <Table.Row><Table.Cell colSpan={6} className="muted">No bills found.</Table.Cell></Table.Row>
           )}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </section>
   );
 }

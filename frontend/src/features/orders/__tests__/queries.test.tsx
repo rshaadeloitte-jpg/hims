@@ -10,7 +10,6 @@ import {
   useWorkflowSteps,
   useAdvanceWorkflowStep,
   useExternalOrders,
-  useCreateExternalOrder,
   useInvestigations,
 } from "../queries";
 

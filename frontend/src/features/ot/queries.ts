@@ -61,6 +61,9 @@ export interface OtSchedule {
   preBilling?: boolean;
   procedures?: OtProcedure[];
   details?: OtScheduleDetail[];
+  surgeryDate?: string;
+  otRoom?: string;
+  anesthesiaType?: string;
 }
 
 export interface OtScheduleInput {

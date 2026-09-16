@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GoalsInterventions } from "./GoalsInterventions";
 import { useCarePlansByAdmission, useUpdateGoalStatus, useUpdateInterventionStatus } from "./queries";
@@ -84,6 +84,8 @@ describe("GoalsInterventions", () => {
     expect(screen.getByText("Post-op care")).toBeInTheDocument();
     expect(screen.getByText("Monitor vitals")).toBeInTheDocument();
     expect(screen.getByText("Pain under control")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Interventions/i }));
     expect(screen.getByText("Check vitals q4h")).toBeInTheDocument();
   });
 
@@ -115,10 +117,8 @@ describe("GoalsInterventions", () => {
 
     renderGoalsInterventions(100);
 
-    // Active goals badge shows 1
-    expect(screen.getByText("1")).toBeInTheDocument();
-    // Active interventions badge shows 1
-    expect(screen.getAllByText("1").length).toBeGreaterThanOrEqual(1);
+    // Active goals and active interventions badges both show 1
+    expect(screen.getAllByText("1").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders resolved badge for resolved care plan", () => {

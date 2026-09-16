@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
-import type { Prescription, DispensePayload, ItemSale, SaleReturn, Intervention } from "./types";
+import type { Prescription, DispensePayload } from "./types";
 
 export interface DrugAllergy {
   allergyId: number;
@@ -133,17 +133,19 @@ export function useRejectSaleReturn() {
   });
 }
 
-export function useDrugAllergies() {
-  return useQuery<any[]>({
-    queryKey: ["pharmacy", "drug-allergies"],
-    queryFn: () => pharmacyJson<any[]>(`${PHARMACY_BASE}/api/v1/pharmacy/drug-allergies`),
+export function useDrugAllergies(patientId?: number) {
+  return useQuery<DrugAllergy[]>({
+    queryKey: patientId ? pharmacyQueryKeys.allergies(patientId) : ["pharmacy", "drug-allergies"],
+    queryFn: () => pharmacyJson<DrugAllergy[]>(`${PHARMACY_BASE}/api/v1/pharmacy/drug-allergies${patientId ? `?patientId=${patientId}` : ""}`),
+    enabled: patientId === undefined || patientId > 0,
   });
 }
 
-export function useDrugInteractions() {
-  return useQuery<any[]>({
-    queryKey: ["pharmacy", "drug-interactions"],
-    queryFn: () => pharmacyJson<any[]>(`${PHARMACY_BASE}/api/v1/pharmacy/drug-interactions`),
+export function useDrugInteractions(patientId?: number) {
+  return useQuery<DrugInteraction[]>({
+    queryKey: patientId ? pharmacyQueryKeys.interactions(patientId) : ["pharmacy", "drug-interactions"],
+    queryFn: () => pharmacyJson<DrugInteraction[]>(`${PHARMACY_BASE}/api/v1/pharmacy/drug-interactions${patientId ? `?patientId=${patientId}` : ""}`),
+    enabled: patientId === undefined || patientId > 0,
   });
 }
 

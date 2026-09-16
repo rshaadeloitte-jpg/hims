@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Button, HStack } from "@chakra-ui/react";
 import { TOKEN_STATUS } from "../queue/zodSchema";
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -77,35 +78,41 @@ function PatientCard({
       <div className="text-xs font-medium text-gray-500">{statusLabel}</div>
 
       {patient.status === 1 && onCall && (
-        <button
+        <Button
           type="button"
-          className="mt-1 w-full text-xs bg-blue-600 text-white py-1 rounded hover:bg-blue-700"
+          variant="primary"
+          size="sm"
+          w="full"
           onClick={() => onCall(patient.tokenId)}
         >
           Call
-        </button>
+        </Button>
       )}
       {patient.status === 2 && (
-        <div className="flex gap-1 mt-1">
+        <HStack gap={1}>
           {onComplete && (
-            <button
+            <Button
               type="button"
-              className="flex-1 text-xs bg-green-600 text-white py-1 rounded hover:bg-green-700"
+              variant="primary"
+              size="sm"
+              flex={1}
               onClick={() => onComplete(patient.tokenId)}
             >
               Complete
-            </button>
+            </Button>
           )}
           {onNoShow && (
-            <button
+            <Button
               type="button"
-              className="flex-1 text-xs bg-gray-500 text-white py-1 rounded hover:bg-gray-600"
+              variant="secondary"
+              size="sm"
+              flex={1}
               onClick={() => onNoShow(patient.tokenId)}
             >
               No-show
-            </button>
+            </Button>
           )}
-        </div>
+        </HStack>
       )}
     </div>
   );
@@ -136,7 +143,6 @@ export function DoctorQueue({
   onCallPatient,
   onComplete,
   onNoShow,
-  onTransfer,
 }: DoctorQueueState) {
   const { data: patients = [], isLoading, isError } = useDoctorQueue(doctorId, date);
 

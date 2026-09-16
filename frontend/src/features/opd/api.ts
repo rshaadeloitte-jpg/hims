@@ -1,9 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
-  appointmentSchema, 
   type AppointmentValues,
   slotSelectionSchema,
-  type SlotSelectionValues
 } from './validation';
 
 export interface DoctorScheduleSlot {
@@ -18,7 +16,7 @@ export interface DoctorScheduleSlot {
 }
 
 export function fetchAvailableSlots(params: { doctorId: number; date: string }) {
-  return fetch(`/api/opd/slots?${new URLSearchParams(params)}`)
+  return fetch(`/api/opd/slots?${new URLSearchParams({ doctorId: String(params.doctorId), date: params.date })}`)
     .then(res => res.json())
     .then(data => slotSelectionSchema.parse(data));
 }

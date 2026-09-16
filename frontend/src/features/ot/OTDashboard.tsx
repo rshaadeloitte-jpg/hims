@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { FormField, TextInput } from "../../components/ui";
 import {
   useOtSchedules,
   useOtDashboard,
@@ -34,7 +35,6 @@ interface RoomCardProps {
 }
 
 function RoomCard({ room, schedules }: RoomCardProps) {
-  const roomId = room.id ?? room.roomId ?? 0;
   const isActive = room.isActive !== false;
 
   const roomSchedules = useMemo(
@@ -111,7 +111,6 @@ interface TimelineProps {
 }
 
 function Timeline({ schedules }: TimelineProps) {
-  const hours = Array.from({ length: 14 }, (_, i) => i + 7); // 7 AM to 8 PM
   const sorted = useMemo(() => [...schedules].sort((a, b) => (a.scheduledStart ?? "").localeCompare(b.scheduledStart ?? "")), [schedules]);
 
   return (
@@ -179,14 +178,14 @@ export function OTDashboard() {
           <p className="text-sm text-gray-500">Real-time room status and surgery board</p>
         </div>
         <div className="flex items-center gap-2">
-          <label htmlFor="dashDate" className="text-sm text-gray-600">Date</label>
-          <input
-            id="dashDate"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500"
-          />
+          <FormField label="Date">
+            <TextInput
+              id="dashDate"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormField>
         </div>
       </header>
 

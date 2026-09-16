@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PatientSearch } from "./PatientSearch";
 import { opSamples } from "../__tests__/mocks/handlers";
+import "../__tests__/setup";
 
 const wrap = (children: React.ReactNode) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

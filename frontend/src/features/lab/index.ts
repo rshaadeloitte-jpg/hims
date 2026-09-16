@@ -65,7 +65,7 @@ export type {
   LabDetail,
   LabDetailStatus,
   Sample,
-  ResultEntry,
+  ResultEntry as ResultEntryData,
   VerificationStatus,
   Machine,
   WorkloadItem,

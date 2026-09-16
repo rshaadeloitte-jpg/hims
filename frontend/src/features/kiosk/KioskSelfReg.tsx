@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSelfRegister } from "./queries";
-import { kioskRegistrationSchema, KioskRegistrationForm } from "./zodSchema";
+import { kioskRegistrationSchema } from "./zodSchema";
 
 export function KioskSelfReg() {
   type FormState = {
@@ -120,7 +120,7 @@ export function KioskSelfReg() {
             <select
               className="kiosk-select kiosk-input"
               value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              onChange={(e) => setForm({ ...form, gender: e.target.value as FormState["gender"] })}
             >
               <option value="">Select Gender</option>
               <option value="M">Male</option>

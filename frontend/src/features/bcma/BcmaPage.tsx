@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useBcmaScans, useRecordBcmaScan } from "./queries";
-import { bcmaScanSchema } from "./zodSchema";
 
 export function BcmaPage() {
   const { data: scans = [], isLoading } = useBcmaScans();

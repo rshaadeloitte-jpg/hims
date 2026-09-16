@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 import { EncounterRecord } from "./EncounterRecord";
 import { DocumentUpload } from "./DocumentUpload";
 
@@ -19,44 +21,36 @@ export function PmrdPage() {
 
       {/* Patient ID input */}
       <div className="card mb-4">
-        <label className="text-sm">
-          <span className="block font-medium">Patient ID</span>
-          <input
+        <FormField label="Patient ID">
+          <TextInput
             type="number"
-            className="w-full border rounded px-2 py-1.5"
             placeholder="Enter patient ID"
             value={patientId ?? ""}
             onChange={(e) => setPatientId(e.target.value ? Number(e.target.value) : undefined)}
           />
-        </label>
+        </FormField>
       </div>
 
       {/* Tab navigation */}
       <div className="flex gap-2 border-b pb-2 mb-4" role="tablist">
-        <button
+        <Button
           role="tab"
           aria-selected={activeTab === "forms"}
-          className={`px-3 py-1.5 text-sm rounded-t transition-colors ${
-            activeTab === "forms"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          variant={activeTab === "forms" ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setActiveTab("forms")}
         >
           JSY Forms
-        </button>
-        <button
+        </Button>
+        <Button
           role="tab"
           aria-selected={activeTab === "documents"}
-          className={`px-3 py-1.5 text-sm rounded-t transition-colors ${
-            activeTab === "documents"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+          variant={activeTab === "documents" ? "primary" : "secondary"}
+          size="sm"
           onClick={() => setActiveTab("documents")}
         >
           Documents
-        </button>
+        </Button>
       </div>
 
       {/* Tab content */}

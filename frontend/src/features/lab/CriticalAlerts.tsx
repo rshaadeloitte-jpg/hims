@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Button } from '@chakra-ui/react';
 import { useLabOrders, useNotifyCritical } from './queries';
-import type { LabOrder, LabDetail, CriticalAlert } from './types';
+import type { LabDetail, CriticalAlert } from './types';
 
 export function CriticalAlerts() {
   const { data: orders = [], isLoading } = useLabOrders();
@@ -48,7 +49,7 @@ export function CriticalAlerts() {
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                   <div className="text-sm text-gray-600"><span className="font-medium">Order:</span> #{alert.orderId}</div>
-                  {isNotified ? (<div className="flex items-center gap-2"><span className="text-green-700 text-sm font-medium">✓ Notified</span>{alert.notifiedAt && <span className="text-xs text-gray-500">{new Date(alert.notifiedAt).toLocaleString()}</span>}</div>) : (<button onClick={() => handleNotify(alert.orderId, alert.detailId)} disabled={notifyCritical.isPending} className={`px-4 py-2 text-white rounded-md hover:opacity-90 disabled:opacity-50 transition-opacity ${alert.criticalLevel === 'HIGH' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}`}>{notifyCritical.isPending ? 'Notifying...' : 'Notify Doctor'}</button>)}
+                  {isNotified ? (<div className="flex items-center gap-2"><span className="text-green-700 text-sm font-medium">✓ Notified</span>{alert.notifiedAt && <span className="text-xs text-gray-500">{new Date(alert.notifiedAt).toLocaleString()}</span>}</div>) : (<Button variant="primary" size="sm" onClick={() => handleNotify(alert.orderId, alert.detailId)} loading={notifyCritical.isPending} loadingText="Notifying...">{notifyCritical.isPending ? 'Notifying...' : 'Notify Doctor'}</Button>)}
                 </div>
                 <div className="mt-3 p-2 bg-white rounded border border-gray-200"><p className="text-xs text-gray-700"><strong>Action Required:</strong> Immediately contact the attending physician to report this critical value and document the notification.</p></div>
               </div>

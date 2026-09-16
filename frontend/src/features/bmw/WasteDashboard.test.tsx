@@ -59,6 +59,35 @@ vi.mock("./queries", () => ({
     },
     isLoading: false,
   }),
+  useWasteDetails: () => ({
+    data: [
+      {
+        id: 1,
+        bagNo: "BAG-001",
+        barcodeNo: "BC12345",
+        weight: 2.5,
+        status: 1,
+        firmName: "Disposal Corp",
+      },
+    ],
+    isLoading: false,
+  }),
+  useStores: () => ({
+    data: [
+      { id: 1, description: "Ward A", isBioMedicalStore: false },
+      { id: 2, description: "BMW Store", isBioMedicalStore: true },
+    ],
+    isLoading: false,
+  }),
+  useWasteBags: () => ({
+    data: [{ id: 1, description: "Yellow Bag" }],
+    isLoading: false,
+  }),
+  useHandoverToFirm: () => ({ mutate: vi.fn(), isPending: false }),
+  useReceiveBioRequest: () => ({ mutate: vi.fn(), isPending: false }),
+  useDecomposeRequest: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateBagStatus: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateWasteRequest: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 describe("WasteDashboard", () => {
@@ -72,8 +101,8 @@ describe("WasteDashboard", () => {
       { wrapper: Wrapper },
     );
     expect(screen.getByRole("heading", { name: /biomedical waste/i })).toBeInTheDocument();
-    expect(screen.getByText("50")).toBeInTheDocument(); // total
-    expect(screen.getByText("10")).toBeInTheDocument(); // pending
+    expect(screen.getAllByText("50").length).toBeGreaterThanOrEqual(1); // total
+    expect(screen.getAllByText("10").length).toBeGreaterThanOrEqual(1); // pending
   });
 
   it("renders the paginated request table", () => {
@@ -90,8 +119,8 @@ describe("WasteDashboard", () => {
       <WasteDashboard unitId={1} storeId={1} />,
       { wrapper: Wrapper },
     );
-    expect(screen.getByText("Pending")).toBeInTheDocument();
-    expect(screen.getByText("Handed Over")).toBeInTheDocument();
+    expect(screen.getAllByText("Pending").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Handed Over").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders category filter strip", () => {

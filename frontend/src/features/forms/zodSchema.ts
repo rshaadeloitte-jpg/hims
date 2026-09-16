@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-const emptyToUndefined = (v: unknown): unknown => (v === "" || v == null ? undefined : v);
 
 const optionalNumber = z.preprocess(
   (v) => (v === "" || v == null ? undefined : v),
@@ -36,8 +35,8 @@ export const formDefinitionSchema = z.object({
 export type FormDefinitionValues = z.infer<typeof formDefinitionSchema>;
 
 export const formSubmissionSchema = z.object({
-  id: z.number(),
-  formId: z.number(),
+  id: z.coerce.number(),
+  formId: z.coerce.number(),
   patientId: optionalNumber,
   encounterId: optionalNumber,
   submissionJson: z.string(),

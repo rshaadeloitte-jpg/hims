@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usePrescriptions, usePrescription } from "./queries";
 import type { Prescription } from "./types";
+import { Box, Button, HStack, Table, VStack } from "@chakra-ui/react";
 
 export function PrescriptionList() {
   const { data: prescriptions = [], isLoading } = usePrescriptions();
@@ -10,42 +11,42 @@ export function PrescriptionList() {
   if (isLoading) return <p className="p-4 text-center text-gray-500">Loading prescriptions…</p>;
 
   return (
-    <section className="space-y-6">
+    <VStack gap={6} align="stretch" as="section">
       <header>
         <h1 className="text-2xl font-bold text-gray-900">Prescription Dispensing</h1>
         <p className="text-sm text-gray-500 mt-1">Process pending prescriptions for dispensing</p>
       </header>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+      <Box overflowX="auto">
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">
                 #
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">
                 Patient
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">
                 Status
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              </Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">
                 Items
-              </th>
-              <th scope="col" className="relative px-6 py-3">
+              </Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase" scope="col">
                 <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+              </Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {prescriptions.map((p) => (
-              <tr key={p.id} className={selectedId === p.id ? "bg-blue-50" : ""}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.id}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
+              <Table.Row key={p.id} bg={selectedId === p.id ? "blue.50" : undefined}>
+                <Table.Cell>{p.id}</Table.Cell>
+                <Table.Cell>
                   <div className="text-sm font-medium text-gray-900">{p.patientName}</div>
                   <div className="text-xs text-gray-500">ID: {p.patientId}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                </Table.Cell>
+                <Table.Cell>
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       p.status === "PENDING"
@@ -57,32 +58,33 @@ export function PrescriptionList() {
                   >
                     {p.status}
                   </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{p.items.length}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
+                </Table.Cell>
+                <Table.Cell>{p.items.length}</Table.Cell>
+                <Table.Cell>
+                  <Button
                     onClick={() => setSelectedId(p.id)}
                     disabled={p.status !== "PENDING"}
-                    className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                    variant="ghost"
+                    size="sm"
                   >
                     {p.status === "PENDING" ? "Dispense" : "View"}
-                  </button>
-                </td>
-              </tr>
+                  </Button>
+                </Table.Cell>
+              </Table.Row>
             ))}
             {prescriptions.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+              <Table.Row>
+                <Table.Cell colSpan={5} className="px-6 py-8 text-center text-gray-500">
                   No pending prescriptions
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             )}
-          </tbody>
-        </table>
-      </div>
+          </Table.Body>
+        </Table.Root>
+      </Box>
 
       {prescription && <DispenseForm prescription={prescription} onClose={() => setSelectedId(0)} />}
-    </section>
+    </VStack>
   );
 }
 
@@ -94,11 +96,11 @@ interface DispenseFormProps {
 function DispenseForm({ prescription, onClose }: DispenseFormProps) {
   // Implementation will be in DispenseForm.tsx
   return (
-    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+    <Box mt={6} p={4} bg="gray.50" borderRadius="lg">
       <h2 className="text-lg font-medium text-gray-900 mb-4">Dispense Prescription #{prescription.id}</h2>
-      <div className="space-y-4">
+      <VStack gap={4} align="stretch">
         {prescription.items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between p-3 bg-white border rounded-md">
+          <HStack key={item.id} justify="space-between" p={3} bg="white" borderWidth="1px" borderRadius="md">
             <div>
               <div className="font-medium text-gray-900">{item.drugName}</div>
               <div className="text-sm text-gray-500">
@@ -106,17 +108,17 @@ function DispenseForm({ prescription, onClose }: DispenseFormProps) {
               </div>
             </div>
             <div className="text-sm font-medium text-gray-700">Dispensed: {item.dispensedQuantity || 0}</div>
-          </div>
+          </HStack>
         ))}
-        <div className="flex justify-end space-x-3">
-          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <HStack justify="flex-end" gap={3}>
+          <Button onClick={onClose} variant="secondary">
             Cancel
-          </button>
-          <button className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700">
+          </Button>
+          <Button variant="primary">
             Complete Dispense
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </HStack>
+      </VStack>
+    </Box>
   );
 }

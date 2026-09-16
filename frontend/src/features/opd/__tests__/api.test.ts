@@ -24,10 +24,10 @@ describe('API Functions', () => {
         doctorId: 123,
       };
       
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
-      });
+      } as any);
 
       const result = await fetchAvailableSlots({ doctorId: 123, date: '2026-09-11' });
       expect(result).toEqual(slotSelectionSchema.parse(mockResponse));
@@ -37,10 +37,10 @@ describe('API Functions', () => {
     });
 
     it('throws on invalid response', async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({}),
-      });
+      } as any);
 
       await expect(fetchAvailableSlots({ doctorId: 123, date: '2026-09-11' }))
         .rejects
@@ -56,10 +56,10 @@ describe('API Functions', () => {
         slotEnd: '09:30',
       };
       
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ id: 456 }),
-      });
+      } as any);
 
       await scheduleAppointment(mockPayload);
       expect(fetch).toHaveBeenCalledWith(

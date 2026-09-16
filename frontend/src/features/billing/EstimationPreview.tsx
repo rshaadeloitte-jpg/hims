@@ -1,13 +1,13 @@
-import { useBillEstimation } from "./hooks";
-import { type EstimationLineValues, type ConcessionPlan, type Package, type SponsorCompany } from "./hooks";
+import type { ChargeValues } from "./zodSchema";
+import type { ConcessionPlan, Package, SponsorCompany } from "./queries";
 
 interface EstimationPreviewProps {
   patientId?: number;
-  charges: EstimationLineValues[];
+  charges: ChargeValues[];
   isSelfCompany: boolean;
   sponsorCompanyId?: number;
-  concessionPlans: ConcessionPlan[];
-  packages: Package[];
+  concessionPlans?: ConcessionPlan[];
+  packages?: Package[];
   sponsors: SponsorCompany[];
 }
 
@@ -16,14 +16,12 @@ interface EstimationPreviewProps {
  * Vercel-style card layout with breakdown of charges, taxes, concessions.
  */
 export function EstimationPreview({
-  patientId,
   charges,
   isSelfCompany,
-  concessionPlans,
-  packages,
+  sponsorCompanyId,
+  packages = [],
   sponsors,
 }: EstimationPreviewProps) {
-  const estimation = useBillEstimation();
 
   const subtotal = charges.reduce((s, c) => s + c.rate * c.qty, 0);
   const estimatedTax = subtotal * 0.05; // Default 5% tax estimate

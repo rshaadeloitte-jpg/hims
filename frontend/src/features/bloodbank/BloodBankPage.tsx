@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, SimpleGrid, Table } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { useBloodBags, useBloodBankStock, useCreateBloodBag, useUpdateBloodBagStatus } from "./queries";
 import { bloodBagSchema } from "./zodSchema";
 
@@ -31,9 +33,9 @@ export function BloodBankPage() {
     <section className="page">
       <header className="page-header">
         <h1>Blood Bank</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <Button variant={showForm ? "secondary" : "primary"} onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Register Bag"}
-        </button>
+        </Button>
       </header>
 
       {stock && (
@@ -50,52 +52,56 @@ export function BloodBankPage() {
       {showForm && (
         <div className="card">
           <h2>New Blood Bag</h2>
-          <div className="form-grid">
-            <label>Blood Group {errors.bloodGroup && <span className="error">{errors.bloodGroup}</span>}</label>
-            <select value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}>
-              <option value="">Select…</option>
-              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
-            <label>Component {errors.component && <span className="error">{errors.component}</span>}</label>
-            <select value={form.component} onChange={(e) => setForm({ ...form, component: e.target.value })}>
-              <option value="">Select…</option>
-              {COMPONENTS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <label>Donor ID {errors.donorId && <span className="error">{errors.donorId}</span>}</label>
-            <input value={form.donorId} onChange={(e) => setForm({ ...form, donorId: e.target.value })} />
-            <label>Volume (ml) {errors.volume && <span className="error">{errors.volume}</span>}</label>
-            <input type="number" value={form.volume} onChange={(e) => setForm({ ...form, volume: e.target.value })} />
-          </div>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={createBag.isPending}>
-            {createBag.isPending ? "Saving…" : "Save Bag"}
-          </button>
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Blood Group" error={errors.bloodGroup}>
+              <HimsSelect aria-label="Blood Group" value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}>
+                <option value="">Select…</option>
+                {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((g) => <option key={g} value={g}>{g}</option>)}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Component" error={errors.component}>
+              <HimsSelect aria-label="Component" value={form.component} onChange={(e) => setForm({ ...form, component: e.target.value })}>
+                <option value="">Select…</option>
+                {COMPONENTS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </HimsSelect>
+            </FormField>
+            <FormField label="Donor ID" error={errors.donorId}>
+              <TextInput aria-label="Donor ID" value={form.donorId} onChange={(e) => setForm({ ...form, donorId: e.target.value })} />
+            </FormField>
+            <FormField label="Volume (ml)" error={errors.volume}>
+              <TextInput aria-label="Volume (ml)" type="number" value={form.volume} onChange={(e) => setForm({ ...form, volume: e.target.value })} />
+            </FormField>
+          </SimpleGrid>
+          <Button variant="primary" onClick={handleSubmit} disabled={createBag.isPending} loading={createBag.isPending} loadingText="Saving…">
+            Save Bag
+          </Button>
         </div>
       )}
 
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr><th>Bag No</th><th>Group</th><th>Component</th><th>Collected</th><th>Expiry</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Bag No</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Group</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Component</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Collected</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Expiry</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader></Table.Row>
+          </Table.Header>
+          <Table.Body>
             {bags.map((b) => (
-              <tr key={b.id}>
-                <td>{b.bagNo}</td>
-                <td>{b.bloodGroup}</td>
-                <td>{b.component}</td>
-                <td>{b.collectionDate}</td>
-                <td>{b.expiryDate}</td>
-                <td>{b.status}</td>
-                <td>
-                  <select value={b.status} onChange={(e) => updateStatus.mutate({ id: b.id, status: e.target.value })}>
+              <Table.Row key={b.id}>
+                <Table.Cell>{b.bagNo}</Table.Cell>
+                <Table.Cell>{b.bloodGroup}</Table.Cell>
+                <Table.Cell>{b.component}</Table.Cell>
+                <Table.Cell>{b.collectionDate}</Table.Cell>
+                <Table.Cell>{b.expiryDate}</Table.Cell>
+                <Table.Cell>{b.status}</Table.Cell>
+                <Table.Cell>
+                  <HimsSelect aria-label={`Status for bag ${b.bagNo}`} value={b.status} onChange={(e) => updateStatus.mutate({ id: b.id, status: e.target.value })}>
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </td>
-              </tr>
+                  </HimsSelect>
+                </Table.Cell>
+              </Table.Row>
             ))}
-            {bags.length === 0 && <tr><td colSpan={7} className="muted">No bags registered.</td></tr>}
-          </tbody>
-        </table>
+            {bags.length === 0 && <Table.Row><Table.Cell colSpan={7}>No bags registered.</Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       </div>
     </section>
   );

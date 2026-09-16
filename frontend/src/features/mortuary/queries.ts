@@ -6,18 +6,8 @@ import type {
   DeathDetailsValues,
   DeathCertificateRequest,
 } from "./zodSchema";
-import { chamberStatusSchema } from "./zodSchema";
-
-/**
- * M28 Mortuary & Death — TanStack Query hooks.
- *
- * Wire surface ported from `PatientServiceImpl#getMortuaryPatients`,
- * `updatePatientDeathDetails`, and the nursing `saveMarkAsExpired` /
- * `addChildDeathReview` endpoints.
- */
 
 const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "/api";
-const NURSING_BASE: string = import.meta.env.VITE_NURSING_API_BASE ?? "/api";
 
 async function mortuaryJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

@@ -168,7 +168,7 @@ export function OrderDetail() {
 
 // ---- WorkflowTab -----------------------------------------------------------
 
-function WorkflowTab({ steps, orderId }: { steps: any[]; orderId: number }) {
+function WorkflowTab({ steps, orderId: _orderId }: { steps: any[]; orderId: number }) {
   if (steps.length === 0) {
     return <p className="muted">No workflow steps for this order.</p>;
   }

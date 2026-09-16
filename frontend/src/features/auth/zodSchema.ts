@@ -39,10 +39,12 @@ export type NotificationTemplateValues = z.infer<typeof notificationTemplateSche
 /** User creation form validation */
 export const userSchema = z.object({
   username: z.string().min(1, "Username required"),
-  fullName: z.string().min(1, "Full name required"),
-  email: z.string().email("Invalid email"),
+  password: z.string().min(8, "Password required").optional(),
+  fullName: z.string().min(1, "Full name required").optional(),
+  email: z.string().email("Invalid email").optional(),
+  employeeId: z.coerce.number().optional(),
   mobileNo: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile").optional(),
-  roleId: z.coerce.number().int().positive("Role required"),
+  roleId: z.coerce.number().int().positive("Role required").optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -59,18 +61,24 @@ export type RoleValues = z.infer<typeof roleSchema>;
 
 /** Permission assignment validation */
 export const permissionSchema = z.object({
-  moduleId: z.coerce.number().int().positive(),
-  permissions: z.array(z.string()).min(1, "At least one permission required"),
+  permissionName: z.string().min(1, "Permission name required").optional(),
+  module: z.string().min(1, "Module required").optional(),
+  description: z.string().optional(),
+  moduleId: z.coerce.number().int().positive().optional(),
+  permissions: z.array(z.string()).optional(),
 });
 
 export type PermissionValues = z.infer<typeof permissionSchema>;
 
 /** Notification template form validation */
 export const notifTemplateSchema = z.object({
-  templateCode: z.string().min(1, "Code required"),
-  channel: z.enum(["SMS", "EMAIL", "WHATSAPP"]),
+  name: z.string().min(1, "Name required").optional(),
+  templateCode: z.string().optional(),
+  eventType: z.string().optional(),
+  channel: z.enum(["SMS", "EMAIL", "WHATSAPP", "PUSH"]).default("SMS"),
   subject: z.string().optional(),
-  bodyTemplate: z.string().min(10, "Body must be at least 10 chars"),
+  template: z.string().optional(),
+  bodyTemplate: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 

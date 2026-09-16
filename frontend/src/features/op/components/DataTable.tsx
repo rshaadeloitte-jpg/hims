@@ -1,4 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
+import { Button, Table } from "@chakra-ui/react";
 
 /**
  * DataTable — schema-driven grid. Reusable across the OP module (and
@@ -111,43 +112,47 @@ export function DataTable<Row>({
 
   return (
     <div className="data-table-wrap">
-      <table className="data-table" aria-label={ariaLabel}>
-        <thead>
-          <tr>
+      <Table.Root size="sm" variant="line" aria-label={ariaLabel}>
+        <Table.Header>
+          <Table.Row>
             {columns.map((col) => {
               const sortable = col.sortable !== false;
               const active = sortKey === col.key;
               return (
-                <th
+                <Table.ColumnHeader
                   key={col.key}
+                  fontSize="xs"
+                  color="gray.600"
+                  textTransform="uppercase"
                   scope="col"
                   aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {sortable ? (
-                    <button
+                    <Button
                       type="button"
-                      className={`data-table__sort${active ? " data-table__sort--active" : ""}`}
+                      variant="ghost"
+                      size="sm"
                       onClick={() => toggleSort(col.key)}
                     >
                       {col.header}
                       <span aria-hidden="true" className="data-table__sort-indicator">
                         {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
                       </span>
-                    </button>
+                    </Button>
                   ) : (
                     col.header
                   )}
-                </th>
+                </Table.ColumnHeader>
               );
             })}
-          </tr>
-        </thead>
-        <tbody>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {sorted.map((row) => {
             const clickable = typeof onRowClick === "function";
             return (
-              <tr
+              <Table.Row
                 key={keyFn(row)}
                 onClick={clickable ? () => onRowClick?.(row) : undefined}
                 className={clickable ? "row-clickable" : undefined}
@@ -164,15 +169,15 @@ export function DataTable<Row>({
                 }
               >
                 {columns.map((col) => (
-                  <td key={col.key} className={col.className}>
+                  <Table.Cell key={col.key} className={col.className}>
                     {col.render ? col.render(row) : defaultRender(col.accessor(row))}
-                  </td>
+                  </Table.Cell>
                 ))}
-              </tr>
+              </Table.Row>
             );
           })}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </div>
   );
 }

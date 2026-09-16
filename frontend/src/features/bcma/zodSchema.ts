@@ -18,10 +18,6 @@ const optionalNumber = z.preprocess(
   z.coerce.number().optional(),
 );
 
-const optionalString = z.preprocess(
-  (v) => (v === "" ? undefined : v),
-  z.string().optional(),
-);
 
 export const bcmaScanSchema = z.object({
   patientId: z.coerce.number().int().positive(),

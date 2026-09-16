@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
-import type { DietOrderFormValues, DietFoodOrderFormValues } from "./zodSchema";
+import type {
+  DietOrderFormValues,
+  DietFoodOrderFormValues,
+  DietSessionMaster,
+  DietItemMaster,
+  TodayDietMenu,
+} from "./zodSchema";
 import type { DietItemScheduleDetails, DietOrderDetails, DietReport } from "./types";
 
 /**

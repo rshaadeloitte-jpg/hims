@@ -80,7 +80,7 @@ export const fuelLogSchema = z.object({
 });
 
 export const fuelLogCreateSchema = z.object({
-  vehicleId: z.number().int().positive("Vehicle is required"),
+  vehicleId: z.coerce.number().int().positive("Vehicle is required"),
   fuelType: z.enum(["PETROL", "DIESEL", "CNG", "ELECTRIC"]),
   quantity: z.coerce.number().positive("Quantity must be positive"),
   cost: z.coerce.number().positive("Cost must be positive"),

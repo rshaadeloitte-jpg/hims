@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Checkbox, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   patientRegistrationSchema,
   type PatientRegistrationValues,
@@ -74,6 +76,7 @@ export function RegistrationForm({
     getValues,
     reset,
     control,
+    watch,
   } = useForm<PatientRegistrationValues>({
     resolver: zodResolver(patientRegistrationSchema),
     defaultValues: initialData ? mapPatientToForm(initialData) : DEFAULT_VALUES,
@@ -83,6 +86,7 @@ export function RegistrationForm({
   // Watch MLC and mother-child for conditional rendering
   const mlc = useWatch({ control, name: "mlc" }) as MlcValues;
   const motherChild = useWatch({ control, name: "motherChildLink" }) as MotherChildLinkValues;
+  const covidInfectionHistory = watch("covidTracking.covidInfectionHistory");
 
   const sectionProgress = useMemo(() => {
     const completed = completedSections.size;
@@ -187,6 +191,8 @@ export function RegistrationForm({
       ? (updateMutation.error as Error)
       : null;
 
+  const isPending = registerMutation.isPending || updateMutation.isPending;
+
   return (
     <form
       onSubmit={onSubmit}
@@ -206,16 +212,17 @@ export function RegistrationForm({
       {/* Section nav — Linear-style */}
       <nav className="registration-form__nav" aria-label="Form sections">
         {SECTION_ORDER.map((section, index) => (
-          <button
+          <Button
             key={section}
             type="button"
-            className={`registration-form__nav-item ${activeSection === section ? "registration-form__nav-item--active" : ""} ${completedSections.has(section) ? "registration-form__nav-item--done" : ""}`}
+            variant="ghost"
+            size="sm"
             onClick={() => goToSection(section)}
             aria-current={activeSection === section ? "step" : undefined}
           >
             <span className="registration-form__nav-num">{index + 1}</span>
             <span className="registration-form__nav-label">{sectionLabel(section)}</span>
-          </button>
+          </Button>
         ))}
       </nav>
 
@@ -224,27 +231,27 @@ export function RegistrationForm({
         {activeSection === "identity" && (
           <Section title="Identity" subtitle="Patient's legal name and identification">
             <div className="form-row form-row--3col">
-              <Field label="First name" required error={errors.firstName?.message}>
-                <input className="form-input" {...register("firstName")} autoFocus placeholder="First name" />
-              </Field>
-              <Field label="Middle name" error={errors.middleName?.message}>
-                <input className="form-input" {...register("middleName")} placeholder="Middle name" />
-              </Field>
-              <Field label="Last name" error={errors.lastName?.message}>
-                <input className="form-input" {...register("lastName")} placeholder="Last name" />
-              </Field>
+              <FormField label="First name" required error={errors.firstName?.message}>
+                <TextInput {...register("firstName")} autoFocus placeholder="First name" />
+              </FormField>
+              <FormField label="Middle name" error={errors.middleName?.message}>
+                <TextInput {...register("middleName")} placeholder="Middle name" />
+              </FormField>
+              <FormField label="Last name" error={errors.lastName?.message}>
+                <TextInput {...register("lastName")} placeholder="Last name" />
+              </FormField>
             </div>
             <div className="form-row form-row--2col">
-              <Field label="Father's name" error={errors.fatherName?.message}>
-                <input className="form-input" {...register("fatherName")} placeholder="Father's name" />
-              </Field>
-              <Field label="Mother's name" error={errors.motherName?.message}>
-                <input className="form-input" {...register("motherName")} placeholder="Mother's name" />
-              </Field>
+              <FormField label="Father's name" error={errors.fatherName?.message}>
+                <TextInput {...register("fatherName")} placeholder="Father's name" />
+              </FormField>
+              <FormField label="Mother's name" error={errors.motherName?.message}>
+                <TextInput {...register("motherName")} placeholder="Mother's name" />
+              </FormField>
             </div>
-            <Field label="Aadhaar Number" error={errors.aadhaarNumber?.message}>
-              <input className="form-input" {...register("aadhaarNumber")} placeholder="XXXX XXXX XXXX" />
-            </Field>
+            <FormField label="Aadhaar Number" error={errors.aadhaarNumber?.message}>
+              <TextInput {...register("aadhaarNumber")} placeholder="XXXX XXXX XXXX" />
+            </FormField>
             <AbhaInput
               value={getValues("abhaAddress") ?? ""}
               onChange={(v) => setValue("abhaAddress", v, { shouldValidate: true })}
@@ -265,29 +272,29 @@ export function RegistrationForm({
         {activeSection === "contact" && (
           <Section title="Contact Information" subtitle="How to reach the patient">
             <div className="form-row form-row--2col">
-              <Field label="Mobile" required error={errors.mobileNo?.message}>
-                <input className="form-input" {...register("mobileNo")} inputMode="numeric" placeholder="10-digit number" />
-              </Field>
-              <Field label="Emergency contact" error={errors.emergencyContact?.message}>
-                <input className="form-input" {...register("emergencyContact")} inputMode="numeric" placeholder="Emergency number" />
-              </Field>
+              <FormField label="Mobile" required error={errors.mobileNo?.message}>
+                <TextInput {...register("mobileNo")} inputMode="numeric" placeholder="10-digit number" />
+              </FormField>
+              <FormField label="Emergency contact" error={errors.emergencyContact?.message}>
+                <TextInput {...register("emergencyContact")} inputMode="numeric" placeholder="Emergency number" />
+              </FormField>
             </div>
-            <Field label="Email" error={errors.email?.message}>
-              <input className="form-input" {...register("email")} type="email" placeholder="email@example.com" />
-            </Field>
-            <Field label="Address" error={errors.address?.message}>
-              <textarea className="form-input" {...register("address")} rows={2} placeholder="Street address" />
-            </Field>
+            <FormField label="Email" error={errors.email?.message}>
+              <TextInput {...register("email")} type="email" placeholder="email@example.com" />
+            </FormField>
+            <FormField label="Address" error={errors.address?.message}>
+              <Textarea bg="white" borderColor="gray.300" {...register("address")} rows={2} placeholder="Street address" />
+            </FormField>
             <div className="form-row form-row--3col">
-              <Field label="City" error={errors.city?.message}>
-                <input className="form-input" {...register("city")} placeholder="City" />
-              </Field>
-              <Field label="State" error={errors.state?.message}>
-                <input className="form-input" {...register("state")} placeholder="State" />
-              </Field>
-              <Field label="Pincode" error={errors.pincode?.message}>
-                <input className="form-input" {...register("pincode")} inputMode="numeric" placeholder="6-digit pincode" />
-              </Field>
+              <FormField label="City" error={errors.city?.message}>
+                <TextInput {...register("city")} placeholder="City" />
+              </FormField>
+              <FormField label="State" error={errors.state?.message}>
+                <TextInput {...register("state")} placeholder="State" />
+              </FormField>
+              <FormField label="Pincode" error={errors.pincode?.message}>
+                <TextInput {...register("pincode")} inputMode="numeric" placeholder="6-digit pincode" />
+              </FormField>
             </div>
           </Section>
         )}
@@ -295,35 +302,35 @@ export function RegistrationForm({
         {activeSection === "demographics" && (
           <Section title="Demographics" subtitle="Clinical and personal details">
             <div className="form-row form-row--3col">
-              <Field label="Gender" required error={errors.genderId?.message}>
-                <select className="form-input" {...register("genderId")}>
+              <FormField label="Gender" required error={errors.genderId?.message}>
+                <HimsSelect {...register("genderId")}>
                   <option value="">Select gender</option>
                   <option value={1}>Male</option>
                   <option value={2}>Female</option>
                   <option value={3}>Other</option>
-                </select>
-              </Field>
-              <Field label="Date of birth" error={errors.dateOfBirth?.message}>
-                <input className="form-input" type="date" {...register("dateOfBirth")} />
-              </Field>
-              <Field label="Blood group" error={errors.bloodGroup?.message}>
-                <select className="form-input" {...register("bloodGroup")}>
+                </HimsSelect>
+              </FormField>
+              <FormField label="Date of birth" error={errors.dateOfBirth?.message}>
+                <TextInput type="date" {...register("dateOfBirth")} />
+              </FormField>
+              <FormField label="Blood group" error={errors.bloodGroup?.message}>
+                <HimsSelect {...register("bloodGroup")}>
                   <option value="">Select</option>
                   {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
                     <option key={b} value={b}>{b}</option>
                   ))}
-                </select>
-              </Field>
+                </HimsSelect>
+              </FormField>
             </div>
-            <Field label="Marital status" error={errors.maritalStatus?.message}>
-              <select className="form-input" {...register("maritalStatus")}>
+            <FormField label="Marital status" error={errors.maritalStatus?.message}>
+              <HimsSelect {...register("maritalStatus")}>
                 <option value="">Select</option>
                 <option value="SINGLE">Single</option>
                 <option value="MARRIED">Married</option>
                 <option value="DIVORCED">Divorced</option>
                 <option value="WIDOWED">Widowed</option>
-              </select>
-            </Field>
+              </HimsSelect>
+            </FormField>
           </Section>
         )}
 
@@ -342,29 +349,33 @@ export function RegistrationForm({
         {activeSection === "mlc" && (
           <Section title="Medico-Legal Case (MLC)" subtitle="Mark if this is a legal case">
             <div className="mlc-section">
-              <label className="checkbox-row">
-                <input type="checkbox" {...register("mlc.isMlc")} />
-                <span className="checkbox-label">This is a Medico-Legal Case (MLC)</span>
-              </label>
+              <Checkbox.Root
+                checked={!!mlc?.isMlc}
+                onCheckedChange={(e) => setValue("mlc.isMlc", !!e.checked, { shouldValidate: true })}
+              >
+                <Checkbox.HiddenInput {...register("mlc.isMlc")} />
+                <Checkbox.Control />
+                <Checkbox.Label>This is a Medico-Legal Case (MLC)</Checkbox.Label>
+              </Checkbox.Root>
               {mlc?.isMlc && (
                 <>
                   <p className="mlc-section__help">
                     MLC cases require FIR details and police station information.
                   </p>
                   <div className="form-row form-row--2col">
-                    <Field label="MLC Number" error={errors.mlc?.mlcNumber?.message}>
-                      <input className="form-input" {...register("mlc.mlcNumber")} placeholder="MLC-XXXX" />
-                    </Field>
-                    <Field label="FIR Number" error={errors.mlc?.mlcFirNumber?.message}>
-                      <input className="form-input" {...register("mlc.mlcFirNumber")} placeholder="FIR Number" />
-                    </Field>
+                    <FormField label="MLC Number" error={errors.mlc?.mlcNumber?.message}>
+                      <TextInput {...register("mlc.mlcNumber")} placeholder="MLC-XXXX" />
+                    </FormField>
+                    <FormField label="FIR Number" error={errors.mlc?.mlcFirNumber?.message}>
+                      <TextInput {...register("mlc.mlcFirNumber")} placeholder="FIR Number" />
+                    </FormField>
                   </div>
-                  <Field label="Police Station" error={errors.mlc?.mlcPoliceStation?.message}>
-                    <input className="form-input" {...register("mlc.mlcPoliceStation")} placeholder="Police station name" />
-                  </Field>
-                  <Field label="MLC Notes" error={errors.mlc?.mlcNotes?.message}>
-                    <textarea className="form-input" {...register("mlc.mlcNotes")} rows={3} placeholder="Additional notes" />
-                  </Field>
+                  <FormField label="Police Station" error={errors.mlc?.mlcPoliceStation?.message}>
+                    <TextInput {...register("mlc.mlcPoliceStation")} placeholder="Police station name" />
+                  </FormField>
+                  <FormField label="MLC Notes" error={errors.mlc?.mlcNotes?.message}>
+                    <Textarea bg="white" borderColor="gray.300" {...register("mlc.mlcNotes")} rows={3} placeholder="Additional notes" />
+                  </FormField>
                 </>
               )}
             </div>
@@ -373,24 +384,28 @@ export function RegistrationForm({
 
         {activeSection === "motherChild" && (
           <Section title="Mother-Child Link" subtitle="For pediatric patients">
-            <label className="checkbox-row">
-              <input type="checkbox" {...register("motherChildLink.isChildPatient")} />
-              <span className="checkbox-label">This is a child patient (link to mother)</span>
-            </label>
+            <Checkbox.Root
+              checked={!!motherChild?.isChildPatient}
+              onCheckedChange={(e) => setValue("motherChildLink.isChildPatient", !!e.checked, { shouldValidate: true })}
+            >
+              <Checkbox.HiddenInput {...register("motherChildLink.isChildPatient")} />
+              <Checkbox.Control />
+              <Checkbox.Label>This is a child patient (link to mother)</Checkbox.Label>
+            </Checkbox.Root>
             {motherChild?.isChildPatient && (
               <div className="form-row form-row--2col">
-                <Field label="Mother's Patient ID" error={errors.motherChildLink?.motherPatientId?.message}>
-                  <input className="form-input" type="number" {...register("motherChildLink.motherPatientId")} placeholder="Mother's ID" />
-                </Field>
-                <Field label="Mother's MRN" error={errors.motherChildLink?.motherMrn?.message}>
-                  <input className="form-input" {...register("motherChildLink.motherMrn")} placeholder="Mother's MRN" />
-                </Field>
-                <Field label="Birth Weight (grams)" error={errors.motherChildLink?.birthWeightGrams?.message}>
-                  <input className="form-input" type="number" {...register("motherChildLink.birthWeightGrams")} placeholder="e.g. 3200" />
-                </Field>
-                <Field label="Gestational Age (weeks)" error={errors.motherChildLink?.gestationalAgeWeeks?.message}>
-                  <input className="form-input" type="number" {...register("motherChildLink.gestationalAgeWeeks")} placeholder="e.g. 38" />
-                </Field>
+                <FormField label="Mother's Patient ID" error={errors.motherChildLink?.motherPatientId?.message}>
+                  <TextInput type="number" {...register("motherChildLink.motherPatientId")} placeholder="Mother's ID" />
+                </FormField>
+                <FormField label="Mother's MRN" error={errors.motherChildLink?.motherMrn?.message}>
+                  <TextInput {...register("motherChildLink.motherMrn")} placeholder="Mother's MRN" />
+                </FormField>
+                <FormField label="Birth Weight (grams)" error={errors.motherChildLink?.birthWeightGrams?.message}>
+                  <TextInput type="number" {...register("motherChildLink.birthWeightGrams")} placeholder="e.g. 3200" />
+                </FormField>
+                <FormField label="Gestational Age (weeks)" error={errors.motherChildLink?.gestationalAgeWeeks?.message}>
+                  <TextInput type="number" {...register("motherChildLink.gestationalAgeWeeks")} placeholder="e.g. 38" />
+                </FormField>
               </div>
             )}
           </Section>
@@ -399,27 +414,31 @@ export function RegistrationForm({
         {activeSection === "covid" && (
           <Section title="COVID-19 Tracking" subtitle="Vaccination and infection history">
             <div className="form-row form-row--2col">
-              <Field label="Vaccination Status" error={errors.covidTracking?.covidVaccinationStatus?.message}>
-                <select className="form-input" {...register("covidTracking.covidVaccinationStatus")}>
+              <FormField label="Vaccination Status" error={errors.covidTracking?.covidVaccinationStatus?.message}>
+                <HimsSelect {...register("covidTracking.covidVaccinationStatus")}>
                   <option value="">Select</option>
                   <option value="UNVACCINATED">Unvaccinated</option>
                   <option value="PARTIAL">Partially Vaccinated</option>
                   <option value="FULL">Fully Vaccinated</option>
                   <option value="BOOSTER">Booster Dose</option>
-                </select>
-              </Field>
-              <Field label="Last Vaccine Date" error={errors.covidTracking?.lastCovidVaccineDate?.message}>
-                <input className="form-input" type="date" {...register("covidTracking.lastCovidVaccineDate")} />
-              </Field>
+                </HimsSelect>
+              </FormField>
+              <FormField label="Last Vaccine Date" error={errors.covidTracking?.lastCovidVaccineDate?.message}>
+                <TextInput type="date" {...register("covidTracking.lastCovidVaccineDate")} />
+              </FormField>
             </div>
-            <label className="checkbox-row">
-              <input type="checkbox" {...register("covidTracking.covidInfectionHistory")} />
-              <span className="checkbox-label">Past COVID-19 infection</span>
-            </label>
-            {getValues("covidTracking.covidInfectionHistory") && (
-              <Field label="Last Infection Date" error={errors.covidTracking?.lastCovidInfectionDate?.message}>
-                <input className="form-input" type="date" {...register("covidTracking.lastCovidInfectionDate")} />
-              </Field>
+            <Checkbox.Root
+              checked={!!covidInfectionHistory}
+              onCheckedChange={(e) => setValue("covidTracking.covidInfectionHistory", !!e.checked, { shouldValidate: true })}
+            >
+              <Checkbox.HiddenInput {...register("covidTracking.covidInfectionHistory")} />
+              <Checkbox.Control />
+              <Checkbox.Label>Past COVID-19 infection</Checkbox.Label>
+            </Checkbox.Root>
+            {covidInfectionHistory && (
+              <FormField label="Last Infection Date" error={errors.covidTracking?.lastCovidInfectionDate?.message}>
+                <TextInput type="date" {...register("covidTracking.lastCovidInfectionDate")} />
+              </FormField>
             )}
           </Section>
         )}
@@ -434,36 +453,34 @@ export function RegistrationForm({
 
       {/* Navigation actions */}
       <footer className="registration-form__actions">
-        <button
+        <Button
           type="button"
-          className="btn btn-secondary"
+          variant="secondary"
           onClick={handlePrev}
           disabled={SECTION_ORDER.indexOf(activeSection) === 0}
         >
           ← Previous
-        </button>
+        </Button>
         <div className="registration-form__actions-right">
           {onCancel && (
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
-            </button>
+            </Button>
           )}
           {SECTION_ORDER.indexOf(activeSection) < SECTION_ORDER.length - 1 ? (
-            <button type="button" className="btn btn-primary" onClick={handleNext}>
+            <Button type="button" variant="primary" onClick={handleNext}>
               Next →
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting || registerMutation.isPending || updateMutation.isPending}
+              variant="primary"
+              disabled={isSubmitting}
+              loading={isPending}
+              loadingText="Saving..."
             >
-              {(registerMutation.isPending || updateMutation.isPending)
-                ? "Saving..."
-                : isEdit
-                  ? "Update Patient"
-                  : "Register Patient"}
-            </button>
+              {isEdit ? "Update Patient" : "Register Patient"}
+            </Button>
           )}
         </div>
       </footer>
@@ -490,31 +507,6 @@ function Section({
       </legend>
       {children}
     </fieldset>
-  );
-}
-
-function Field({
-  label,
-  children,
-  required,
-  error,
-}: {
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-  error?: string;
-}) {
-  return (
-    <div className={`field ${error ? "field--error" : ""}`}>
-      <span className="field__label">
-        {label}
-        {required && <span className="field__req" aria-hidden="true"> *</span>}
-      </span>
-      {children}
-      {error && (
-        <span className="field-error" role="alert">{error}</span>
-      )}
-    </div>
   );
 }
 

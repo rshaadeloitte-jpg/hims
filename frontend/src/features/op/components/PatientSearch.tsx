@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../../components/ui";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { usePatientSearch } from "../api/queries";
 import type { PatientSearchHit } from "../api/types";
@@ -43,22 +45,19 @@ export function PatientSearch({
 
   return (
     <div className="patient-search">
-      <label className="field-label" htmlFor="patient-search-input">
-        {label}
-      </label>
-      <input
-        id="patient-search-input"
-        type="search"
-        className="form-input"
-        value={input}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-        onChange={(e) => setInput(e.target.value)}
-        autoComplete="off"
-        aria-controls="patient-search-results"
-        aria-expanded={showResults}
-        aria-busy={search.isFetching}
-      />
+      <FormField label={label}>
+        <TextInput
+          type="search"
+          value={input}
+          placeholder={placeholder}
+          autoFocus={autoFocus}
+          onChange={(e) => setInput(e.target.value)}
+          autoComplete="off"
+          aria-controls="patient-search-results"
+          aria-expanded={showResults}
+          aria-busy={search.isFetching}
+        />
+      </FormField>
 
       {showResults ? (
         <div className="patient-search__results" id="patient-search-results" role="listbox">
@@ -72,9 +71,9 @@ export function PatientSearch({
             <ul className="patient-search__hits">
               {(search.data ?? []).map((hit) => (
                 <li key={hit.id}>
-                  <button
+                  <Button
                     type="button"
-                    className="patient-search__hit"
+                    variant="ghost"
                     onClick={() => onPick(hit)}
                   >
                     <span className="patient-search__mrn">{hit.mrn ?? `#${hit.id}`}</span>
@@ -86,7 +85,7 @@ export function PatientSearch({
                       {hit.mobile ? ` · ${hit.mobile}` : ""}
                       {hit.abha ? ` · ABHA ${hit.abha}` : ""}
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -96,13 +95,14 @@ export function PatientSearch({
             <div className="patient-search__empty">
               <p>No patient matches <strong>{debounced}</strong>.</p>
               {onRegisterNew ? (
-                <button
+                <Button
                   type="button"
-                  className="btn btn-primary btn-sm"
+                  variant="primary"
+                  size="sm"
                   onClick={onRegisterNew}
                 >
                   + Register new patient
-                </button>
+                </Button>
               ) : null}
             </div>
           ) : null}

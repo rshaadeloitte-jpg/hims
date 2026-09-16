@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Button, Checkbox, Table, Textarea } from '@chakra-ui/react';
+import { FormField, TextInput } from "../../components/ui";
 import { useLabOrder } from './queries';
 import { useSampleWorkflow, useBarcodeScanner } from './useSampleWorkflow';
 import { BarcodeGenerator } from './BarcodeGenerator';
@@ -20,7 +22,6 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
     setScanningMode,
     toggleSampleSelection,
     clearSelection,
-    generateBarcode,
     acceptSample,
     rejectSample,
   } = useSampleWorkflow();
@@ -83,23 +84,23 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
           <p className="text-sm text-gray-500">Order #{orderId}</p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setScanningMode(!scanningMode)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              scanningMode
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
           >
             {scanningMode ? '🔴 Scanning Mode' : '📷 Enable Scanner'}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleAccept}
+            loading={acceptSample.isPending}
+            loadingText="Processing..."
             disabled={selectedSamples.size === 0 || acceptSample.isPending}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {acceptSample.isPending ? 'Processing...' : `Accept ${selectedSamples.size} Sample${selectedSamples.size !== 1 ? 's' : ''}`}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -107,7 +108,7 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-green-900">Scanner Active</span>
-            <input
+            <TextInput
               type="text"
               placeholder="Scan barcode or enter manually..."
               autoFocus
@@ -117,73 +118,68 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
                   e.currentTarget.value = '';
                 }
               }}
-              className="flex-1 px-3 py-2 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
             />
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setScanningMode(false)}
-              className="px-3 py-2 bg-white text-green-700 border border-green-300 rounded-md hover:bg-green-50 text-sm"
             >
               Disable
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Sample List */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
-                <input
-                  type="checkbox"
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                <Checkbox.Root
                   checked={selectedSamples.size === pendingDetails.length && pendingDetails.length > 0}
-                  onChange={(e) => {
-                    if (e.target.checked) {
+                  onCheckedChange={(e) => {
+                    if (e.checked) {
                       pendingDetails.forEach(d => toggleSampleSelection(d.detailId));
                     } else {
                       clearSelection();
                     }
                   }}
-                  className="rounded border-gray-300"
-                />
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barcode</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+                >
+                  <Checkbox.Control />
+                </Checkbox.Root>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Test</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Barcode</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {pendingDetails.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+              <Table.Row>
+                <Table.Cell colSpan={5}>
                   No samples pending collection
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             ) : (
               pendingDetails.map((detail) => (
-                <tr
+                <Table.Row
                   key={detail.detailId}
-                  className={`transition-colors ${
-                    selectedSamples.has(detail.detailId)
-                      ? 'bg-blue-50'
-                      : 'hover:bg-gray-50'
-                  }`}
                 >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
+                  <Table.Cell>
+                    <Checkbox.Root
                       checked={selectedSamples.has(detail.detailId)}
-                      onChange={() => toggleSampleSelection(detail.detailId)}
-                      className="rounded border-gray-300"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
+                      onCheckedChange={() => toggleSampleSelection(detail.detailId)}
+                    >
+                      <Checkbox.Control />
+                    </Checkbox.Root>
+                  </Table.Cell>
+                  <Table.Cell>
                     <div className="text-sm font-medium text-gray-900">{detail.testName}</div>
                     <div className="text-xs text-gray-500 font-mono">{detail.testCode}</div>
-                  </td>
-                  <td className="px-4 py-3">
+                  </Table.Cell>
+                  <Table.Cell>
                     {detail.barcode ? (
                       <span className="font-mono text-sm text-gray-900">{detail.barcode}</span>
                     ) : (
@@ -193,8 +189,8 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
                         testName={detail.testName}
                       />
                     )}
-                  </td>
-                  <td className="px-4 py-3">
+                  </Table.Cell>
+                  <Table.Cell>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                       detail.status === 'COLLECTED'
                         ? 'bg-green-100 text-green-800'
@@ -202,23 +198,24 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
                     }`}>
                       {detail.status}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
+                  </Table.Cell>
+                  <Table.Cell>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setActiveDetail(detail);
                         setShowRejectModal(true);
                       }}
-                      className="px-3 py-1 bg-red-50 text-red-700 text-xs rounded hover:bg-red-100 transition-colors"
                     >
                       Reject
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
               ))
             )}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
 
       {/* Rejection Modal */}
@@ -230,35 +227,39 @@ export function SampleCollection({ orderId, onCollected }: SampleCollectionProps
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rejection Reason *
-                </label>
-                <textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Enter reason for rejection..."
-                />
+                <FormField label="Rejection Reason" required>
+                  <Textarea
+                    bg="white"
+                    borderColor="gray.300"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={3}
+                    placeholder="Enter reason for rejection..."
+                  />
+                </FormField>
               </div>
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleReject}
+                  loading={rejectSample.isPending}
+                  loadingText="Rejecting..."
                   disabled={!rejectionReason || rejectSample.isPending}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {rejectSample.isPending ? 'Rejecting...' : 'Confirm Rejection'}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setShowRejectModal(false);
                     setRejectionReason('');
                     setActiveDetail(null);
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           </div>

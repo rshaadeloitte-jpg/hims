@@ -69,6 +69,6 @@ export type {
   FileCategoryValues,
   AnnotationValues,
   RenameCategoryValues,
-  FileCategory,
+  FileCategory as FileCategoryCode,
   OwnerType,
 } from "./zodSchema";

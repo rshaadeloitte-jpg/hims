@@ -9,6 +9,8 @@ import {
   useDeleteSubmission,
 } from "./queries";
 import { JsonSchemaForm } from "./components/JsonSchemaForm";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
+import { Button, Table } from "@chakra-ui/react";
 
 /**
  * M40 Clinical Forms — dynamic JSON Schema renderer.
@@ -67,13 +69,10 @@ export function FormListPage() {
       ) : null}
 
       <div className="row" style={{ marginBottom: 12 }}>
-        <label>
-          Specialty
-          <select value={specialty} onChange={(e) => { setSpecialty(e.target.value); setSelectedId(null); }}>
+        <FormField label="Specialty"><HimsSelect value={specialty} onChange={(e) => { setSpecialty(e.target.value); setSelectedId(null); }}>
             <option value="">All</option>
             {specialties.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </label>
+          </HimsSelect></FormField>
       </div>
 
       <section className="card">
@@ -82,22 +81,22 @@ export function FormListPage() {
         ) : forms.length === 0 ? (
           <p className="empty-state">No forms found{specialty ? ` for ${specialty}` : ""}.</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr><th>Code</th><th>Name</th><th>Specialty</th><th>Ver</th><th>Action</th></tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Specialty</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Ver</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Action</Table.ColumnHeader></Table.Row>
+            </Table.Header>
+            <Table.Body>
               {forms.map(f => (
-                <tr key={f.id} className={selectedId === f.id ? "row-selected" : ""}>
-                  <td><code>{f.code}</code></td>
-                  <td>{f.name}</td>
-                  <td>{f.specialty}</td>
-                  <td>{f.version}</td>
-                  <td><button className="btn btn--small" onClick={() => openForm(f.id)}>Open</button></td>
-                </tr>
+                <Table.Row key={f.id}>
+                  <Table.Cell><code>{f.code}</code></Table.Cell>
+                  <Table.Cell>{f.name}</Table.Cell>
+                  <Table.Cell>{f.specialty}</Table.Cell>
+                  <Table.Cell>{f.version}</Table.Cell>
+                  <Table.Cell><Button variant="secondary" size="sm" onClick={() => openForm(f.id)}>Open</Button></Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         )}
       </section>
 
@@ -122,13 +121,17 @@ export function FormListPage() {
               />
 
               <div className="row" style={{ marginTop: 16 }}>
-                <label>
-                  Patient ID (optional)
-                  <input type="number" value={patientId} onChange={(e) => setPatientId(e.target.value)} style={{ marginLeft: 8, width: 120 }} />
-                </label>
-                <button className="btn btn--primary" disabled={submitM.isPending} onClick={handleSubmit}>
-                  {submitM.isPending ? "Submitting…" : "Submit"}
-                </button>
+                <FormField label="Patient ID (optional)">
+                  <TextInput
+                    type="number"
+                    value={patientId}
+                    onChange={(e) => setPatientId(e.target.value)}
+                    style={{ marginLeft: 8, width: 120 }}
+                  />
+                </FormField>
+                <Button variant="primary" loading={submitM.isPending} loadingText="Submitting…" disabled={submitM.isPending} onClick={handleSubmit}>
+                  Submit
+                </Button>
               </div>
               {submitM.isSuccess ? (
                 <p className="notice" role="status">
@@ -141,28 +144,28 @@ export function FormListPage() {
 
               <h3 style={{ marginTop: 24 }}>Submissions</h3>
               {submissionsQ.isLoading ? <p>Loading…</p> : (
-                <table className="table">
-                  <thead><tr><th>ID</th><th>Patient</th><th>Encounter</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
-                  <tbody>
+                <Table.Root size="sm" variant="line">
+                  <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Encounter</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Submitted</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+                  <Table.Body>
                     {(submissionsQ.data ?? []).map((s) => (
-                      <tr key={s.id}>
-                        <td>{s.id}</td>
-                        <td>{s.patientId ?? "—"}</td>
-                        <td>{s.encounterId ?? "—"}</td>
-                        <td>{s.submittedAt?.slice(0, 19)}</td>
-                        <td>{s.status === false ? "Deleted" : "Active"}</td>
-                        <td>
+                      <Table.Row key={s.id}>
+                        <Table.Cell>{s.id}</Table.Cell>
+                        <Table.Cell>{s.patientId ?? "—"}</Table.Cell>
+                        <Table.Cell>{s.encounterId ?? "—"}</Table.Cell>
+                        <Table.Cell>{s.submittedAt?.slice(0, 19)}</Table.Cell>
+                        <Table.Cell>{s.status === false ? "Deleted" : "Active"}</Table.Cell>
+                        <Table.Cell>
                           {s.status !== false && (
-                            <button className="btn btn--small btn--danger" onClick={() => deleteM.mutate(s.id)}>Delete</button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteM.mutate(s.id)}>Delete</Button>
                           )}
-                        </td>
-                      </tr>
+                        </Table.Cell>
+                      </Table.Row>
                     ))}
                     {(submissionsQ.data ?? []).length === 0 && (
-                      <tr><td colSpan={6} className="muted">No submissions yet.</td></tr>
+                      <Table.Row><Table.Cell colSpan={6}>No submissions yet.</Table.Cell></Table.Row>
                     )}
-                  </tbody>
-                </table>
+                  </Table.Body>
+                </Table.Root>
               )}
             </>
           ) : null}

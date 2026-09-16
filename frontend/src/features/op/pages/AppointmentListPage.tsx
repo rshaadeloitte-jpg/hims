@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@chakra-ui/react";
 import {
   useAppointmentList,
   useCancelAppointment,
@@ -174,20 +175,23 @@ export function AppointmentListPage() {
         <div className="row-actions">
           {a.status === 1 ? (
             <>
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                variant="primary"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   void checkIn.mutateAsync(a.id);
                 }}
                 disabled={checkIn.isPending}
+                loading={checkIn.isPending}
               >
                 Check in
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelected(a);
@@ -195,10 +199,11 @@ export function AppointmentListPage() {
                 }}
               >
                 Reschedule
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelected(a);
@@ -206,18 +211,20 @@ export function AppointmentListPage() {
                 }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   void noShow.mutateAsync(a.id);
                 }}
                 disabled={noShow.isPending}
+                loading={noShow.isPending}
               >
                 No-show
-              </button>
+              </Button>
             </>
           ) : null}
         </div>
@@ -234,13 +241,13 @@ export function AppointmentListPage() {
             {total} matching · page {page + 1}{hasMore ? "+" : ""}
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          className="btn btn-primary"
+          variant="primary"
           onClick={() => navigate("/m/op/addAppointment")}
         >
           + New appointment
-        </button>
+        </Button>
       </header>
 
       {highlight != null && highlightedPatient ? (
@@ -257,15 +264,16 @@ export function AppointmentListPage() {
         {STATUS_FILTERS.map((f) => {
           const active = filter === f.key;
           return (
-            <button
+            <Button
               key={f.key}
               type="button"
-              className={`filter-pill${active ? " filter-pill--active" : ""}`}
+              variant={active ? "primary" : "secondary"}
+              size="sm"
               aria-pressed={active}
               onClick={() => setFilterAndPage(f.key, 0)}
             >
               {f.label}
-            </button>
+            </Button>
           );
         })}
       </nav>
@@ -285,35 +293,38 @@ export function AppointmentListPage() {
           emptyState={
             <div className="empty-state">
               <p>No appointments match this filter.</p>
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                variant="secondary"
+                size="sm"
                 onClick={() => setFilterAndPage("all", 0)}
               >
                 Clear filter
-              </button>
+              </Button>
             </div>
           }
         />
 
         <div className="pagination">
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             disabled={page === 0}
             onClick={() => setFilterAndPage(filter, Math.max(0, page - 1))}
           >
             ← Prev
-          </button>
+          </Button>
           <span className="pagination-page">Page {page + 1}</span>
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary btn-sm"
+            variant="secondary"
+            size="sm"
             disabled={!hasMore}
             onClick={() => setFilterAndPage(filter, page + 1)}
           >
             Next →
-          </button>
+          </Button>
         </div>
       </section>
 

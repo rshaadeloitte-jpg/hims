@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { labQueryKeys } from './queries';
 import type { LabTest } from './types';
 
 const LAB_BASE: string = import.meta.env.VITE_LAB_API_BASE ?? '/api';

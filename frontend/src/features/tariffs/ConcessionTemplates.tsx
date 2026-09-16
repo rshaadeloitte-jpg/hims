@@ -10,6 +10,8 @@ import {
   concessionTemplateSchema,
   type ConcessionTemplateValues,
 } from "./zodSchema";
+import { Button, Checkbox } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 /**
  * ConcessionTemplates — manage discount templates with max-percent-off config.
@@ -18,7 +20,7 @@ import {
  */
 export function ConcessionTemplates() {
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [_editingId, setEditingId] = useState<number | null>(null);
 
   const { data: templates = [], isLoading } = useConcessionTemplates();
   const createTemplate = useCreateConcessionTemplate();
@@ -49,6 +51,8 @@ export function ConcessionTemplates() {
     setShowForm(true);
   }, []);
 
+  void _editingId;
+
   return (
     <section className="page">
       <header className="page-header">
@@ -58,14 +62,16 @@ export function ConcessionTemplates() {
             Configure discount templates with maximum percent-off and approval rules.
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          className="btn btn--primary"
+          variant="primary"
           onClick={handleNew}
           disabled={createTemplate.isPending}
+          loading={createTemplate.isPending}
+          loadingText="Loading..."
         >
           + New Template
-        </button>
+        </Button>
       </header>
 
       {/* Template cards — Stripe-style grid */}
@@ -124,14 +130,15 @@ export function ConcessionTemplates() {
               )}
               <div className="concession-card__actions">
                 {tpl.docStatus === 1 && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleDeactivate(tpl.id)}
                     disabled={deactivateTemplate.isPending}
                   >
                     Deactivate
-                  </button>
+                  </Button>
                 )}
               </div>
             </article>
@@ -168,6 +175,7 @@ function ConcessionTemplateForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ConcessionTemplateValues>({
     resolver: zodResolver(concessionTemplateSchema),
@@ -182,6 +190,7 @@ function ConcessionTemplateForm({
   });
 
   const maxPercentOff = watch("maxPercentOff");
+  const requiresApproval = watch("requiresApproval");
 
   return (
     <div
@@ -194,83 +203,71 @@ function ConcessionTemplateForm({
       <div className="slideover__panel">
         <header className="slideover__header">
           <h2>New Concession Template</h2>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={onCancel}>
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel} aria-label="Close">
             ✕
-          </button>
+          </Button>
         </header>
 
         <form className="slideover__form" onSubmit={handleSubmit(onSubmit)}>
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="ct-code">Code *</label>
-              <input
-                id="ct-code"
-                type="text"
-                className="form-input"
-                placeholder="e.g. STAFF_DUTY"
-                {...register("code")}
-                aria-invalid={errors.code ? true : undefined}
-              />
-              {errors.code && (
-                <span className="field-error">{errors.code.message}</span>
-              )}
-            </div>
-            <div className="field">
-              <label htmlFor="ct-name">Name *</label>
-              <input
-                id="ct-name"
-                type="text"
-                className="form-input"
-                placeholder="e.g. Staff Duty Concession"
-                {...register("name")}
-                aria-invalid={errors.name ? true : undefined}
-              />
-              {errors.name && (
-                <span className="field-error">{errors.name.message}</span>
-              )}
-            </div>
-            <div className="field">
-              <label htmlFor="ct-scheme">Scheme *</label>
-              <input
-                id="ct-scheme"
-                type="text"
-                className="form-input"
-                placeholder="e.g. RGHS, Chiranjeevi, Self"
-                {...register("scheme")}
-                aria-invalid={errors.scheme ? true : undefined}
-              />
-              {errors.scheme && (
-                <span className="field-error">{errors.scheme.message}</span>
-              )}
-            </div>
-            <div className="field">
-              <label htmlFor="ct-desc">Description</label>
-              <input
-                id="ct-desc"
-                type="text"
-                className="form-input"
-                placeholder="Optional description"
-                {...register("description")}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="ct-max-pct">Max Percent Off *</label>
-              <div className="concession-form__percent-input">
-                <input
-                  id="ct-max-pct"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  className="form-input"
-                  {...register("maxPercentOff")}
-                  aria-invalid={errors.maxPercentOff ? true : undefined}
+              <FormField label="Code *" required error={errors.code?.message}>
+                <TextInput
+                  id="ct-code"
+                  type="text"
+                  placeholder="e.g. STAFF_DUTY"
+                  {...register("code")}
+                  aria-invalid={errors.code ? true : undefined}
                 />
-                <span className="concession-form__percent-suffix">%</span>
-              </div>
-              {errors.maxPercentOff && (
-                <span className="field-error">{errors.maxPercentOff.message}</span>
-              )}
+              </FormField>
+            </div>
+            <div className="field">
+              <FormField label="Name *" required error={errors.name?.message}>
+                <TextInput
+                  id="ct-name"
+                  type="text"
+                  placeholder="e.g. Staff Duty Concession"
+                  {...register("name")}
+                  aria-invalid={errors.name ? true : undefined}
+                />
+              </FormField>
+            </div>
+            <div className="field">
+              <FormField label="Scheme *" required error={errors.scheme?.message}>
+                <TextInput
+                  id="ct-scheme"
+                  type="text"
+                  placeholder="e.g. RGHS, Chiranjeevi, Self"
+                  {...register("scheme")}
+                  aria-invalid={errors.scheme ? true : undefined}
+                />
+              </FormField>
+            </div>
+            <div className="field">
+              <FormField label="Description">
+                <TextInput
+                  id="ct-desc"
+                  type="text"
+                  placeholder="Optional description"
+                  {...register("description")}
+                />
+              </FormField>
+            </div>
+            <div className="field">
+              <FormField label="Max Percent Off *" required error={errors.maxPercentOff?.message}>
+                <div className="concession-form__percent-input">
+                  <TextInput
+                    id="ct-max-pct"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    {...register("maxPercentOff")}
+                    aria-invalid={errors.maxPercentOff ? true : undefined}
+                  />
+                  <span className="concession-form__percent-suffix">%</span>
+                </div>
+              </FormField>
               {/* Visual percent bar */}
               <div className="concession-form__percent-bar">
                 <div
@@ -280,24 +277,24 @@ function ConcessionTemplateForm({
               </div>
             </div>
             <div className="field field--check">
-              <label htmlFor="ct-approval">
-                <input
-                  id="ct-approval"
-                  type="checkbox"
-                  {...register("requiresApproval")}
-                />
-                Requires Approval
-              </label>
+              <Checkbox.Root
+                checked={!!requiresApproval}
+                onCheckedChange={(e) => setValue("requiresApproval", !!e.checked, { shouldValidate: true })}
+              >
+                <Checkbox.HiddenInput {...register("requiresApproval")} />
+                <Checkbox.Control />
+                <Checkbox.Label>Requires Approval</Checkbox.Label>
+              </Checkbox.Root>
             </div>
           </div>
 
           <div className="slideover__actions">
-            <button type="button" className="btn btn--secondary" onClick={onCancel}>
+            <Button type="button" variant="secondary" onClick={onCancel}>
               Cancel
-            </button>
-            <button type="submit" className="btn btn--primary" disabled={isPending}>
-              {isPending ? "Creating..." : "Create Template"}
-            </button>
+            </Button>
+            <Button type="submit" variant="primary" disabled={isPending} loading={isPending} loadingText="Creating...">
+              Create Template
+            </Button>
           </div>
         </form>
       </div>

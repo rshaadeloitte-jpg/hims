@@ -76,7 +76,7 @@ export function FormRenderer({ schemaResponse, patientId, encounterId, onSuccess
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(validationSchema),
     mode: "onChange",

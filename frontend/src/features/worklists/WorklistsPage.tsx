@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 import { NurseTaskList } from "./NurseTaskList";
 import { GoalsInterventions } from "./GoalsInterventions";
 
@@ -18,22 +20,24 @@ export function WorklistsPage() {
       <header className="page-header">
         <h1>Patient Care Worklists</h1>
         <nav className="wl-tabs" role="tablist">
-          <button
+          <Button
             role="tab"
             aria-selected={view === "tasks"}
-            className={`wl-tab ${view === "tasks" ? "wl-tab--active" : ""}`}
+            variant={view === "tasks" ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setView("tasks")}
           >
             Nurse Tasks
-          </button>
-          <button
+          </Button>
+          <Button
             role="tab"
             aria-selected={view === "goals"}
-            className={`wl-tab ${view === "goals" ? "wl-tab--active" : ""}`}
+            variant={view === "goals" ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setView("goals")}
           >
             Goals &amp; Interventions
-          </button>
+          </Button>
         </nav>
       </header>
 
@@ -43,15 +47,15 @@ export function WorklistsPage() {
           <div className="wl-goals-interventions__header">
             <h2>Care Goals &amp; Interventions</h2>
             <div className="wl-form__row">
-              <label htmlFor="admissionId" className="wl-form__label">Admission ID</label>
-              <input
-                id="admissionId"
-                type="number"
-                className="wl-form__input"
-                value={admissionId || ""}
-                onChange={(e) => setAdmissionId(Number(e.target.value))}
-                placeholder="Enter admission ID"
-              />
+              <FormField label="Admission ID">
+                <TextInput
+                  id="admissionId"
+                  type="number"
+                  value={admissionId || ""}
+                  onChange={(e) => setAdmissionId(Number(e.target.value))}
+                  placeholder="Enter admission ID"
+                />
+              </FormField>
             </div>
           </div>
           {admissionId > 0 ? (

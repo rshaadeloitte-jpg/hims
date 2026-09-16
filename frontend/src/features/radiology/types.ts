@@ -7,13 +7,17 @@ export interface RadOrderLine {
 
 export interface RadOrder {
   radOrderId: number;
+  id?: number;
   patientId: number;
+  patientName?: string;
   encounterId?: number;
   admissionId?: number;
   modality: "XRAY" | "CT" | "MRI" | "US";
+  bodyPart?: string;
   priority: 1 | 2;
-  status: 1 | 2 | 3 | 4;
+  status: any;
   imageCaptured: boolean;
+  scheduledAt?: string;
   reportText?: string;
   reportedBy?: string;
   addedDatetime?: string;

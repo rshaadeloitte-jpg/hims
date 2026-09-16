@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRecordPayment, usePatientAdvances, useApplyAdvance } from "./hooks";
-import { paymentSchema, type PaymentValues } from "./zodSchema";
 import { quickPaymentSchema, type QuickPaymentValues } from "./schemas";
+import { Button, Checkbox } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 interface PaymentFormProps {
   billId: number;
@@ -53,6 +54,8 @@ export function PaymentForm({
   });
 
   const amount = watch("amount");
+  const markAsSettled = watch("markAsSettled");
+  const generateReceipt = watch("generateReceipt");
   const availableAdvances = advances.filter((a) => !a.isSettled);
   const totalAdvance = availableAdvances.reduce((s, a) => s + a.amount, 0);
 
@@ -103,9 +106,11 @@ export function PaymentForm({
         {/* Payment method selector — Stripe-style segmented control */}
         <div className="payment-form__methods" role="group" aria-label="Payment method">
           {(["CASH", "CARD", "UPI", "CHEQUE", "ADVANCE"] as PaymentMethod[]).map((m) => (
-            <button
+            <Button
               key={m}
               type="button"
+              size="sm"
+              variant={method === m ? "primary" : "secondary"}
               aria-pressed={method === m}
               className={`payment-form__method${method === m ? " payment-form__method--active" : ""}`}
               onClick={() => handleMethodChange(m)}
@@ -115,42 +120,42 @@ export function PaymentForm({
               {m === "UPI" && "UPI"}
               {m === "CHEQUE" && "Cheque"}
               {m === "ADVANCE" && `Advance${totalAdvance > 0 ? ` (₹${totalAdvance.toFixed(0)})` : ""}`}
-            </button>
+            </Button>
           ))}
         </div>
 
         {/* Amount field */}
         <div className="payment-form__amount-section">
-          <label htmlFor="payment-amount" className="payment-form__label">
-            Amount
-          </label>
-          <div className="payment-form__amount-input">
-            <span className="payment-form__currency">₹</span>
-            <input
-              id="payment-amount"
-              type="number"
-              step="0.01"
-              className="payment-form__amount"
-              {...register("amount")}
-              aria-invalid={errors.amount ? true : undefined}
-            />
-          </div>
-          {errors.amount && <span className="field-error">{errors.amount.message}</span>}
+          <FormField label="Amount" error={errors.amount?.message}>
+            <div className="payment-form__amount-input">
+              <span className="payment-form__currency">₹</span>
+              <TextInput
+                id="payment-amount"
+                type="number"
+                step="0.01"
+                className="payment-form__amount"
+                {...register("amount")}
+                aria-invalid={errors.amount ? true : undefined}
+              />
+            </div>
+          </FormField>
           <div className="payment-form__quick-amounts">
-            <button
+            <Button
               type="button"
-              className="btn btn--sm btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => setValue("amount", balanceAmount)}
             >
               Full amount
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn--sm btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => setValue("amount", Math.ceil(balanceAmount / 2))}
             >
               50%
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -162,38 +167,38 @@ export function PaymentForm({
                   the actual Stripe CardElement from @stripe/react-stripe-js */}
               <div className="payment-form__card-mock">
                 <div className="payment-form__card-number">
-                  <label htmlFor="card-number">Card Number</label>
-                  <input
-                    id="card-number"
-                    type="text"
-                    className="form-input"
-                    placeholder="4242 4242 4242 4242"
-                    inputMode="numeric"
-                    autoComplete="cc-number"
-                  />
+                  <FormField label="Card Number">
+                    <TextInput
+                      id="card-number"
+                      type="text"
+                      placeholder="4242 4242 4242 4242"
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                    />
+                  </FormField>
                 </div>
                 <div className="payment-form__card-row">
                   <div className="payment-form__card-expiry">
-                    <label htmlFor="card-expiry">Expiry</label>
-                    <input
-                      id="card-expiry"
-                      type="text"
-                      className="form-input"
-                      placeholder="MM/YY"
-                      inputMode="numeric"
-                      autoComplete="cc-exp"
-                    />
+                    <FormField label="Expiry">
+                      <TextInput
+                        id="card-expiry"
+                        type="text"
+                        placeholder="MM/YY"
+                        inputMode="numeric"
+                        autoComplete="cc-exp"
+                      />
+                    </FormField>
                   </div>
                   <div className="payment-form__card-cvv">
-                    <label htmlFor="card-cvv">CVV</label>
-                    <input
-                      id="card-cvv"
-                      type="text"
-                      className="form-input"
-                      placeholder="123"
-                      inputMode="numeric"
-                      autoComplete="cc-csc"
-                    />
+                    <FormField label="CVV">
+                      <TextInput
+                        id="card-cvv"
+                        type="text"
+                        placeholder="123"
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
+                      />
+                    </FormField>
                   </div>
                 </div>
               </div>
@@ -203,16 +208,14 @@ export function PaymentForm({
 
         {method === "UPI" && (
           <div className="payment-form__upi-fields">
-            <label htmlFor="upi-id" className="payment-form__label">
-              UPI ID
-            </label>
-            <input
-              id="upi-id"
-              type="text"
-              className="form-input"
-              placeholder="yourname@upi"
-              autoComplete="off"
-            />
+            <FormField label="UPI ID">
+              <TextInput
+                id="upi-id"
+                type="text"
+                placeholder="yourname@upi"
+                autoComplete="off"
+              />
+            </FormField>
             <p className="payment-form__hint">
               Enter UPI ID to generate QR or approve via UPI app
             </p>
@@ -222,36 +225,30 @@ export function PaymentForm({
         {method === "CHEQUE" && (
           <div className="payment-form__cheque-fields">
             <div className="payment-form__field">
-              <label htmlFor="cheque-bank" className="payment-form__label">
-                Bank Name
-              </label>
-              <input
-                id="cheque-bank"
-                type="text"
-                className="form-input"
-                placeholder="Bank name"
-              />
+              <FormField label="Bank Name">
+                <TextInput
+                  id="cheque-bank"
+                  type="text"
+                  placeholder="Bank name"
+                />
+              </FormField>
             </div>
             <div className="payment-form__field">
-              <label htmlFor="cheque-no" className="payment-form__label">
-                Cheque No
-              </label>
-              <input
-                id="cheque-no"
-                type="text"
-                className="form-input"
-                placeholder="Cheque number"
-              />
+              <FormField label="Cheque No">
+                <TextInput
+                  id="cheque-no"
+                  type="text"
+                  placeholder="Cheque number"
+                />
+              </FormField>
             </div>
             <div className="payment-form__field">
-              <label htmlFor="cheque-date" className="payment-form__label">
-                Cheque Date
-              </label>
-              <input
-                id="cheque-date"
-                type="date"
-                className="form-input"
-              />
+              <FormField label="Cheque Date">
+                <TextInput
+                  id="cheque-date"
+                  type="date"
+                />
+              </FormField>
             </div>
           </div>
         )}
@@ -285,67 +282,66 @@ export function PaymentForm({
         {/* Reference & remarks */}
         <div className="payment-form__extra-fields">
           <div className="payment-form__field">
-            <label htmlFor="payment-ref" className="payment-form__label">
-              Reference No
-            </label>
-            <input
-              id="payment-ref"
-              type="text"
-              className="form-input"
-              placeholder="Transaction / reference number"
-              {...register("referenceNo")}
-            />
+            <FormField label="Reference No">
+              <TextInput
+                id="payment-ref"
+                type="text"
+                placeholder="Transaction / reference number"
+                {...register("referenceNo")}
+              />
+            </FormField>
           </div>
           <div className="payment-form__field">
-            <label htmlFor="payment-remarks" className="payment-form__label">
-              Remarks
-            </label>
-            <input
-              id="payment-remarks"
-              type="text"
-              className="form-input"
-              placeholder="Optional notes"
-              {...register("remarks")}
-            />
+            <FormField label="Remarks">
+              <TextInput
+                id="payment-remarks"
+                type="text"
+                placeholder="Optional notes"
+                {...register("remarks")}
+              />
+            </FormField>
           </div>
         </div>
 
         {/* Options */}
         <div className="payment-form__options">
-          <label className="payment-form__option">
-            <input type="checkbox" {...register("markAsSettled")} />
-            Mark bill as settled
-          </label>
-          <label className="payment-form__option">
-            <input type="checkbox" {...register("generateReceipt")} />
-            Generate receipt
-          </label>
+          <Checkbox.Root
+            checked={!!markAsSettled}
+            onCheckedChange={(e) => setValue("markAsSettled", !!e.checked, { shouldValidate: true })}
+          >
+            <Checkbox.HiddenInput {...register("markAsSettled")} />
+            <Checkbox.Control />
+            <Checkbox.Label>Mark bill as settled</Checkbox.Label>
+          </Checkbox.Root>
+          <Checkbox.Root
+            checked={!!generateReceipt}
+            onCheckedChange={(e) => setValue("generateReceipt", !!e.checked, { shouldValidate: true })}
+          >
+            <Checkbox.HiddenInput {...register("generateReceipt")} />
+            <Checkbox.Control />
+            <Checkbox.Label>Generate receipt</Checkbox.Label>
+          </Checkbox.Root>
         </div>
 
         {/* Actions */}
         <div className="payment-form__actions">
-          <button
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={onCancel}
             disabled={isPending}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="btn btn--primary btn--lg"
+            variant="primary"
             disabled={isPending || amount <= 0}
+            loading={isPending}
+            loadingText="Processing..."
           >
-            {isPending ? (
-              <>
-                <span className="spinner spinner--sm" aria-hidden="true" />
-                Processing...
-              </>
-            ) : (
-              `Collect ₹ ${amount?.toFixed(2) ?? "0.00"}`
-            )}
-          </button>
+            {`Collect ₹ ${amount?.toFixed(2) ?? "0.00"}`}
+          </Button>
         </div>
 
         {recordPayment.isError && (

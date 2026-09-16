@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useLabOrders, useVerifyResult, useFinalizeResult } from './queries';
-import type { LabOrder, LabDetail } from './types';
+import { Button, Text } from '@chakra-ui/react';
+import { useLabOrders, useVerifyResult, useFinalizeResult, type LabOrder } from './queries';
 
 export function VerificationQueue() {
   const { data: orders = [], isLoading } = useLabOrders();
@@ -47,14 +47,14 @@ export function VerificationQueue() {
         </div>
         <div className="lg:col-span-2 border border-gray-200 rounded-lg overflow-hidden">
           {selectedOrder ? (<>
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between"><div><h3 className="text-sm font-medium text-gray-900">Order #{selectedOrder.orderId}</h3><p className="text-xs text-gray-500">Patient #{selectedOrder.patientId}</p></div><button onClick={() => handleVerifyAll(selectedOrder)} disabled={verifyResult.isPending || finalizeResult.isPending} className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors">{verifyResult.isPending || finalizeResult.isPending ? 'Verifying...' : 'Verify All'}</button></div>
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between"><div><h3 className="text-sm font-medium text-gray-900">Order #{selectedOrder.orderId}</h3><p className="text-xs text-gray-500">Patient #{selectedOrder.patientId}</p></div><Button variant="primary" size="sm" onClick={() => handleVerifyAll(selectedOrder)} loading={verifyResult.isPending || finalizeResult.isPending} loadingText="Verifying..." disabled={verifyResult.isPending || finalizeResult.isPending}>{verifyResult.isPending || finalizeResult.isPending ? 'Verifying...' : 'Verify All'}</Button></div>
             <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
               {selectedOrder.details?.filter(d => d.status === 'COMPLETED' && !d.verified).map((detail) => (
                 <div key={detail.detailId} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></div><button onClick={() => handleVerify(selectedOrder.orderId, detail.detailId)} disabled={verifyResult.isPending} className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50 transition-colors">Verify</button></div>
-                  <div className="grid grid-cols-2 gap-4 text-sm"><div><label className="text-xs text-gray-500 uppercase tracking-wider">Result</label><div className={`font-mono text-lg mt-1 ${detail.isCritical ? 'text-red-600 font-bold' : 'text-gray-900'}`}>{detail.resultValue || 'N/A'}{detail.resultUnit && <span className="text-sm text-gray-500 ml-1">{detail.resultUnit}</span>}</div></div><div><label className="text-xs text-gray-500 uppercase tracking-wider">Reference Range</label><div className="font-mono text-lg text-gray-600 mt-1">{detail.referenceRange || 'N/A'}</div></div></div>
+                  <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></div><Button variant="primary" size="sm" onClick={() => handleVerify(selectedOrder.orderId, detail.detailId)} loading={verifyResult.isPending} loadingText="Verify">Verify</Button></div>
+                  <div className="grid grid-cols-2 gap-4 text-sm"><div><Text fontSize="sm" fontWeight="medium">Result</Text><div className={`font-mono text-lg mt-1 ${detail.isCritical ? 'text-red-600 font-bold' : 'text-gray-900'}`}>{detail.resultValue || 'N/A'}{detail.resultUnit && <span className="text-sm text-gray-500 ml-1">{detail.resultUnit}</span>}</div></div><div><Text fontSize="sm" fontWeight="medium">Reference Range</Text><div className="font-mono text-lg text-gray-600 mt-1">{detail.referenceRange || 'N/A'}</div></div></div>
                   {detail.isCritical && <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded"><p className="text-xs text-red-800 font-semibold">⚠️ CRITICAL VALUE - Immediate notification required</p></div>}
-                  {detail.remarks && <div className="mt-3"><label className="text-xs text-gray-500 uppercase tracking-wider">Remarks</label><p className="text-sm text-gray-700 mt-1">{detail.remarks}</p></div>}
+                  {detail.remarks && <div className="mt-3"><Text fontSize="sm" fontWeight="medium">Remarks</Text><p className="text-sm text-gray-700 mt-1">{detail.remarks}</p></div>}
                 </div>
               ))}
             </div>

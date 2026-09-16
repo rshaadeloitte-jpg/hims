@@ -31,6 +31,8 @@ export interface LabOrder {
 
 export interface LabDetail {
   detailId: number;
+  orderId?: number;
+  testId?: number;
   testName: string;
   testCode?: string;
   status: string;
@@ -38,6 +40,7 @@ export interface LabDetail {
   critical?: boolean;
   isCritical?: boolean;
   verified?: boolean;
+  isVerified?: boolean;
   verifiedBy?: number;
   verifiedAt?: string;
   sampleCollectedAt?: string;

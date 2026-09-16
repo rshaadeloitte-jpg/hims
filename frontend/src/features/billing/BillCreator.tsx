@@ -13,6 +13,8 @@ import { createBillSchema, type CreateBillValues } from "./zodSchema";
 import { ChargeItems } from "./ChargeItems";
 import { type ChargeValues } from "./zodSchema";
 import { EstimationPreview } from "./EstimationPreview";
+import { Button, Checkbox } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 interface BillCreatorProps {
   onBillCreated?: (billId: number) => void;
@@ -97,21 +99,21 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
       <div className="bill-creator__header">
         <h2 className="bill-creator__title">Create New Bill</h2>
         <div className="bill-creator__actions">
-          <button
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={() => setShowEstimation(!showEstimation)}
             disabled={charges.length === 0}
           >
             {showEstimation ? "Hide Estimate" : "Preview Estimate"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={() => navigate("/billing")}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -122,24 +124,24 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
 
           {!selectedPatient ? (
             <div className="bill-creator__search">
-              <label htmlFor="patient-search" className="bill-creator__label">
-                Search patient
-              </label>
-              <input
-                id="patient-search"
-                type="search"
-                className="bill-creator__input"
-                placeholder="Name, MRN, mobile, ABHA..."
-                value={patientQuery}
-                onChange={(e) => setPatientQuery(e.target.value)}
-                autoComplete="off"
-              />
+              <FormField label="Search patient">
+                <TextInput
+                  id="patient-search"
+                  type="search"
+                  placeholder="Name, MRN, mobile, ABHA..."
+                  value={patientQuery}
+                  onChange={(e) => setPatientQuery(e.target.value)}
+                  autoComplete="off"
+                />
+              </FormField>
               {patients.length > 0 && (
                 <ul className="bill-creator__results" role="listbox">
                   {patients.map((p: any) => (
                     <li key={p.patientId}>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         className="bill-creator__result"
                         onClick={() =>
                           handleSelectPatient({
@@ -154,7 +156,7 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
                         <span className="bill-creator__result-meta">
                           {p.mobileNo ?? p.mobile ?? ""} {p.mrn ?? ""}
                         </span>
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -164,9 +166,10 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
             <div className="bill-creator__selected-patient">
               <span className="bill-creator__patient-name">{selectedPatient.name}</span>
               <span className="bill-creator__patient-id">ID: {selectedPatient.id}</span>
-              <button
+              <Button
                 type="button"
-                className="btn btn--sm btn--ghost"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setSelectedPatient(null);
                   setValue("patientId", undefined as unknown as number);
@@ -174,7 +177,7 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
                 }}
               >
                 Change
-              </button>
+              </Button>
             </div>
           )}
         </section>
@@ -184,45 +187,43 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
           <h3 className="bill-creator__subtitle">Bill Options</h3>
           <div className="bill-creator__options-grid">
             <div className="field">
-              <label htmlFor="encounterId">Encounter ID</label>
-              <input
-                id="encounterId"
-                type="number"
-                className="form-input"
-                {...register("encounterId")}
-              />
+              <FormField label="Encounter ID" error={errors.encounterId?.message}>
+                <TextInput
+                  id="encounterId"
+                  type="number"
+                  {...register("encounterId")}
+                />
+              </FormField>
             </div>
             <div className="field">
-              <label htmlFor="admissionId">Admission ID</label>
-              <input
-                id="admissionId"
-                type="number"
-                className="form-input"
-                {...register("admissionId")}
-              />
+              <FormField label="Admission ID" error={errors.admissionId?.message}>
+                <TextInput
+                  id="admissionId"
+                  type="number"
+                  {...register("admissionId")}
+                />
+              </FormField>
             </div>
             <div className="field">
-              <label htmlFor="prescriberDoctorId">Prescriber Doctor</label>
-              <input
-                id="prescriberDoctorId"
-                type="number"
-                className="form-input"
-                {...register("prescriberDoctorId")}
-              />
+              <FormField label="Prescriber Doctor">
+                <TextInput
+                  id="prescriberDoctorId"
+                  type="number"
+                  {...register("prescriberDoctorId")}
+                />
+              </FormField>
             </div>
             <div className="field field--check">
-              <label htmlFor="isSelfCompany">
-                <input
-                  id="isSelfCompany"
-                  type="checkbox"
-                  {...register("isSelfCompany")}
-                />
-                Self Company
-              </label>
+              <Checkbox.Root
+                checked={!!isSelfCompany}
+                onCheckedChange={(e) => setValue("isSelfCompany", !!e.checked, { shouldValidate: true })}
+              >
+                <Checkbox.HiddenInput {...register("isSelfCompany")} />
+                <Checkbox.Control />
+                <Checkbox.Label>Self Company</Checkbox.Label>
+              </Checkbox.Root>
             </div>
           </div>
-          {errors.encounterId && <p className="field-error">{errors.encounterId.message}</p>}
-          {errors.admissionId && <p className="field-error">{errors.admissionId.message}</p>}
         </section>
 
         {/* Charges panel */}
@@ -230,13 +231,14 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
           <div className="bill-creator__charges-header">
             <h3 className="bill-creator__subtitle">Charge Items</h3>
             {charges.length > 0 && (
-              <button
+              <Button
                 type="button"
-                className="btn btn--sm btn--ghost"
+                variant="ghost"
+                size="sm"
                 onClick={handleClearCharges}
               >
                 Clear all
-              </button>
+              </Button>
             )}
           </div>
           <ChargeItems
@@ -269,20 +271,15 @@ export function BillCreator({ onBillCreated }: BillCreatorProps) {
 
         {/* Submit */}
         <div className="bill-creator__footer">
-          <button
+          <Button
             type="submit"
-            className="btn btn--primary btn--lg"
+            variant="primary"
             disabled={!canSubmit}
+            loading={createBill.isPending}
+            loadingText="Creating Bill..."
           >
-            {createBill.isPending ? (
-              <>
-                <span className="spinner spinner--sm" aria-hidden="true" />
-                Creating Bill...
-              </>
-            ) : (
-              "Create Bill"
-            )}
-          </button>
+            Create Bill
+          </Button>
           {!selectedPatient && (
             <p className="bill-creator__hint">Select a patient to continue</p>
           )}

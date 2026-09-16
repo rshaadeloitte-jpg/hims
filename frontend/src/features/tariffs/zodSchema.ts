@@ -5,11 +5,6 @@ import { z } from "zod";
  * Numeric HTML inputs come through as strings; `z.coerce.number()` normalises them.
  */
 
-const optionalNumber = z
-  .preprocess(
-    (v) => (v === "" || v == null ? undefined : v),
-    z.coerce.number().optional(),
-  );
 
 const optionalString = z
   .preprocess(

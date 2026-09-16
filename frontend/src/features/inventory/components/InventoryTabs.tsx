@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { HStack, Table } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../../components/ui";
 import { useInventoryItems, useInventoryStores, useStockBalances } from "../queries";
 
 export function ItemsTab() {
@@ -7,31 +9,31 @@ export function ItemsTab() {
   if (isLoading) return <p className="muted">Loading items…</p>;
 
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Unit</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table.Root size="sm" variant="line">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Unit</Table.ColumnHeader>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
         {items.map((item) => (
-          <tr key={item.id}>
-            <td>{item.code}</td>
-            <td>{item.name}</td>
-            <td>{item.unitId}</td>
-            <td>{item.status}</td>
-          </tr>
+          <Table.Row key={item.id}>
+            <Table.Cell>{item.code}</Table.Cell>
+            <Table.Cell>{item.name}</Table.Cell>
+            <Table.Cell>{item.unitId}</Table.Cell>
+            <Table.Cell>{item.status}</Table.Cell>
+          </Table.Row>
         ))}
         {items.length === 0 && (
-          <tr>
-            <td colSpan={4} className="muted">No items.</td>
-          </tr>
+          <Table.Row>
+            <Table.Cell colSpan={4}>No items.</Table.Cell>
+          </Table.Row>
         )}
-      </tbody>
-    </table>
+      </Table.Body>
+    </Table.Root>
   );
 }
 
@@ -41,29 +43,29 @@ export function StoresTab() {
   if (isLoading) return <p className="muted">Loading stores…</p>;
 
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Location</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table.Root size="sm" variant="line">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader>
+          <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Location</Table.ColumnHeader>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
         {stores.map((store) => (
-          <tr key={store.id}>
-            <td>{store.code}</td>
-            <td>{store.name}</td>
-            <td>{store.location ?? "—"}</td>
-          </tr>
+          <Table.Row key={store.id}>
+            <Table.Cell>{store.code}</Table.Cell>
+            <Table.Cell>{store.name}</Table.Cell>
+            <Table.Cell>{store.location ?? "—"}</Table.Cell>
+          </Table.Row>
         ))}
         {stores.length === 0 && (
-          <tr>
-            <td colSpan={3} className="muted">No stores.</td>
-          </tr>
+          <Table.Row>
+            <Table.Cell colSpan={3}>No stores.</Table.Cell>
+          </Table.Row>
         )}
-      </tbody>
-    </table>
+      </Table.Body>
+    </Table.Root>
   );
 }
 
@@ -77,41 +79,39 @@ export function StockTab() {
 
   return (
     <div>
-      <div className="row">
-        <label>
-          Store ID
-          <input type="number" value={storeId} onChange={(e) => setStoreId(e.target.value)} />
-        </label>
-        <label>
-          Item ID
-          <input type="number" value={itemId} onChange={(e) => setItemId(e.target.value)} />
-        </label>
-      </div>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Batch</th>
-            <th>Quantity</th>
-            <th>Location</th>
-          </tr>
-        </thead>
-        <tbody>
+      <HStack gap={4} className="row">
+        <FormField label="Store ID">
+          <TextInput type="number" aria-label="Store ID" value={storeId} onChange={(e) => setStoreId(e.target.value)} />
+        </FormField>
+        <FormField label="Item ID">
+          <TextInput type="number" aria-label="Item ID" value={itemId} onChange={(e) => setItemId(e.target.value)} />
+        </FormField>
+      </HStack>
+      <Table.Root size="sm" variant="line">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Item</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Batch</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Quantity</Table.ColumnHeader>
+            <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Location</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {balances.map((b) => (
-            <tr key={b.id}>
-              <td>{b.itemId}</td>
-              <td>{b.batchId}</td>
-              <td>{b.quantity}</td>
-              <td>{b.location}</td>
-            </tr>
+            <Table.Row key={b.id}>
+              <Table.Cell>{b.itemId}</Table.Cell>
+              <Table.Cell>{b.batchId}</Table.Cell>
+              <Table.Cell>{b.quantity}</Table.Cell>
+              <Table.Cell>{b.location}</Table.Cell>
+            </Table.Row>
           ))}
           {balances.length === 0 && (
-            <tr>
-              <td colSpan={4} className="muted">No stock balances.</td>
-            </tr>
+            <Table.Row>
+              <Table.Cell colSpan={4}>No stock balances.</Table.Cell>
+            </Table.Row>
           )}
-        </tbody>
-      </table>
+        </Table.Body>
+      </Table.Root>
     </div>
   );
 }

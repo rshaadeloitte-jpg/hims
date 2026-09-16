@@ -11,7 +11,7 @@ import {
   useRescheduleLine,
   useRequestRetest,
   useRadOrderAction,
-} from './queries';
+} from '../queries';
 
 function wrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });

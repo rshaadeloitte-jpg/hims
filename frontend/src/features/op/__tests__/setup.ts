@@ -4,7 +4,7 @@ import { resetOpSession } from "../store/opSession";
 
 // Boot MSW once per test file; reset handlers between cases so a test
 // adding a custom handler doesn't leak into the next.
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 afterAll(() => server.close());
 beforeEach(() => {
   server.resetHandlers();

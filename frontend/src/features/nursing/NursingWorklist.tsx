@@ -1,119 +1,120 @@
-import { useState, useEffect } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useState } from "react";
+import { Box, Card, Heading, HStack, SimpleGrid, Table, Text, VStack } from "@chakra-ui/react";
 import { useVitals, useNursingTasks } from "./queries";
-import { vitalsSchema, nursingTaskSchema } from "./zodSchema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { TextInput } from "../../components/ui";
 
 export function NursingWorklist() {
   const [patientId, setPatientId] = useState(0);
   const [admissionId, setAdmissionId] = useState(0);
   const { data: vitals = [] } = useVitals(patientId);
   const { data: tasks = [] } = useNursingTasks();
-  
-  // Transform vitals data for charting (Epic MyChart style)
-  const chartData = vitals.slice(-20).map(v => ({
-    time: new Date(v.recordedAt).toLocaleTimeString(),
-    temperature: v.temperature ?? null,
-    pulse: v.pulse ?? null,
-    "Blood Pressure": v.bloodPressureSystolic && v.bloodPressureDiastolic 
-      ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}` 
-      : null,
-    "SpO₂": v.spO2 ?? null
-  }));
+
+  const recentVitals = vitals.slice(-20);
 
   // Organize tasks by status (Linear-style Kanban)
   const taskColumns = {
-    "To Do": tasks.filter(t => !t.completed && !t.cancelled),
-    "In Progress": tasks.filter(t => t.assignedTo && !t.completed && !t.cancelled),
-    "Completed": tasks.filter(t => t.completed),
-    "Cancelled": tasks.filter(t => t.cancelled)
+    "To Do": tasks.filter((t) => !t.completed && !t.cancelled),
+    "In Progress": tasks.filter((t) => t.assignedTo && !t.completed && !t.cancelled),
+    "Completed": tasks.filter((t) => t.completed),
+    "Cancelled": tasks.filter((t) => t.cancelled),
   };
 
   return (
-    <div className="space-y-6 p-4">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Nursing Worklist</h1>
-        <div className="flex gap-4">
-          <input 
-            type="number" 
-            placeholder="Patient ID" 
-            value={patientId || ""} 
-            onChange={(e) => setPatientId(Number(e.target.value))} 
-            className="border rounded px-2 py-1"
+    <Box p={4} className="space-y-6">
+      <HStack justify="space-between" align="center" wrap="wrap" gap={4} mb={6}>
+        <Heading as="h1" size="lg">Nursing Worklist</Heading>
+        <HStack gap={4}>
+          <TextInput
+            type="number"
+            placeholder="Patient ID"
+            value={patientId || ""}
+            onChange={(e) => setPatientId(Number(e.target.value))}
           />
-          <input 
-            type="number" 
-            placeholder="Admission ID" 
-            value={admissionId || ""} 
-            onChange={(e) => setAdmissionId(Number(e.target.value))} 
-            className="border rounded px-2 py-1"
+          <TextInput
+            type="number"
+            placeholder="Admission ID"
+            value={admissionId || ""}
+            onChange={(e) => setAdmissionId(Number(e.target.value))}
           />
-        </div>
-      </header>
+        </HStack>
+      </HStack>
 
       {patientId > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Vitals Trend (Last 20)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line yAxisId="left" type="monotone" dataKey="temperature" stroke="#8884d8" name="Temp (°C)" />
-                  <Line yAxisId="left" type="monotone" dataKey="pulse" stroke="#82ca9d" name="Pulse (bpm)" />
-                  <Line yAxisId="right" type="monotone" dataKey="Blood Pressure" stroke="#ffc658" name="BP (mmHg)" />
-                  <Line yAxisId="left" type="monotone" dataKey="SpO₂" stroke="#ff7300" name="SpO₂ (%)" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <Card.Root mb={6}>
+          <Card.Header>
+            <Card.Title>Vitals Trend (Last 20)</Card.Title>
+          </Card.Header>
+          <Card.Body>
+            <Table.Root size="sm" variant="line">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader>Time</Table.ColumnHeader>
+                  <Table.ColumnHeader>Temp (°C)</Table.ColumnHeader>
+                  <Table.ColumnHeader>Pulse (bpm)</Table.ColumnHeader>
+                  <Table.ColumnHeader>BP (mmHg)</Table.ColumnHeader>
+                  <Table.ColumnHeader>SpO₂ (%)</Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                {recentVitals.map((v) => (
+                  <Table.Row key={v.vitalId}>
+                    <Table.Cell>{new Date(v.recordedAt).toLocaleTimeString()}</Table.Cell>
+                    <Table.Cell>{v.temperature ?? "—"}</Table.Cell>
+                    <Table.Cell>{v.pulse ?? "—"}</Table.Cell>
+                    <Table.Cell>
+                      {v.bloodPressureSystolic && v.bloodPressureDiastolic
+                        ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}`
+                        : "—"}
+                    </Table.Cell>
+                    <Table.Cell>{v.spO2 ?? "—"}</Table.Cell>
+                  </Table.Row>
+                ))}
+                {recentVitals.length === 0 && (
+                  <Table.Row>
+                    <Table.Cell colSpan={5}>No vitals recorded.</Table.Cell>
+                  </Table.Row>
+                )}
+              </Table.Body>
+            </Table.Root>
+          </Card.Body>
+        </Card.Root>
       )}
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={4}>
         {Object.entries(taskColumns).map(([status, columnTasks]) => (
-          <div key={status} className="flex-shrink-0 w-80">
-            <Card>
-              <CardHeader className="bg-muted">
-                <CardTitle className="text-sm font-semibold">{status} ({columnTasks.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-2">
-                    {columnTasks.map(task => (
-                      <div 
-                        key={task.taskId} 
-                        className="border rounded p-3 bg-card hover:shadow transition-shadow"
-                      >
-                        <p className="font-medium">{task.taskType}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
-                        <div className="mt-2 flex justify-between text-xs">
-                          <span>Patient: {task.patientId}</span>
-                          <span>Admission: {task.admissionId}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {columnTasks.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No tasks</p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+          <Card.Root key={status}>
+            <Card.Header bg="gray.50" py={3}>
+              <Card.Title fontSize="sm" fontWeight="semibold">
+                {status} ({columnTasks.length})
+              </Card.Title>
+            </Card.Header>
+            <Card.Body maxH="400px" overflowY="auto" p={3}>
+              <VStack align="stretch" gap={2}>
+                {columnTasks.map((task) => (
+                  <Box
+                    key={task.taskId}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    p={3}
+                    bg="white"
+                    _hover={{ shadow: "sm" }}
+                  >
+                    <Text fontWeight="medium" fontSize="sm">{task.taskType}</Text>
+                    <Text fontSize="xs" color="gray.600" lineClamp={2}>{task.description}</Text>
+                    <HStack justify="space-between" fontSize="xs" color="gray.500" mt={2}>
+                      <span>Patient: {task.patientId}</span>
+                      <span>Admission: {task.admissionId}</span>
+                    </HStack>
+                  </Box>
+                ))}
+                {columnTasks.length === 0 && (
+                  <Text textAlign="center" color="gray.500" py={4} fontSize="sm">No tasks</Text>
+                )}
+              </VStack>
+            </Card.Body>
+          </Card.Root>
         ))}
-      </div>
-    </div>
+      </SimpleGrid>
+    </Box>
   );
 }

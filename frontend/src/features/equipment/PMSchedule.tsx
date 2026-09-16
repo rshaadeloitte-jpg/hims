@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, Checkbox, HStack, SimpleGrid, Table, Textarea, Wrap } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   usePmSchedules,
   useCreatePmSchedule,
@@ -154,362 +156,411 @@ export function PMSchedule() {
     <section className="page">
       <header className="page-header">
         <h1>Preventive Maintenance & Calibration</h1>
-        <button
-          className="btn btn-primary"
+        <Button
+          variant={showForm ? "secondary" : "primary"}
           onClick={() => {
             setShowForm(!showForm);
             setCompletingId(null);
           }}
         >
           {showForm ? "Cancel" : "New PM Schedule"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>Create PM Schedule</h2>
-          <div className="form-grid">
-            <label htmlFor="pm-equipmentId">
-              Equipment ID *
-              {scheduleErrors.equipmentId && (
-                <span className="error">{scheduleErrors.equipmentId}</span>
-              )}
-            </label>
-            <input
-              id="pm-equipmentId"
-              type="number"
-              value={scheduleForm.equipmentId || ""}
-              onChange={(e) =>
-                setScheduleForm({ ...scheduleForm, equipmentId: Number(e.target.value) })
-              }
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Equipment ID" error={scheduleErrors.equipmentId} required>
+              <TextInput
+                id="pm-equipmentId"
+                aria-label="Equipment ID"
+                type="number"
+                value={scheduleForm.equipmentId || ""}
+                onChange={(e) =>
+                  setScheduleForm({ ...scheduleForm, equipmentId: Number(e.target.value) })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pm-scheduleCode">Schedule Code</label>
-            <input
-              id="pm-scheduleCode"
-              value={scheduleForm.scheduleCode ?? ""}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleCode: e.target.value })}
-            />
+            <FormField label="Schedule Code">
+              <TextInput
+                id="pm-scheduleCode"
+                aria-label="Schedule Code"
+                value={scheduleForm.scheduleCode ?? ""}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, scheduleCode: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="pm-frequency">
-              Frequency (months) *
-              {scheduleErrors.frequency && (
-                <span className="error">{scheduleErrors.frequency}</span>
-              )}
-            </label>
-            <input
-              id="pm-frequency"
-              type="number"
-              value={scheduleForm.frequency}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, frequency: Number(e.target.value) })}
-            />
+            <FormField label="Frequency (months)" error={scheduleErrors.frequency} required>
+              <TextInput
+                id="pm-frequency"
+                aria-label="Frequency (months)"
+                type="number"
+                value={scheduleForm.frequency}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, frequency: Number(e.target.value) })}
+              />
+            </FormField>
 
-            <label htmlFor="pm-pmDate">PM Start Date</label>
-            <input
-              id="pm-pmDate"
-              type="date"
-              value={scheduleForm.pmDate ?? ""}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, pmDate: e.target.value })}
-            />
+            <FormField label="PM Start Date">
+              <TextInput
+                id="pm-pmDate"
+                aria-label="PM Start Date"
+                type="date"
+                value={scheduleForm.pmDate ?? ""}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, pmDate: e.target.value })}
+              />
+            </FormField>
 
-            <label htmlFor="pm-pmType">Maintenance Type</label>
-            <select
-              id="pm-pmType"
-              value={scheduleForm.pmType}
-              onChange={(e) => setScheduleForm({ ...scheduleForm, pmType: Number(e.target.value) })}
-            >
-              <option value={1}>Preventive</option>
-              <option value={2}>Corrective</option>
-              <option value={3}>Calibration</option>
-            </select>
+            <FormField label="Maintenance Type">
+              <HimsSelect
+                id="pm-pmType"
+                aria-label="Maintenance Type"
+                value={scheduleForm.pmType}
+                onChange={(e) => setScheduleForm({ ...scheduleForm, pmType: Number(e.target.value) })}
+              >
+                <option value={1}>Preventive</option>
+                <option value={2}>Corrective</option>
+                <option value={3}>Calibration</option>
+              </HimsSelect>
+            </FormField>
 
-            <label htmlFor="pm-storeId">Store ID</label>
-            <input
-              id="pm-storeId"
-              type="number"
-              value={scheduleForm.storeId ?? ""}
-              onChange={(e) =>
-                setScheduleForm({ ...scheduleForm, storeId: Number(e.target.value) || undefined })
-              }
-            />
+            <FormField label="Store ID">
+              <TextInput
+                id="pm-storeId"
+                aria-label="Store ID"
+                type="number"
+                value={scheduleForm.storeId ?? ""}
+                onChange={(e) =>
+                  setScheduleForm({ ...scheduleForm, storeId: Number(e.target.value) || undefined })
+                }
+              />
+            </FormField>
 
-            <label>Service Months</label>
-            <div className="month-toggles">
-              {MONTHS.map((m) => (
-                <label key={m.key} className="month-toggle">
-                  <input
-                    type="checkbox"
-                    checked={scheduleForm[m.key] as boolean}
-                    onChange={() => toggleMonth(m.key)}
-                  />
-                  {m.label}
-                </label>
-              ))}
-            </div>
-          </div>
-          <button className="btn btn-primary" onClick={handleCreate} disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create Schedule"}
-          </button>
+            <FormField label="Service Months">
+              <Wrap gap={2} className="month-toggles">
+                {MONTHS.map((m) => (
+                  <Checkbox.Root
+                    key={m.key}
+                    checked={!!(scheduleForm[m.key] as boolean)}
+                    onCheckedChange={() => toggleMonth(m.key)}
+                  >
+                    <Checkbox.Control />
+                    <Checkbox.Label>{m.label}</Checkbox.Label>
+                  </Checkbox.Root>
+                ))}
+              </Wrap>
+            </FormField>
+          </SimpleGrid>
+          <Button variant="primary" onClick={handleCreate} disabled={create.isPending} loading={create.isPending} loadingText="Creating…">
+            Create Schedule
+          </Button>
         </div>
       )}
 
       {completingId && (
         <div className="card">
           <h2>Record Completion — Schedule #{completingId}</h2>
-          <div className="form-grid">
-            <label htmlFor="pmc-maintenanceNo">Maintenance No.</label>
-            <input
-              id="pmc-maintenanceNo"
-              value={completionForm.maintenanceNo ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, maintenanceNo: e.target.value })
-              }
-            />
+          <SimpleGrid columns={{ base: 1, md: 2 }} gap={4} className="form-grid">
+            <FormField label="Maintenance No.">
+              <TextInput
+                id="pmc-maintenanceNo"
+                aria-label="Maintenance No."
+                value={completionForm.maintenanceNo ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, maintenanceNo: e.target.value })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pmc-maintenanceDate">Maintenance Date</label>
-            <input
-              id="pmc-maintenanceDate"
-              type="date"
-              value={completionForm.maintenanceDate ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, maintenanceDate: e.target.value })
-              }
-            />
+            <FormField label="Maintenance Date">
+              <TextInput
+                id="pmc-maintenanceDate"
+                aria-label="Maintenance Date"
+                type="date"
+                value={completionForm.maintenanceDate ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, maintenanceDate: e.target.value })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pmc-performedBy">Performed By (Engineer ID)</label>
-            <input
-              id="pmc-performedBy"
-              type="number"
-              value={completionForm.performedBy ?? ""}
-              onChange={(e) =>
-                setCompletionForm({
-                  ...completionForm,
-                  performedBy: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Performed By (Engineer ID)">
+              <TextInput
+                id="pmc-performedBy"
+                aria-label="Performed By (Engineer ID)"
+                type="number"
+                value={completionForm.performedBy ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({
+                    ...completionForm,
+                    performedBy: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pmc-functionalCheckRemark">Functional Check Remark</label>
-            <textarea
-              id="pmc-functionalCheckRemark"
-              value={completionForm.functionalCheckRemark ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, functionalCheckRemark: e.target.value })
-              }
-            />
+            <FormField label="Functional Check Remark">
+              <Textarea
+                id="pmc-functionalCheckRemark"
+                aria-label="Functional Check Remark"
+                value={completionForm.functionalCheckRemark ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, functionalCheckRemark: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-preventiveMaintenanceRemark">Preventive Maintenance Remark</label>
-            <textarea
-              id="pmc-preventiveMaintenanceRemark"
-              value={completionForm.preventiveMaintenanceRemark ?? ""}
-              onChange={(e) =>
-                setCompletionForm({
-                  ...completionForm,
-                  preventiveMaintenanceRemark: e.target.value,
-                })
-              }
-            />
+            <FormField label="Preventive Maintenance Remark">
+              <Textarea
+                id="pmc-preventiveMaintenanceRemark"
+                aria-label="Preventive Maintenance Remark"
+                value={completionForm.preventiveMaintenanceRemark ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({
+                    ...completionForm,
+                    preventiveMaintenanceRemark: e.target.value,
+                  })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-electricalSafetyRemark">Electrical Safety Remark</label>
-            <textarea
-              id="pmc-electricalSafetyRemark"
-              value={completionForm.electricalSafetyRemark ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, electricalSafetyRemark: e.target.value })
-              }
-            />
+            <FormField label="Electrical Safety Remark">
+              <Textarea
+                id="pmc-electricalSafetyRemark"
+                aria-label="Electrical Safety Remark"
+                value={completionForm.electricalSafetyRemark ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, electricalSafetyRemark: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-calibration">Calibration</label>
-            <textarea
-              id="pmc-calibration"
-              value={completionForm.calibration ?? ""}
-              onChange={(e) => setCompletionForm({ ...completionForm, calibration: e.target.value })}
-            />
+            <FormField label="Calibration">
+              <Textarea
+                id="pmc-calibration"
+                aria-label="Calibration"
+                value={completionForm.calibration ?? ""}
+                onChange={(e) => setCompletionForm({ ...completionForm, calibration: e.target.value })}
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-furtherActions">Further Actions</label>
-            <textarea
-              id="pmc-furtherActions"
-              value={completionForm.furtherActions ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, furtherActions: e.target.value })
-              }
-            />
+            <FormField label="Further Actions">
+              <Textarea
+                id="pmc-furtherActions"
+                aria-label="Further Actions"
+                value={completionForm.furtherActions ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, furtherActions: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-commentsOnUse">Comments on Use</label>
-            <textarea
-              id="pmc-commentsOnUse"
-              value={completionForm.commentsOnUse ?? ""}
-              onChange={(e) =>
-                setCompletionForm({ ...completionForm, commentsOnUse: e.target.value })
-              }
-            />
+            <FormField label="Comments on Use">
+              <Textarea
+                id="pmc-commentsOnUse"
+                aria-label="Comments on Use"
+                value={completionForm.commentsOnUse ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({ ...completionForm, commentsOnUse: e.target.value })
+                }
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-remarks">Remarks</label>
-            <textarea
-              id="pmc-remarks"
-              value={completionForm.remarks ?? ""}
-              onChange={(e) => setCompletionForm({ ...completionForm, remarks: e.target.value })}
-            />
+            <FormField label="Remarks">
+              <Textarea
+                id="pmc-remarks"
+                aria-label="Remarks"
+                value={completionForm.remarks ?? ""}
+                onChange={(e) => setCompletionForm({ ...completionForm, remarks: e.target.value })}
+                bg="white"
+                borderColor="gray.300"
+              />
+            </FormField>
 
-            <label htmlFor="pmc-amountIncurred">Amount Incurred</label>
-            <input
-              id="pmc-amountIncurred"
-              type="number"
-              step="0.01"
-              value={completionForm.amountIncurred ?? ""}
-              onChange={(e) =>
-                setCompletionForm({
-                  ...completionForm,
-                  amountIncurred: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Amount Incurred">
+              <TextInput
+                id="pmc-amountIncurred"
+                aria-label="Amount Incurred"
+                type="number"
+                step="0.01"
+                value={completionForm.amountIncurred ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({
+                    ...completionForm,
+                    amountIncurred: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pmc-verifiedBy">Verified By</label>
-            <input
-              id="pmc-verifiedBy"
-              type="number"
-              value={completionForm.verifiedBy ?? ""}
-              onChange={(e) =>
-                setCompletionForm({
-                  ...completionForm,
-                  verifiedBy: Number(e.target.value) || undefined,
-                })
-              }
-            />
+            <FormField label="Verified By">
+              <TextInput
+                id="pmc-verifiedBy"
+                aria-label="Verified By"
+                type="number"
+                value={completionForm.verifiedBy ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({
+                    ...completionForm,
+                    verifiedBy: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
 
-            <label htmlFor="pmc-serviceAgentId">Service Agent ID</label>
-            <input
-              id="pmc-serviceAgentId"
-              type="number"
-              value={completionForm.serviceAgentId ?? ""}
-              onChange={(e) =>
-                setCompletionForm({
-                  ...completionForm,
-                  serviceAgentId: Number(e.target.value) || undefined,
-                })
-              }
-            />
-          </div>
-          <button
-            className="btn btn-primary"
+            <FormField label="Service Agent ID">
+              <TextInput
+                id="pmc-serviceAgentId"
+                aria-label="Service Agent ID"
+                type="number"
+                value={completionForm.serviceAgentId ?? ""}
+                onChange={(e) =>
+                  setCompletionForm({
+                    ...completionForm,
+                    serviceAgentId: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </FormField>
+          </SimpleGrid>
+          <Button
+            variant="primary"
             onClick={handleComplete}
             disabled={complete.isPending}
+            loading={complete.isPending}
+            loadingText="Saving…"
           >
-            {complete.isPending ? "Saving…" : "Record Completion"}
-          </button>
+            Record Completion
+          </Button>
         </div>
       )}
 
       <div className="card">
         <h2>PM Schedules</h2>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Schedule Code</th>
-              <th>Equipment</th>
-              <th>Type</th>
-              <th>Frequency</th>
-              <th>Next Due</th>
-              <th>Last Completed</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Schedule Code</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Equipment</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Type</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Frequency</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Next Due</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Last Completed</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {schedules.map((s) => (
-              <tr key={s.id}>
-                <td>{s.id}</td>
-                <td>{s.scheduleCode ?? "—"}</td>
-                <td>{s.equipmentId}</td>
-                <td>
+              <Table.Row key={s.id}>
+                <Table.Cell>{s.id}</Table.Cell>
+                <Table.Cell>{s.scheduleCode ?? "—"}</Table.Cell>
+                <Table.Cell>{s.equipmentId}</Table.Cell>
+                <Table.Cell>
                   <span className="badge badge-info">
                     {MAINTENANCE_TYPE_LABELS[s.pmType] ?? s.pmType}
                   </span>
-                </td>
-                <td>{s.frequency} mo</td>
-                <td>{s.nextDueDate ?? "—"}</td>
-                <td>{s.lastCompletedDate ?? "—"}</td>
-                <td>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                  >
-                    {expandedId === s.id ? "Hide" : "History"}
-                  </button>{" "}
-                  <button
-                    className="btn btn-sm btn-success"
-                    onClick={() => setCompletingId(s.id)}
-                  >
-                    Complete
-                  </button>
-                </td>
-              </tr>
+                </Table.Cell>
+                <Table.Cell>{s.frequency} mo</Table.Cell>
+                <Table.Cell>{s.nextDueDate ?? "—"}</Table.Cell>
+                <Table.Cell>{s.lastCompletedDate ?? "—"}</Table.Cell>
+                <Table.Cell>
+                  <HStack gap={1}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                    >
+                      {expandedId === s.id ? "Hide" : "History"}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setCompletingId(s.id)}
+                    >
+                      Complete
+                    </Button>
+                  </HStack>
+                </Table.Cell>
+              </Table.Row>
             ))}
             {schedules.length === 0 && (
-              <tr>
-                <td colSpan={8} className="muted">
+              <Table.Row>
+                <Table.Cell colSpan={8}>
                   No PM schedules.
-                </td>
-              </tr>
+                </Table.Cell>
+              </Table.Row>
             )}
-          </tbody>
-        </table>
+          </Table.Body>
+        </Table.Root>
       </div>
 
       {expandedId && history && history.length > 0 && (
         <div className="card">
           <h2>Execution History — Schedule #{expandedId}</h2>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Maintenance No.</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Performed By</th>
-                <th>Amount</th>
-                <th>Calibration</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Maintenance No.</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Performed By</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Calibration</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {history.map((h) => (
-                <tr key={h.id}>
-                  <td>{h.maintenanceNo ?? "—"}</td>
-                  <td>{h.maintenanceDate ?? "—"}</td>
-                  <td>
+                <Table.Row key={h.id}>
+                  <Table.Cell>{h.maintenanceNo ?? "—"}</Table.Cell>
+                  <Table.Cell>{h.maintenanceDate ?? "—"}</Table.Cell>
+                  <Table.Cell>
                     <span className={`badge ${STATUS_BADGE[h.pmStatus] ?? "badge-muted"}`}>
                       {PM_STATUS_LABELS[h.pmStatus] ?? h.pmStatus}
                     </span>
-                  </td>
-                  <td>{h.performedBy ?? "—"}</td>
-                  <td>{h.amountIncurred != null ? `₹${h.amountIncurred}` : "—"}</td>
-                  <td>{h.calibration ?? "—"}</td>
-                </tr>
+                  </Table.Cell>
+                  <Table.Cell>{h.performedBy ?? "—"}</Table.Cell>
+                  <Table.Cell>{h.amountIncurred != null ? `₹${h.amountIncurred}` : "—"}</Table.Cell>
+                  <Table.Cell>{h.calibration ?? "—"}</Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       )}
 
       {checklists.length > 0 && (
         <div className="card">
           <h2>PM Checklist Templates</h2>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Code</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Description</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {checklists.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.code}</td>
-                  <td>{c.description}</td>
-                </tr>
+                <Table.Row key={c.id}>
+                  <Table.Cell>{c.code}</Table.Cell>
+                  <Table.Cell>{c.description}</Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       )}
     </section>

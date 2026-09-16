@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from "react-router-dom";
-import { DeloitteLogo } from "./components/DeloitteIcon";
+import { AppShell } from "./components/layout";
 import { MasterEditPage } from "./features/masters/MasterEditPage";
 import { MasterListPage } from "./features/masters/MasterListPage";
 import { FormListPage } from "./features/forms/FormListPage";
@@ -92,45 +92,8 @@ import { HospitalSetupPage } from "./features/commons/HospitalSetup";
  */
 export default function App() {
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="app-header__inner">
-          <div className="brand-wrapper">
-            <Link to="/masters" className="brand-logo">
-              <DeloitteLogo size={28} />
-              <span>Deloitte</span>
-              <span className="brand-logo__dot" />
-            </Link>
-            <span className="brand-logo__tag">HIMS Enterprise</span>
-          </div>
-          <nav className="app-nav" aria-label="Main">
-            <Link to="/masters">Masters</Link>
-            <Link to="/forms">Forms</Link>
-            <Link to="/m/op/walkinVisit">Walk-in</Link>
-            <Link to="/m/op/addAppointment">New appt</Link>
-            <Link to="/m/op/appointmentList">Appointments</Link>
-            <Link to="/m/op/abha">ABHA</Link>
-            <Link to="/m02/walkin">M02 Walk-in</Link>
-            <Link to="/m02/booking">M02 Booking</Link>
-            <Link to="/m02/followups">M02 Follow-ups</Link>
-            <Link to="/patients/register">Register</Link>
-            <Link to="/billing">Billing</Link>
-            <Link to="/pharmacy">Pharmacy</Link>
-            <Link to="/nursing">Nursing</Link>
-            <Link to="/lab">Lab</Link>
-            <Link to="/adt">ADT</Link>
-            <Link to="/queue">Queue</Link>
-            <Link to="/auth/login">Login</Link>
-            <Link to="/auth/admin">Admin</Link>
-            <Link to="/reports">Reports</Link>
-            <Link to="/commons/config">AppConfig</Link>
-            <Link to="/commons/audit">Audit</Link>
-            <Link to="/commons/hospital">Hospital</Link>
-          </nav>
-        </div>
-      </header>
-      <main className="app-main">
-        <Routes>
+    <AppShell>
+      <Routes>
           <Route path="/" element={<MasterListPage />} />
           <Route path="/masters" element={<MasterListPage />} />
           <Route path="/masters/:entity" element={<MasterListPage />} />
@@ -158,6 +121,7 @@ export default function App() {
           <Route path="/pharmacy/new" element={<NewSalePage />} />
           <Route path="/pharmacy/returns" element={<SaleReturnsPage />} />
           <Route path="/pharmacy/safety" element={<DrugSafetyPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/nursing" element={<NursingCarePage />} />
           <Route path="/nursing/worklist" element={<NursingWorksListPage />} />
           <Route path="/lab" element={<LabOrdersPage />} />
@@ -202,13 +166,8 @@ export default function App() {
           <Route path="/commons/audit" element={<AuditTrailPage />} />
           <Route path="/commons/hospital" element={<HospitalSetupPage />} />
           <Route path="*" element={<MasterListPage />} />
-        </Routes>
-      </main>
-      <footer className="app-footer">
-        <span className="app-footer__dot" />
-        <span>Deloitte Digital & Healthcare Solutions · HIMS Modernization Platform · All Modules Verified</span>
-      </footer>
-    </div>
+      </Routes>
+    </AppShell>
   );
 }
 

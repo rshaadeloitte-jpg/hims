@@ -70,14 +70,14 @@ export function useCreateRequest() {
 export function useVehicles() {
   return useQuery<Vehicle[]>({
     queryKey: transportQueryKeys.vehicles(),
-    queryFn: () => trnJson<Vehicle[]>(`${TRN_BASE}/v1/vehicles`),
+    queryFn: () => trnJson<Vehicle[]>(`${TRN_BASE}/api/v1/transport/vehicles`),
   });
 }
 
 export function useVehicle(id: number) {
   return useQuery<Vehicle>({
     queryKey: transportQueryKeys.vehicle(id),
-    queryFn: () => trnJson<Vehicle>(`${TRN_BASE}/v1/vehicles/${id}`),
+    queryFn: () => trnJson<Vehicle>(`${TRN_BASE}/api/v1/transport/vehicles/${id}`),
     enabled: id > 0,
   });
 }
@@ -86,7 +86,7 @@ export function useVehicleIn() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { vehicleId: number; location: string; odometerReading: number; notes?: string }) =>
-      trnJson<Vehicle>(`${TRN_BASE}/v1/vehicles/${input.vehicleId}/in`, {
+      trnJson<Vehicle>(`${TRN_BASE}/api/v1/transport/vehicles/${input.vehicleId}/in`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -98,7 +98,7 @@ export function useVehicleOut() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { vehicleId: number; destination: string; odometerReading: number; purpose: string }) =>
-      trnJson<Vehicle>(`${TRN_BASE}/v1/vehicles/${input.vehicleId}/out`, {
+      trnJson<Vehicle>(`${TRN_BASE}/api/v1/transport/vehicles/${input.vehicleId}/out`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -110,7 +110,7 @@ export function useAllocateVehicle() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { vehicleId: number; allocatedTo: string; purpose: string; expectedReturnAt?: string }) =>
-      trnJson<Vehicle>(`${TRN_BASE}/v1/vehicles/${input.vehicleId}/allocate`, {
+      trnJson<Vehicle>(`${TRN_BASE}/api/v1/transport/vehicles/${input.vehicleId}/allocate`, {
         method: "POST",
         body: JSON.stringify(input),
       }),

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Box, Button, SimpleGrid, Table, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   useAnesthesiaRecords,
   useCreatePreOp,
@@ -10,8 +12,6 @@ import {
   useAnesthesiaDrugs,
   useCompletePostOp,
   type AnesthesiaRecord,
-  type VitalSignRecord,
-  type AnesthesiaDrug,
 } from "./queries";
 import {
   anesthesiaPreOpSchema,
@@ -47,42 +47,35 @@ function PreOpForm({ onCreated }: { onCreated: (recordId: number) => void }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white">
       <h4 className="text-sm font-semibold text-gray-900">Pre-Operative Assessment</h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Schedule ID *</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("scheduleId", { valueAsNumber: true })} />
-          {errors.scheduleId && <p className="text-xs text-red-600">{errors.scheduleId.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Patient ID *</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("patientId", { valueAsNumber: true })} />
-          {errors.patientId && <p className="text-xs text-red-600">{errors.patientId.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">ASA Grade *</label>
-          <select className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("asaGrade")}>
+      <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+        <FormField label="Schedule ID *" error={errors.scheduleId?.message} required>
+          <TextInput type="number" {...register("scheduleId", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="Patient ID *" error={errors.patientId?.message} required>
+          <TextInput type="number" {...register("patientId", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="ASA Grade *" error={errors.asaGrade?.message} required>
+          <HimsSelect {...register("asaGrade")}>
             <option value="">Select...</option>
             <option value="ASA_I">ASA I</option>
             <option value="ASA_II">ASA II</option>
             <option value="ASA_III">ASA III</option>
             <option value="ASA_IV">ASA IV</option>
             <option value="ASA_V">ASA V</option>
-          </select>
-          {errors.asaGrade && <p className="text-xs text-red-600">{errors.asaGrade.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Airway Assessment *</label>
-          <input type="text" placeholder="e.g. Mallampati I" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("airway")} />
-          {errors.airway && <p className="text-xs text-red-600">{errors.airway.message}</p>}
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-gray-700 mb-1">Comorbidities</label>
-          <textarea rows={2} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("comorbidities")} />
-        </div>
-      </div>
-      <button type="submit" disabled={mutation.isPending} className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 disabled:opacity-50">
-        {mutation.isPending ? "Saving..." : "Save Pre-Op Assessment"}
-      </button>
+          </HimsSelect>
+        </FormField>
+        <FormField label="Airway Assessment *" error={errors.airway?.message} required>
+          <TextInput type="text" placeholder="e.g. Mallampati I" {...register("airway")} />
+        </FormField>
+        <Box gridColumn={{ base: "auto", md: "span 2" }}>
+          <FormField label="Comorbidities">
+            <Textarea bg="white" borderColor="gray.300" rows={2} {...register("comorbidities")} />
+          </FormField>
+        </Box>
+      </SimpleGrid>
+      <Button type="submit" variant="primary" loading={mutation.isPending} loadingText="Saving...">
+        Save Pre-Op Assessment
+      </Button>
     </form>
   );
 }
@@ -93,7 +86,6 @@ function VitalsForm({ recordId }: { recordId: number }) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
   } = useForm<VitalSignForm>({
     resolver: zodResolver(vitalSignSchema),
@@ -114,65 +106,72 @@ function VitalsForm({ recordId }: { recordId: number }) {
       <h4 className="text-sm font-semibold text-gray-900">Vital Signs</h4>
       {vitals.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border border-gray-200 rounded">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-2 py-1 text-left">Time</th>
-                <th className="px-2 py-1 text-left">HR</th>
-                <th className="px-2 py-1 text-left">BP</th>
-                <th className="px-2 py-1 text-left">SpO2</th>
-                <th className="px-2 py-1 text-left">RR</th>
-                <th className="px-2 py-1 text-left">Temp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Time</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">HR</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">BP</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">SpO2</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">RR</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Temp</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {vitals.map((v) => (
-                <tr key={v.vitalId ?? v.id}>
-                  <td className="px-2 py-1">{v.recordedAt ? new Date(v.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
-                  <td className="px-2 py-1">{v.heartRate ?? "—"}</td>
-                  <td className="px-2 py-1">{v.bpSystolic ?? "—"}/{v.bpDiastolic ?? "—"}</td>
-                  <td className="px-2 py-1">{v.spo2 ?? "—"}</td>
-                  <td className="px-2 py-1">{v.respiratoryRate ?? "—"}</td>
-                  <td className="px-2 py-1">{v.temperature ?? "—"}</td>
-                </tr>
+                <Table.Row key={v.vitalId ?? v.id}>
+                  <Table.Cell>{v.recordedAt ? new Date(v.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</Table.Cell>
+                  <Table.Cell>{v.heartRate ?? "—"}</Table.Cell>
+                  <Table.Cell>{v.bpSystolic ?? "—"}/{v.bpDiastolic ?? "—"}</Table.Cell>
+                  <Table.Cell>{v.spo2 ?? "—"}</Table.Cell>
+                  <Table.Cell>{v.respiratoryRate ?? "—"}</Table.Cell>
+                  <Table.Cell>{v.temperature ?? "—"}</Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       )}
       <form onSubmit={onSubmit} className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-gray-50 rounded border border-gray-200">
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Recorded At</label>
-          <input type="datetime-local" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("recordedAt")} />
+          <FormField label="Recorded At">
+            <TextInput type="datetime-local" {...register("recordedAt")} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">HR (bpm)</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("hr", { valueAsNumber: true })} />
+          <FormField label="HR (bpm)">
+            <TextInput type="number" {...register("hr", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">BP Sys</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("bpSys", { valueAsNumber: true })} />
+          <FormField label="BP Sys">
+            <TextInput type="number" {...register("bpSys", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">BP Dia</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("bpDia", { valueAsNumber: true })} />
+          <FormField label="BP Dia">
+            <TextInput type="number" {...register("bpDia", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">SpO2 (%)</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("spo2", { valueAsNumber: true })} />
+          <FormField label="SpO2 (%)">
+            <TextInput type="number" {...register("spo2", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">RR</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("rr", { valueAsNumber: true })} />
+          <FormField label="RR">
+            <TextInput type="number" {...register("rr", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Temp (°C)</label>
-          <input type="number" step="0.1" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("temp", { valueAsNumber: true })} />
+          <FormField label="Temp (°C)">
+            <TextInput type="number" step="0.1" {...register("temp", { valueAsNumber: true })} />
+          </FormField>
         </div>
         <div className="col-span-2 md:col-span-3">
-          <button type="submit" disabled={mutation.isPending} className="px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:opacity-50">
-            {mutation.isPending ? "Adding..." : "Add Vital Sign"}
-          </button>
+          <Button type="submit" variant="primary" loading={mutation.isPending} loadingText="Adding...">
+            Add Vital Sign
+          </Button>
         </div>
       </form>
     </div>
@@ -206,61 +205,61 @@ function DrugForm({ recordId }: { recordId: number }) {
       <h4 className="text-sm font-semibold text-gray-900">Anesthesia Drugs</h4>
       {drugs.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border border-gray-200 rounded">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-2 py-1 text-left">Drug</th>
-                <th className="px-2 py-1 text-left">Dose</th>
-                <th className="px-2 py-1 text-left">Route</th>
-                <th className="px-2 py-1 text-left">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+          <Table.Root size="sm" variant="line">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Drug</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Dose</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Route</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Time</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {drugs.map((d) => (
-                <tr key={d.drugId ?? d.id}>
-                  <td className="px-2 py-1">{d.drugName}</td>
-                  <td className="px-2 py-1">{d.dose}</td>
-                  <td className="px-2 py-1">{d.route}</td>
-                  <td className="px-2 py-1">{d.administeredAt ? new Date(d.administeredAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
-                </tr>
+                <Table.Row key={d.drugId ?? d.id}>
+                  <Table.Cell>{d.drugName}</Table.Cell>
+                  <Table.Cell>{d.dose}</Table.Cell>
+                  <Table.Cell>{d.route}</Table.Cell>
+                  <Table.Cell>{d.administeredAt ? new Date(d.administeredAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         </div>
       )}
       <form onSubmit={onSubmit} className="grid grid-cols-2 md:grid-cols-4 gap-2 p-3 bg-gray-50 rounded border border-gray-200">
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Drug Name *</label>
-          <input type="text" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("drugName")} />
-          {errors.drugName && <p className="text-xs text-red-600">{errors.drugName.message}</p>}
+          <FormField label="Drug Name *" error={errors.drugName?.message} required>
+            <TextInput type="text" {...register("drugName")} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Dose *</label>
-          <input type="text" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("dose")} />
-          {errors.dose && <p className="text-xs text-red-600">{errors.dose.message}</p>}
+          <FormField label="Dose *" error={errors.dose?.message} required>
+            <TextInput type="text" {...register("dose")} />
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Route *</label>
-          <select className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("route")}>
-            <option value="">Select...</option>
-            <option value="IV">IV</option>
-            <option value="IM">IM</option>
-            <option value="SC">SC</option>
-            <option value="INHALATION">Inhalation</option>
-            <option value="EPIDURAL">Epidural</option>
-            <option value="SPINAL">Spinal</option>
-          </select>
-          {errors.route && <p className="text-xs text-red-600">{errors.route.message}</p>}
+          <FormField label="Route *" error={errors.route?.message} required>
+            <HimsSelect {...register("route")}>
+              <option value="">Select...</option>
+              <option value="IV">IV</option>
+              <option value="IM">IM</option>
+              <option value="SC">SC</option>
+              <option value="INHALATION">Inhalation</option>
+              <option value="EPIDURAL">Epidural</option>
+              <option value="SPINAL">Spinal</option>
+            </HimsSelect>
+          </FormField>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Administered At *</label>
-          <input type="datetime-local" className="w-full border border-gray-300 rounded px-2 py-1 text-xs" {...register("administeredAt")} />
-          {errors.administeredAt && <p className="text-xs text-red-600">{errors.administeredAt.message}</p>}
+          <FormField label="Administered At *" error={errors.administeredAt?.message} required>
+            <TextInput type="datetime-local" {...register("administeredAt")} />
+          </FormField>
         </div>
         <div className="col-span-2 md:col-span-4">
-          <button type="submit" disabled={mutation.isPending} className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 disabled:opacity-50">
-            {mutation.isPending ? "Adding..." : "Add Drug"}
-          </button>
+          <Button type="submit" variant="primary" loading={mutation.isPending} loadingText="Adding...">
+            Add Drug
+          </Button>
         </div>
       </form>
     </div>
@@ -289,24 +288,20 @@ function PostOpForm({ recordId }: { recordId: number }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3 p-4 border border-gray-200 rounded-lg bg-white">
       <h4 className="text-sm font-semibold text-gray-900">Post-Operative / PACU</h4>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">PACU Stay (min)</label>
-          <input type="number" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("pacuMinutes", { valueAsNumber: true })} />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Recovery Score (0-10)</label>
-          <input type="number" min={0} max={10} className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("recoveryScore", { valueAsNumber: true })} />
-          {errors.recoveryScore && <p className="text-xs text-red-600">{errors.recoveryScore.message}</p>}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Complications</label>
-          <input type="text" className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" {...register("complications")} />
-        </div>
-      </div>
-      <button type="submit" disabled={mutation.isPending} className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 disabled:opacity-50">
-        {mutation.isPending ? "Saving..." : "Complete Post-Op"}
-      </button>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
+        <FormField label="PACU Stay (min)">
+          <TextInput type="number" {...register("pacuMinutes", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="Recovery Score (0-10)" error={errors.recoveryScore?.message}>
+          <TextInput type="number" min={0} max={10} {...register("recoveryScore", { valueAsNumber: true })} />
+        </FormField>
+        <FormField label="Complications">
+          <TextInput type="text" {...register("complications")} />
+        </FormField>
+      </SimpleGrid>
+      <Button type="submit" variant="primary" loading={mutation.isPending} loadingText="Saving...">
+        Complete Post-Op
+      </Button>
     </form>
   );
 }
@@ -337,10 +332,10 @@ export function AnesthesiaRecord() {
               const isActive = id === activeRecordId;
               return (
                 <div key={id} className="p-4">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setActiveRecordId(isActive ? null : id)}
-                    className="w-full text-left flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-gray-900">Record #{id}</span>
@@ -350,7 +345,7 @@ export function AnesthesiaRecord() {
                     <svg className={`w-4 h-4 text-gray-400 transition-transform ${isActive ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                  </button>
+                  </Button>
                   {isActive && (
                     <div className="mt-4 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">

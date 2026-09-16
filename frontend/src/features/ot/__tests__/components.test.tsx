@@ -20,7 +20,6 @@ const mockSchedules = [
   },
 ];
 
-const mockEmpty: never[] = [];
 
 vi.mock("../queries", () => ({
   useOtSchedules: vi.fn(() => ({ data: mockSchedules, isLoading: false })),
@@ -89,7 +88,7 @@ describe("SurgeryScheduler", () => {
     const button = screen.getByText("+ New Surgery");
     fireEvent.click(button);
     expect(screen.getByText("Schedule New Surgery")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getAllByText("Cancel").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders slot grid with schedules", () => {

@@ -1,4 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { Textarea } from "@chakra-ui/react";
+import { FormField } from "../../../components/ui";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -81,21 +83,24 @@ export function ConfirmDialog({
         <div className="confirm-dialog__content">{body}</div>
         {reasonField ? (
           <div className="confirm-dialog__reason">
-            <label className="field-label" htmlFor="confirm-dialog-reason">
-              {reasonField.label}
-            </label>
-            <textarea
-              id="confirm-dialog-reason"
-              className="form-textarea"
-              rows={3}
-              placeholder={reasonField.placeholder}
-              required={reasonField.required}
-              value={reasonField.value}
-              onChange={(e) => reasonField.onChange(e.target.value)}
-            />
+            <FormField label={reasonField.label} required={reasonField.required}>
+              <Textarea
+                bg="white"
+                borderColor="gray.300"
+                rows={3}
+                placeholder={reasonField.placeholder}
+                required={reasonField.required}
+                value={reasonField.value}
+                onChange={(e) => reasonField.onChange(e.target.value)}
+              />
+            </FormField>
           </div>
         ) : null}
         <div className="confirm-dialog__actions">
+          {/* NOTE: buttons intentionally left as raw <button> elements.
+              The project button recipe has no "danger" variant and the
+              test-suite asserts the `btn-danger` class on the confirm
+              button — migrating would break that contract. */}
           <button
             ref={cancelRef}
             type="button"

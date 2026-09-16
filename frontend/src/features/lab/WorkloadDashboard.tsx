@@ -1,5 +1,4 @@
 import { useLabWorkload, useMachines } from './queries';
-import type { Machine, WorkloadItem } from './types';
 
 export function WorkloadDashboard() {
   const { data: workload = [], isLoading: workloadLoading } = useLabWorkload();

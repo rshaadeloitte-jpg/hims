@@ -9,9 +9,6 @@ import {
   concessionTemplateFilterSchema,
   healthPlanSchema,
   ServiceCategoryEnum,
-  type TariffValues,
-  type PackageValues,
-  type ConcessionTemplateValues,
 } from "./zodSchema";
 
 describe("tariffSchema", () => {

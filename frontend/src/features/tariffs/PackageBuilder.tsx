@@ -8,10 +8,7 @@ import {
 } from "./queries";
 import {
   packageSchema,
-  packagePlanSelectionSchema,
   type PackageValues,
-  type PackagePlanSelectionValues,
-  type PackageServiceLineValues,
 } from "./zodSchema";
 
 /**
@@ -163,7 +160,7 @@ function PackageForm({
   onCancel,
   isPending,
 }: PackageFormProps) {
-  const { register, handleSubmit, control, watch, setValue, formState: { errors } } =
+  const { register, handleSubmit, control, watch, formState: { errors } } =
     useForm<PackageValues>({
       resolver: zodResolver(packageSchema),
       defaultValues: {
@@ -184,7 +181,6 @@ function PackageForm({
     useFieldArray({ control, name: "plans" });
 
   const services = watch("services");
-  const plans = watch("plans");
 
   // Auto-calculate totalValue from services
   const totalValue = services.reduce(

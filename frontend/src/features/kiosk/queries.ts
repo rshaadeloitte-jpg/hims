@@ -79,8 +79,8 @@ export function useSelfRegister() {
       mobileNo: string;
       firstName: string;
       lastName: string;
-      gender: string;
-      dob: string;
+      gender?: string;
+      dob?: string;
     }) => kioskJson<KioskRegistrationResponse>(`${KIOSK_BASE}/v1/kiosk/self-register`, {
       method: "POST",
       body: JSON.stringify(input),

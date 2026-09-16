@@ -1,6 +1,8 @@
+import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { PrescriptionList } from "./PrescriptionList";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as queries from "./queries";
 
 // Mock API response
 const mockPrescriptions = [
@@ -25,7 +27,7 @@ const mockPrescriptions = [
   },
 ];
 
-jest.mock("./queries", () => ({
+vi.mock("./queries", () => ({
   usePrescriptions: () => ({
     data: mockPrescriptions,
     isLoading: false,
@@ -68,10 +70,10 @@ describe("PrescriptionList", () => {
       },
     ];
 
-    jest.spyOn(require("./queries"), "usePrescriptions").mockReturnValue({
+    vi.spyOn(queries, "usePrescriptions").mockReturnValue({
       data: mockCompleted,
       isLoading: false,
-    });
+    } as any);
 
     render(<PrescriptionList />, { wrapper: Wrapper });
 

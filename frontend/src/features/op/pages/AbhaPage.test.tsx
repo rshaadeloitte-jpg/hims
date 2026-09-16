@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AbhaPage } from "./AbhaPage";
+import "../__tests__/setup";
 
 const wrap = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -45,7 +46,7 @@ describe("AbhaPage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /^3\. abha card$/i })).toBeInTheDocument();
     });
-    expect(screen.getByText("12-3456-7890-1234")).toBeInTheDocument();
+    expect(screen.getAllByText(/12-3456-7890-1234/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("OTPs the PENDING_OTP → LINKED flow when the patient is not yet enrolled", async () => {

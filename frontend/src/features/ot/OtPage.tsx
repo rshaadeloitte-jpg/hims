@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Button, Table, Text, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { useCreateOtSchedule, useOtSchedules, useUpdateOtScheduleStatus } from "./queries";
 import { otScheduleSchema } from "./zodSchema";
 
@@ -32,61 +34,73 @@ export function OtPage() {
     <section className="page">
       <header className="page-header">
         <h1>OT & Surgery</h1>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+        <Button variant={showForm ? "secondary" : "primary"} onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Schedule Surgery"}
-        </button>
+        </Button>
       </header>
 
       {showForm && (
         <div className="card">
           <h2>New Surgery Schedule</h2>
           <div className="form-grid">
-            <label>Patient ID {errors.patientId && <span className="error">{errors.patientId}</span>}</label>
-            <input value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} />
-            <label>Surgery Date {errors.surgeryDate && <span className="error">{errors.surgeryDate}</span>}</label>
-            <input type="date" value={form.surgeryDate} onChange={(e) => setForm({ ...form, surgeryDate: e.target.value })} />
-            <label>OT Room {errors.otRoom && <span className="error">{errors.otRoom}</span>}</label>
-            <input value={form.otRoom} onChange={(e) => setForm({ ...form, otRoom: e.target.value })} />
-            <label>Anesthesia Type</label>
-            <select value={form.anesthesiaType} onChange={(e) => setForm({ ...form, anesthesiaType: e.target.value })}>
-              <option value="">Select…</option>
-              <option value="GENERAL">General</option>
-              <option value="SPINAL">Spinal</option>
-              <option value="EPIDURAL">Epidural</option>
-              <option value="LOCAL">Local</option>
-            </select>
-            <label>Notes</label>
-            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <FormField label="Patient ID" error={errors.patientId}>
+              <TextInput value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} />
+            </FormField>
+            <FormField label="Surgery Date" error={errors.surgeryDate}>
+              <TextInput type="date" value={form.surgeryDate} onChange={(e) => setForm({ ...form, surgeryDate: e.target.value })} />
+            </FormField>
+            <FormField label="OT Room" error={errors.otRoom}>
+              <TextInput value={form.otRoom} onChange={(e) => setForm({ ...form, otRoom: e.target.value })} />
+            </FormField>
+            <FormField label="Anesthesia Type">
+              <HimsSelect value={form.anesthesiaType} onChange={(e) => setForm({ ...form, anesthesiaType: e.target.value })}>
+                <option value="">Select…</option>
+                <option value="GENERAL">General</option>
+                <option value="SPINAL">Spinal</option>
+                <option value="EPIDURAL">Epidural</option>
+                <option value="LOCAL">Local</option>
+              </HimsSelect>
+            </FormField>
+            <FormField label="Notes">
+              <Textarea bg="white" borderColor="gray.300" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </FormField>
           </div>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={createSchedule.isPending}>
-            {createSchedule.isPending ? "Saving…" : "Save Schedule"}
-          </button>
+          <Button variant="primary" onClick={handleSubmit} loading={createSchedule.isPending} loadingText="Saving…">
+            Save Schedule
+          </Button>
         </div>
       )}
 
       <div className="card">
-        <table className="table">
-          <thead>
-            <tr><th>Patient</th><th>Date</th><th>Room</th><th>Anesthesia</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody>
+        <Table.Root size="sm" variant="line">
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Room</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Anesthesia</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+              <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Actions</Table.ColumnHeader>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
             {schedules.map((s) => (
-              <tr key={s.id}>
-                <td>{s.patientName}</td>
-                <td>{s.surgeryDate}</td>
-                <td>{s.otRoom}</td>
-                <td>{s.anesthesiaType ?? "—"}</td>
-                <td>{s.status}</td>
-                <td>
-                  <select value={s.status} onChange={(e) => updateStatus.mutate({ id: s.id, status: e.target.value })}>
+              <Table.Row key={s.id}>
+                <Table.Cell>{s.patientName}</Table.Cell>
+                <Table.Cell>{s.surgeryDate}</Table.Cell>
+                <Table.Cell>{s.otRoom}</Table.Cell>
+                <Table.Cell>{s.anesthesiaType ?? "—"}</Table.Cell>
+                <Table.Cell>{s.status}</Table.Cell>
+                <Table.Cell>
+                  <HimsSelect value={s.status} onChange={(e) => updateStatus.mutate({ id: s.id ?? s.scheduleId ?? 0, status: e.target.value })}>
                     {STATUS_OPTIONS.map((st) => <option key={st} value={st}>{st}</option>)}
-                  </select>
-                </td>
-              </tr>
+                  </HimsSelect>
+                </Table.Cell>
+              </Table.Row>
             ))}
-            {schedules.length === 0 && <tr><td colSpan={6} className="muted">No surgeries scheduled.</td></tr>}
-          </tbody>
-        </table>
+            {schedules.length === 0 && <Table.Row><Table.Cell colSpan={6}><Text color="gray.500">No surgeries scheduled.</Text></Table.Cell></Table.Row>}
+          </Table.Body>
+        </Table.Root>
       </div>
     </section>
   );

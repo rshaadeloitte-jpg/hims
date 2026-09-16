@@ -39,18 +39,20 @@ export type LabOrderStatus =
 
 export interface LabDetail {
   detailId: number;
-  orderId: number;
-  testId: number;
+  orderId?: number;
+  testId?: number;
   testName: string;
-  testCode: string;
-  status: LabDetailStatus;
+  testCode?: string;
+  status: LabDetailStatus | string;
   barcode?: string;
   sampleCollectedAt?: string;
   resultValue?: string;
   resultUnit?: string;
   referenceRange?: string;
   isCritical?: boolean;
+  critical?: boolean;
   isVerified?: boolean;
+  verified?: boolean;
   verifiedBy?: number;
   verifiedAt?: string;
   remarks?: string;

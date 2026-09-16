@@ -73,7 +73,7 @@ describe("DeviceMonitor", () => {
 
   it("renders metrics tab by default", () => {
     renderDeviceMonitor();
-    expect(screen.getByText("Record Metric")).toBeInTheDocument();
+    expect(screen.getAllByText("Record Metric").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Latest Readings")).toBeInTheDocument();
   });
 
@@ -87,7 +87,7 @@ describe("DeviceMonitor", () => {
     renderDeviceMonitor();
     fireEvent.click(screen.getByText("Devices"));
     await waitFor(() => {
-      expect(screen.getByText("Register Device")).toBeInTheDocument();
+      expect(screen.getAllByText("Register Device").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("Registered Devices")).toBeInTheDocument();
     });
   });

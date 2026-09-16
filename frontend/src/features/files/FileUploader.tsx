@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, HStack, Input } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   fileUploadSchema,
   FILE_CATEGORIES,
@@ -43,7 +45,7 @@ export function FileUploader({
     handleSubmit,
     setValue,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<FileUploadValues>({
     resolver: zodResolver(fileUploadSchema),
     mode: "onChange",
@@ -179,9 +181,10 @@ export function FileUploader({
                 {(selectedFile.size / 1024).toFixed(1)} KB
               </span>
             </div>
-            <button
+            <Button
               type="button"
-              className="file-uploader__clear-btn"
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 clearFile();
@@ -189,7 +192,7 @@ export function FileUploader({
               aria-label="Remove selected file"
             >
               ✕
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="file-uploader__placeholder">
@@ -200,7 +203,7 @@ export function FileUploader({
             <p className="file-uploader__hint">Max 10 MB · Images, PDFs, documents</p>
           </div>
         )}
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           className="visually-hidden"
@@ -218,10 +221,8 @@ export function FileUploader({
       {selectedFile && (
         <form onSubmit={onSubmit} className="file-uploader__form">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <label className="text-sm">
-              <span className="block font-medium">Category</span>
-              <select
-                className="w-full border rounded px-2 py-1.5"
+            <FormField label="Category">
+              <HimsSelect
                 {...register("fileCategoryId", { valueAsNumber: true })}
               >
                 <option value="">Select category…</option>
@@ -230,40 +231,33 @@ export function FileUploader({
                     {cat.replace(/_/g, " ")}
                   </option>
                 ))}
-              </select>
-            </label>
+              </HimsSelect>
+            </FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium">Owner Type</span>
-              <select
-                className="w-full border rounded px-2 py-1.5"
+            <FormField label="Owner Type">
+              <HimsSelect
                 {...register("ownerType")}
               >
                 <option value="">None</option>
                 {OWNER_TYPES.map((ot) => (
                   <option key={ot} value={ot}>{ot}</option>
                 ))}
-              </select>
-            </label>
+              </HimsSelect>
+            </FormField>
 
-            <label className="text-sm sm:col-span-2">
-              <span className="block font-medium">Owner ID</span>
-              <input
+            <FormField label="Owner ID" error={errors.ownerId?.message}>
+              <TextInput
                 type="number"
-                className="w-full border rounded px-2 py-1.5"
                 {...register("ownerId", { valueAsNumber: true })}
                 placeholder="e.g. 123"
               />
-              {errors.ownerId && (
-                <span className="text-red-600 text-xs">{errors.ownerId.message}</span>
-              )}
-            </label>
+            </FormField>
           </div>
 
           {/* Hidden fields for form state */}
-          <input type="hidden" {...register("fileName")} />
-          <input type="hidden" {...register("fileType")} />
-          <input type="hidden" {...register("fileData")} />
+          <TextInput type="hidden" {...register("fileName")} />
+          <TextInput type="hidden" {...register("fileType")} />
+          <TextInput type="hidden" {...register("fileData")} />
 
           {errors.fileName && (
             <p className="text-red-600 text-xs mt-1">{errors.fileName.message}</p>
@@ -281,30 +275,25 @@ export function FileUploader({
             </p>
           )}
 
-          <div className="flex gap-2 mt-4">
-            <button
+          <HStack gap={2} mt={4}>
+            <Button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              variant="primary"
               disabled={uploadDisabled}
+              loading={isUploading}
+              loadingText="Uploading…"
             >
-              {isUploading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin" aria-hidden="true">⏳</span>
-                  Uploading…
-                </span>
-              ) : (
-                "Upload File"
-              )}
-            </button>
-            <button
+              Upload File
+            </Button>
+            <Button
               type="button"
-              className="px-4 py-2 border rounded hover:bg-gray-50 transition-colors"
+              variant="secondary"
               onClick={clearFile}
               disabled={isUploading}
             >
               Cancel
-            </button>
-          </div>
+            </Button>
+          </HStack>
         </form>
       )}
 

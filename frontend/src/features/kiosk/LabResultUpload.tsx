@@ -25,9 +25,9 @@ export function LabResultUpload() {
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = () => {
+    const fieldErrors: Record<string, string> = {};
     if (!form.file) {
-      setErrors({ ...errors, file: "File required" });
-      return;
+      fieldErrors.file = "File required";
     }
 
     const result = labResultUploadSchema.safeParse({
@@ -36,17 +36,20 @@ export function LabResultUpload() {
       testName: form.testName,
       resultValue: form.resultValue,
       resultDate: form.resultDate,
-      file: form.file,
+      file: form.file ?? undefined,
     });
 
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((e) => {
         fieldErrors[String(e.path[0])] = e.message;
       });
+    }
+
+    if (Object.keys(fieldErrors).length > 0 || !result.success) {
       setErrors(fieldErrors);
       return;
     }
+
     setErrors({});
     upload.mutate(result.data, {
       onSuccess: () => setSubmitted(true),

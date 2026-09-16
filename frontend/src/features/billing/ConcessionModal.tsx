@@ -3,6 +3,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useApplyConcession } from "./hooks";
 import { concessionModalSchema, type ConcessionModalValues } from "./schemas";
 import { type ConcessionPlan } from "./hooks";
+import { Button, Checkbox, Text, Textarea } from "@chakra-ui/react";
+import { FormField, TextInput } from "../../components/ui";
 
 interface ConcessionModalProps {
   billId: number;
@@ -47,6 +49,7 @@ export function ConcessionModal({
   const planPct = watch("concessionPlanPct");
   const billPct = watch("concessionBillPct");
   const selectedPlanId = watch("concessionPlanId");
+  const applyToAllLines = watch("applyToAllLines");
 
   const discountAmount = currentTotal * ((planPct ?? 0) / 100) + currentTotal * ((billPct ?? 0) / 100);
   const finalAmount = currentTotal - discountAmount;
@@ -90,12 +93,13 @@ export function ConcessionModal({
         {/* Concession plans */}
         {concessionPlans.length > 0 && (
           <div className="concession-modal__plans">
-            <label className="concession-modal__label">Concession Plan</label>
+            <Text fontSize="sm" fontWeight="medium" className="concession-modal__label">Concession Plan</Text>
             <div className="concession-modal__plan-list">
               {concessionPlans.map((plan) => (
-                <button
+                <Button
                   key={plan.planId}
                   type="button"
+                  variant="secondary"
                   className={`concession-modal__plan${selectedPlanId === plan.planId ? " concession-modal__plan--active" : ""}`}
                   onClick={() => handlePlanSelect(plan.planId)}
                 >
@@ -104,7 +108,7 @@ export function ConcessionModal({
                   {plan.requiresApproval && (
                     <span className="concession-modal__plan-badge">Approval Required</span>
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -113,68 +117,68 @@ export function ConcessionModal({
         {/* Manual percentage */}
         <div className="concession-modal__manual">
           <div className="concession-modal__field">
-            <label htmlFor="concession-plan-pct">Plan Discount %</label>
-            <input
-              id="concession-plan-pct"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              className="form-input"
-              {...register("concessionPlanPct")}
-              aria-invalid={errors.concessionPlanPct ? true : undefined}
-            />
-            {errors.concessionPlanPct && (
-              <span className="field-error">{errors.concessionPlanPct.message}</span>
-            )}
+            <FormField label="Plan Discount %" error={errors.concessionPlanPct?.message}>
+              <TextInput
+                id="concession-plan-pct"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                {...register("concessionPlanPct")}
+                aria-invalid={errors.concessionPlanPct ? true : undefined}
+              />
+            </FormField>
           </div>
           <div className="concession-modal__field">
-            <label htmlFor="concession-bill-pct">Bill Discount %</label>
-            <input
-              id="concession-bill-pct"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              className="form-input"
-              {...register("concessionBillPct")}
-              aria-invalid={errors.concessionBillPct ? true : undefined}
-            />
-            {errors.concessionBillPct && (
-              <span className="field-error">{errors.concessionBillPct.message}</span>
-            )}
+            <FormField label="Bill Discount %" error={errors.concessionBillPct?.message}>
+              <TextInput
+                id="concession-bill-pct"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                {...register("concessionBillPct")}
+                aria-invalid={errors.concessionBillPct ? true : undefined}
+              />
+            </FormField>
           </div>
         </div>
 
         {/* Approval */}
         <div className="concession-modal__field">
-          <label htmlFor="concession-approved-by">Approved By (User ID)</label>
-          <input
-            id="concession-approved-by"
-            type="number"
-            className="form-input"
-            placeholder="Approver user ID"
-            {...register("approvedBy")}
-          />
+          <FormField label="Approved By (User ID)">
+            <TextInput
+              id="concession-approved-by"
+              type="number"
+              placeholder="Approver user ID"
+              {...register("approvedBy")}
+            />
+          </FormField>
         </div>
 
         {/* Remarks */}
         <div className="concession-modal__field">
-          <label htmlFor="concession-remarks">Remarks</label>
-          <textarea
-            id="concession-remarks"
-            className="form-input"
-            rows={2}
-            placeholder="Reason for concession..."
-            {...register("remarks")}
-          />
+          <FormField label="Remarks">
+            <Textarea
+              id="concession-remarks"
+              bg="white"
+              borderColor="gray.300"
+              rows={2}
+              placeholder="Reason for concession..."
+              {...register("remarks")}
+            />
+          </FormField>
         </div>
 
         {/* Apply to all lines */}
-        <label className="concession-modal__option">
-          <input type="checkbox" {...register("applyToAllLines")} />
-          Apply to all charge lines
-        </label>
+        <Checkbox.Root
+          checked={!!applyToAllLines}
+          onCheckedChange={(e) => setValue("applyToAllLines", !!e.checked, { shouldValidate: true })}
+        >
+          <Checkbox.HiddenInput {...register("applyToAllLines")} />
+          <Checkbox.Control />
+          <Checkbox.Label>Apply to all charge lines</Checkbox.Label>
+        </Checkbox.Root>
 
         {/* Summary */}
         <div className="concession-modal__summary">
@@ -194,28 +198,23 @@ export function ConcessionModal({
 
         {/* Actions */}
         <div className="concession-modal__actions">
-          <button
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={onCancel}
             disabled={applyConcession.isPending}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="btn btn--primary"
+            variant="primary"
             disabled={applyConcession.isPending || discountAmount <= 0}
+            loading={applyConcession.isPending}
+            loadingText="Applying..."
           >
-            {applyConcession.isPending ? (
-              <>
-                <span className="spinner spinner--sm" aria-hidden="true" />
-                Applying...
-              </>
-            ) : (
-              "Apply Concession"
-            )}
-          </button>
+            Apply Concession
+          </Button>
         </div>
 
         {applyConcession.isError && (

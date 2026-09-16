@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { usePatientSubmissions, useEncounterSubmissions, useDeleteSubmission } from "./queries";
+import { TextInput } from "../../components/ui";
+import { Button, Table } from "@chakra-ui/react";
 
 interface SubmissionListProps {
   /** Optional initial patient ID to load on mount. */
@@ -59,34 +61,35 @@ export function SubmissionList({ initialPatientId }: SubmissionListProps) {
       {/* Lookup controls */}
       <div className="submission-list__controls">
         <div className="submission-list__mode-toggle" role="group" aria-label="Lookup mode">
-          <button
+          <Button
+            variant={lookupMode === "patient" ? "solid" : "outline"}
+            size="sm"
             type="button"
-            className={`submission-list__mode-btn${lookupMode === "patient" ? " submission-list__mode-btn--active" : ""}`}
             onClick={() => handleModeChange("patient")}
           >
             By Patient
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={lookupMode === "encounter" ? "solid" : "outline"}
+            size="sm"
             type="button"
-            className={`submission-list__mode-btn${lookupMode === "encounter" ? " submission-list__mode-btn--active" : ""}`}
             onClick={() => handleModeChange("encounter")}
           >
             By Encounter
-          </button>
+          </Button>
         </div>
 
         <div className="submission-list__search">
-          <input
+          <TextInput
             type="number"
-            className="submission-list__input"
             placeholder={lookupMode === "patient" ? "Patient ID" : "Encounter ID"}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleLookup(); }}
           />
-          <button type="button" className="submission-list__search-btn" onClick={handleLookup}>
+          <Button variant="secondary" type="button" onClick={handleLookup}>
             Look up
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -113,17 +116,17 @@ export function SubmissionList({ initialPatientId }: SubmissionListProps) {
         )}
 
         {submissions.length > 0 && (
-          <table className="submission-list__table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Form</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table.Root size="sm" variant="line" className="submission-list__table">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Form</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Submitted</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader>
+                <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {submissions.map((s) => (
                 <SubmissionRow
                   key={s.id}
@@ -139,8 +142,8 @@ export function SubmissionList({ initialPatientId }: SubmissionListProps) {
                   parseSubmission={parseSubmission}
                 />
               ))}
-            </tbody>
-          </table>
+            </Table.Body>
+          </Table.Root>
         )}
       </div>
     </div>
@@ -163,34 +166,34 @@ interface SubmissionRowProps {
 function SubmissionRow({ id, formId, patientId, encounterId, submittedAt, status, submissionJson, isExpanded, onToggle, parseSubmission }: SubmissionRowProps) {
   return (
     <>
-      <tr className={isExpanded ? "submission-list__row--expanded" : ""}>
-        <td>{id}</td>
-        <td>
+      <Table.Row>
+        <Table.Cell>{id}</Table.Cell>
+        <Table.Cell>
           <span className="submission-list__form-id">{formId}</span>
           {patientId && <span className="submission-list__meta">Patient: {patientId}</span>}
           {encounterId && <span className="submission-list__meta">Encounter: {encounterId}</span>}
-        </td>
-        <td className="submission-list__date">{submittedAt?.slice(0, 19)}</td>
-        <td>
+        </Table.Cell>
+        <Table.Cell className="submission-list__date">{submittedAt?.slice(0, 19)}</Table.Cell>
+        <Table.Cell>
           <span className={`submission-list__status${status === false ? " submission-list__status--deleted" : ""}`}>
             {status === false ? "Deleted" : "Active"}
           </span>
-        </td>
-        <td className="submission-list__actions">
-          <button type="button" className="submission-list__btn" onClick={onToggle}>
+        </Table.Cell>
+        <Table.Cell className="submission-list__actions">
+          <Button variant="secondary" type="button" onClick={onToggle}>
             {isExpanded ? "Hide" : "View"}
-          </button>
+          </Button>
           {status !== false && <DeleteButton submissionId={id} formId={formId} />}
-        </td>
-      </tr>
+        </Table.Cell>
+      </Table.Row>
       {isExpanded && (
-        <tr className="submission-list__detail-row">
-          <td colSpan={5}>
+        <Table.Row className="submission-list__detail-row">
+          <Table.Cell colSpan={5}>
             <pre className="submission-list__json">
               {parseSubmission(submissionJson)}
             </pre>
-          </td>
-        </tr>
+          </Table.Cell>
+        </Table.Row>
       )}
     </>
   );
@@ -199,12 +202,11 @@ function SubmissionRow({ id, formId, patientId, encounterId, submittedAt, status
 function DeleteButton({ submissionId, formId }: { submissionId: number; formId: number }) {
   const deleteM = useDeleteSubmission(formId);
   return (
-    <button
+    <Button variant="ghost" size="sm"
       type="button"
-      className="submission-list__btn submission-list__btn--danger"
       onClick={() => { if (window.confirm("Delete this submission?")) deleteM.mutate(submissionId); }}
     >
       Delete
-    </button>
+    </Button>
   );
 }

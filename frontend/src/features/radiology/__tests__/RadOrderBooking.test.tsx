@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RadOrderBooking } from "../RadOrderBooking";
@@ -80,6 +80,7 @@ beforeEach(() => {
 describe("RadOrderBooking", () => {
   it("renders study list and existing orders", async () => {
     renderBooking();
+    fireEvent.click(await screen.findByText("New Order"));
 
     // Study list renders
     expect(await screen.findByText("Chest X-Ray")).toBeInTheDocument();
@@ -87,7 +88,7 @@ describe("RadOrderBooking", () => {
 
     // Existing orders render
     expect(screen.getByText("#1")).toBeInTheDocument();
-    expect(screen.getByText("CT")).toBeInTheDocument();
+    expect(screen.getAllByText("CT").length).toBeGreaterThan(0);
   });
 
   it("shows New Order button and opens form", async () => {

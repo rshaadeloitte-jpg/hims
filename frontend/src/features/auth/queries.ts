@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { User, Role, RolePermission, Permission, NotificationTemplate, AuthTokens } from './types';
+import type { User, Role, Permission, NotificationTemplate, AuthTokens } from './types';
 
 const API = '/api/v1';
 

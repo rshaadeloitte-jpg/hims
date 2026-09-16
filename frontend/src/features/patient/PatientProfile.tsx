@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@chakra-ui/react";
 import { usePatientDetail, type PatientDetail } from "./queries";
 
 /**
@@ -79,31 +80,31 @@ export function PatientProfile({
         </div>
         <div className="patient-profile__actions">
           {onEdit && (
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary"
+              variant="secondary"
               onClick={() => onEdit(patient)}
             >
               Edit Profile
-            </button>
+            </Button>
           )}
           {onNavigate && (
-            <button
+            <Button
               type="button"
-              className="btn btn-primary"
+              variant="primary"
               onClick={() => onNavigate(`/patients/${patient.patientId}/documents`)}
             >
               Upload Documents
-            </button>
+            </Button>
           )}
         </div>
       </header>
 
       {/* Demographics section */}
       <section className="patient-profile__section">
-        <button
+        <Button
           type="button"
-          className="patient-profile__section-header"
+          variant="ghost"
           onClick={() => toggleSection("demographics")}
           aria-expanded={expandedSections.has("demographics")}
         >
@@ -111,7 +112,7 @@ export function PatientProfile({
           <span className="patient-profile__chevron" aria-hidden="true">
             {expandedSections.has("demographics") ? "▲" : "▼"}
           </span>
-        </button>
+        </Button>
         {expandedSections.has("demographics") && (
           <dl className="patient-profile__grid">
             <div className="patient-profile__item">
@@ -136,9 +137,9 @@ export function PatientProfile({
 
       {/* Contact section */}
       <section className="patient-profile__section">
-        <button
+        <Button
           type="button"
-          className="patient-profile__section-header"
+          variant="ghost"
           onClick={() => toggleSection("contact")}
           aria-expanded={expandedSections.has("contact")}
         >
@@ -146,7 +147,7 @@ export function PatientProfile({
           <span className="patient-profile__chevron" aria-hidden="true">
             {expandedSections.has("contact") ? "▲" : "▼"}
           </span>
-        </button>
+        </Button>
         {expandedSections.has("contact") && (
           <dl className="patient-profile__grid">
             <div className="patient-profile__item">
@@ -175,9 +176,9 @@ export function PatientProfile({
 
       {/* IDs section */}
       <section className="patient-profile__section">
-        <button
+        <Button
           type="button"
-          className="patient-profile__section-header"
+          variant="ghost"
           onClick={() => toggleSection("ids")}
           aria-expanded={expandedSections.has("ids")}
         >
@@ -185,7 +186,7 @@ export function PatientProfile({
           <span className="patient-profile__chevron" aria-hidden="true">
             {expandedSections.has("ids") ? "▲" : "▼"}
           </span>
-        </button>
+        </Button>
         {expandedSections.has("ids") && (
           <dl className="patient-profile__grid">
             <div className="patient-profile__item">

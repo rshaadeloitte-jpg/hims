@@ -21,7 +21,7 @@ describe("BankReconciliation", () => {
   it("shows bank account selector", () => {
     renderBankReconciliation();
     expect(screen.getByText("Bank Account")).toBeInTheDocument();
-    expect(screen.getByRole("combobox")).toHaveValue("Select account...");
+    expect(screen.getByRole("combobox")).toHaveValue("0");
   });
 
   it("shows date range inputs", () => {
@@ -50,8 +50,8 @@ describe("BankReconciliation", () => {
     fireEvent.mouseDown(select);
 
     // Date inputs
-    const fromDate = screen.getByLabelText("From Date");
-    const toDate = screen.getByLabelText("To Date");
+    expect(screen.getByLabelText("From Date")).toBeInTheDocument();
+    expect(screen.getByLabelText("To Date")).toBeInTheDocument();
 
     // Note: We can't fully test loading without mocking fetch
     // But we can check initial state

@@ -124,8 +124,9 @@ export function FormDesigner({ initialData, onSubmit, onCancel, isSubmitting }: 
           <h3 className="form-designer__section-title">Form Details</h3>
           <div className="form-designer__grid">
             <div className="form-designer__field">
-              <label className="form-designer__label">Code *</label>
+              <label className="form-designer__label" htmlFor="form-code">Code *</label>
               <input
+                id="form-code"
                 className="form-designer__input"
                 placeholder="CONSULT_NOTE_V1"
                 {...register("code")}
@@ -133,8 +134,9 @@ export function FormDesigner({ initialData, onSubmit, onCancel, isSubmitting }: 
               {errors.code && <span className="form-designer__error">{errors.code.message}</span>}
             </div>
             <div className="form-designer__field">
-              <label className="form-designer__label">Name *</label>
+              <label className="form-designer__label" htmlFor="form-name">Name *</label>
               <input
+                id="form-name"
                 className="form-designer__input"
                 placeholder="Consultation Note"
                 {...register("name")}
@@ -142,8 +144,9 @@ export function FormDesigner({ initialData, onSubmit, onCancel, isSubmitting }: 
               {errors.name && <span className="form-designer__error">{errors.name.message}</span>}
             </div>
             <div className="form-designer__field">
-              <label className="form-designer__label">Specialty *</label>
+              <label className="form-designer__label" htmlFor="form-specialty">Specialty *</label>
               <input
+                id="form-specialty"
                 className="form-designer__input"
                 placeholder="General Medicine"
                 list="specialty-suggestions"
@@ -155,8 +158,9 @@ export function FormDesigner({ initialData, onSubmit, onCancel, isSubmitting }: 
               {errors.specialty && <span className="form-designer__error">{errors.specialty.message}</span>}
             </div>
             <div className="form-designer__field">
-              <label className="form-designer__label">Version *</label>
+              <label className="form-designer__label" htmlFor="form-version">Version *</label>
               <input
+                id="form-version"
                 type="number"
                 min={1}
                 className="form-designer__input form-designer__input--narrow"
@@ -165,8 +169,9 @@ export function FormDesigner({ initialData, onSubmit, onCancel, isSubmitting }: 
               {errors.version && <span className="form-designer__error">{errors.version.message}</span>}
             </div>
             <div className="form-designer__field form-designer__field--wide">
-              <label className="form-designer__label">Description</label>
+              <label className="form-designer__label" htmlFor="form-description">Description</label>
               <input
+                id="form-description"
                 className="form-designer__input"
                 placeholder="Optional description..."
                 {...register("description")}

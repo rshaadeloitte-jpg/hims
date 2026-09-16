@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, HStack, SimpleGrid } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   questionnaireSchema,
   type QuestionnaireValues,
@@ -29,19 +31,18 @@ export function ConsultationDesk({ appointmentId }: { appointmentId: number }) {
   return (
     <div className="p-4 border rounded space-y-4" aria-label="consultation-desk">
       <h2 className="text-xl font-semibold">Consultation Desk — Appt #{appointmentId}</h2>
-      <div className="flex gap-2 border-b">
+      <HStack gap={2}>
         {(["questionnaire", "telemedicine", "opdcard", "followup"] as const).map((t) => (
-          <button
+          <Button
             key={t}
-            className={`px-3 py-2 capitalize ${
-              tab === t ? "border-b-2 border-blue-600 font-medium" : "text-gray-500"
-            }`}
+            variant="ghost"
+            size="sm"
             onClick={() => setTab(t)}
           >
             {t}
-          </button>
+          </Button>
         ))}
-      </div>
+      </HStack>
 
       {tab === "questionnaire" && <QuestionnaireTab appointmentId={appointmentId} />}
       {tab === "telemedicine" && <TelemedicineTab appointmentId={appointmentId} />}
@@ -86,32 +87,32 @@ function QuestionnaireTab({ appointmentId }: { appointmentId: number }) {
       {existing.data && (
         <p className="text-xs text-gray-500">Last submitted: {new Date(existing.data.id).toLocaleString()}</p>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <label className="text-sm">
-          <span className="block font-medium">Module</span>
-          <select className="w-full border rounded px-2 py-1" {...register("module")}>
+      <SimpleGrid columns={{ base: 1, sm: 2 }} gap={2}>
+        <FormField label="Module">
+          <HimsSelect {...register("module")}>
             <option>Patient Assessment</option>
             <option>Doctor Assessment</option>
             <option>Social Assessment</option>
-          </select>
-        </label>
-        <label className="text-sm">
-          <span className="block font-medium">Module type</span>
-          <input className="w-full border rounded px-2 py-1" {...register("moduleType")} />
-        </label>
-      </div>
+          </HimsSelect>
+        </FormField>
+        <FormField label="Module type">
+          <TextInput {...register("moduleType")} />
+        </FormField>
+      </SimpleGrid>
       {errors.module && <p className="text-red-600 text-xs">{errors.module.message}</p>}
 
       {submit.isError && <p className="text-sm text-red-600">{(submit.error as Error).message}</p>}
       {submit.isSuccess && <p className="text-sm text-green-600">Submitted. ID: {submit.data.id}</p>}
 
-      <button
+      <Button
         type="submit"
-        className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={isSubmitting || submit.isPending}
+        variant="primary"
+        disabled={isSubmitting}
+        loading={submit.isPending}
+        loadingText="Submitting..."
       >
-        {submit.isPending ? "Submitting..." : "Submit Questionnaire"}
-      </button>
+        Submit Questionnaire
+      </Button>
     </form>
   );
 }
@@ -136,39 +137,45 @@ function TelemedicineTab({ appointmentId }: { appointmentId: number }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <button
+      <HStack wrap="wrap" gap={2}>
+        <Button
           type="button"
-          className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50"
+          variant="primary"
           onClick={() => create.mutate(appointmentId)}
-          disabled={create.isPending || !!room.data}
+          disabled={!!room.data}
+          loading={create.isPending}
+          loadingText="Creating..."
         >
-          {create.isPending ? "Creating..." : room.data ? "Room exists" : "Create Room"}
-        </button>
+          {room.data ? "Room exists" : "Create Room"}
+        </Button>
         {room.data && (() => {
           const r = room.data;
           return (
             <>
-              <button
+              <Button
                 type="button"
-                className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50"
+                variant="primary"
                 onClick={() => start.mutate(r.id)}
-                disabled={start.isPending || r.roomStatus === 2}
+                disabled={r.roomStatus === 2}
+                loading={start.isPending}
+                loadingText="Starting..."
               >
-                {start.isPending ? "Starting..." : "Start Session"}
-              </button>
-              <button
+                Start Session
+              </Button>
+              <Button
                 type="button"
-                className="bg-red-600 text-white px-3 py-2 rounded disabled:opacity-50"
+                variant="secondary"
                 onClick={() => end.mutate(r.id)}
-                disabled={end.isPending || r.roomStatus !== 2}
+                disabled={r.roomStatus !== 2}
+                loading={end.isPending}
+                loadingText="Ending..."
               >
-                {end.isPending ? "Ending..." : "End Session"}
-              </button>
+                End Session
+              </Button>
             </>
           );
         })()}
-      </div>
+      </HStack>
 
       {(create.error || start.error || end.error) && (
         <p className="text-sm text-red-600">
@@ -188,25 +195,27 @@ function OpdCardTab({ appointmentId }: { appointmentId: number }) {
 
   return (
     <div className="space-y-3" aria-label="opd-card-tab">
-      <div className="flex gap-2">
-        <button
+      <HStack gap={2}>
+        <Button
           type="button"
-          className={`px-3 py-1 rounded ${!printable ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          variant="secondary"
+          size="sm"
           onClick={() => setPrintable(false)}
         >
           Data
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`px-3 py-1 rounded ${printable ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          variant="secondary"
+          size="sm"
           onClick={() => setPrintable(true)}
         >
           Print HTML
-        </button>
-        <button type="button" className="px-3 py-1 rounded bg-gray-700 text-white" onClick={() => window.print()}>
+        </Button>
+        <Button type="button" variant="primary" size="sm" onClick={() => window.print()}>
           Print
-        </button>
-      </div>
+        </Button>
+      </HStack>
 
       {!printable && (
         <div className="border rounded p-3 text-sm space-y-1">

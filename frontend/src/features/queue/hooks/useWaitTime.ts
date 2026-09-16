@@ -7,7 +7,7 @@ import type { QueueToken } from "../queries";
  */
 export function computeWaitTime(
   tokens: QueueToken[],
-  now: Date = new Date(),
+  _now: Date = new Date(),
 ): { avgServiceMinutes: number; waitingAhead: number; estimatedMinutes: number } {
   const completed = tokens.filter((t) => t.status === 3 && t.calledAt && t.completedAt);
   const waiting = tokens.filter((t) => t.status === 1);

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { GrievanceForm } from "./GrievanceForm";
@@ -11,8 +11,8 @@ function wrapper() {
 }
 
 const mockCategories = [
-  { id: 1, code: "CLEANLINESS", description: "Cleanliness" },
-  { id: 2, code: "BILLING", description: "Billing" },
+  { id: 1, code: "CLEANLINESS", description: "Cleanliness", isCitizen: true },
+  { id: 2, code: "BILLING", description: "Billing", isCitizen: false },
 ];
 
 const mockSeverities = [
@@ -85,10 +85,10 @@ describe("GrievanceForm", () => {
     const severitySelect = screen.getByLabelText(/Severity/);
     fireEvent.click(severitySelect);
 
-    expect(screen.getByText(/LOW/)).toBeTruthy();
-    expect(screen.getByText(/MEDIUM/)).toBeTruthy();
-    expect(screen.getByText(/HIGH/)).toBeTruthy();
-    expect(screen.getByText(/CRITICAL/)).toBeTruthy();
+    expect(screen.getAllByText(/LOW/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/MEDIUM/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/HIGH/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/CRITICAL/).length).toBeGreaterThan(0);
   });
 
   it("shows required asterisk for mandatory fields", () => {

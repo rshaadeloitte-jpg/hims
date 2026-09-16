@@ -1,5 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, SimpleGrid, Textarea, VStack, Text } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { patientRegistrationSchema, type PatientRegistrationValues } from "./zodSchema";
 import { useRegisterPatient } from "./queries";
 
@@ -44,99 +46,80 @@ export function PatientRegistrationForm({ onCreated }: { onCreated?: (id: number
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 p-4 border rounded" aria-label="patient-registration">
-      <h2 className="text-lg font-semibold">Patient Registration</h2>
+    <form onSubmit={onSubmit} aria-label="patient-registration">
+      <VStack align="stretch" gap={3} p={4} borderWidth="1px" borderColor="gray.200" borderRadius="md">
+        <Text fontSize="lg" fontWeight="semibold">Patient Registration</Text>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="First name" required error={errors.firstName?.message}>
-          <input className="w-full border rounded px-2 py-1" {...register("firstName")} />
-        </Field>
-        <Field label="Middle name" error={errors.middleName?.message}>
-          <input className="w-full border rounded px-2 py-1" {...register("middleName")} />
-        </Field>
-        <Field label="Last name" error={errors.lastName?.message}>
-          <input className="w-full border rounded px-2 py-1" {...register("lastName")} />
-        </Field>
-      </div>
+        <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3}>
+          <FormField label="First name" required error={errors.firstName?.message}>
+            <TextInput {...register("firstName")} />
+          </FormField>
+          <FormField label="Middle name" error={errors.middleName?.message}>
+            <TextInput {...register("middleName")} />
+          </FormField>
+          <FormField label="Last name" error={errors.lastName?.message}>
+            <TextInput {...register("lastName")} />
+          </FormField>
+        </SimpleGrid>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Mobile" required error={errors.mobileNo?.message}>
-          <input className="w-full border rounded px-2 py-1" inputMode="numeric" {...register("mobileNo")} />
-        </Field>
-        <Field label="ABHA address" error={errors.abhaAddress?.message}>
-          <input className="w-full border rounded px-2 py-1" {...register("abhaAddress")} />
-        </Field>
-      </div>
+        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+          <FormField label="Mobile" required error={errors.mobileNo?.message}>
+            <TextInput inputMode="numeric" {...register("mobileNo")} />
+          </FormField>
+          <FormField label="ABHA address" error={errors.abhaAddress?.message}>
+            <TextInput {...register("abhaAddress")} />
+          </FormField>
+        </SimpleGrid>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Date of birth" error={errors.dateOfBirth?.message}>
-          <input type="date" className="w-full border rounded px-2 py-1" {...register("dateOfBirth")} />
-        </Field>
-        <Field label="Gender ID" error={errors.genderId?.message}>
-          <input type="number" className="w-full border rounded px-2 py-1" {...register("genderId")} />
-        </Field>
-        <Field label="Blood group" error={errors.bloodGroup?.message}>
-          <select className="w-full border rounded px-2 py-1" {...register("bloodGroup")}>
-            <option value="">Select</option>
-            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+        <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3}>
+          <FormField label="Date of birth" error={errors.dateOfBirth?.message}>
+            <TextInput type="date" {...register("dateOfBirth")} />
+          </FormField>
+          <FormField label="Gender ID" error={errors.genderId?.message}>
+            <TextInput type="number" {...register("genderId")} />
+          </FormField>
+          <FormField label="Blood group" error={errors.bloodGroup?.message}>
+            <HimsSelect {...register("bloodGroup")}>
+              <option value="">Select</option>
+              {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </HimsSelect>
+          </FormField>
+        </SimpleGrid>
 
-      <Field label="Address" error={errors.address?.message}>
-        <textarea className="w-full border rounded px-2 py-1" rows={2} {...register("address")} />
-      </Field>
+        <FormField label="Address" error={errors.address?.message}>
+          <Textarea bg="white" borderColor="gray.300" rows={2} {...register("address")} />
+        </FormField>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Email" error={errors.email?.message}>
-          <input type="email" className="w-full border rounded px-2 py-1" {...register("email")} />
-        </Field>
-        <Field label="Emergency contact" error={errors.emergencyContact?.message}>
-          <input className="w-full border rounded px-2 py-1" inputMode="numeric" {...register("emergencyContact")} />
-        </Field>
-      </div>
+        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+          <FormField label="Email" error={errors.email?.message}>
+            <TextInput type="email" {...register("email")} />
+          </FormField>
+          <FormField label="Emergency contact" error={errors.emergencyContact?.message}>
+            <TextInput inputMode="numeric" {...register("emergencyContact")} />
+          </FormField>
+        </SimpleGrid>
 
-      {mutation.isError && (
-        <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>
-      )}
-      {mutation.isSuccess && (
-        <p className="text-sm text-green-600">Registered. Patient ID: {mutation.data.patientId}</p>
-      )}
+        {mutation.isError && (
+          <Text color="red.600" fontSize="sm">{(mutation.error as Error).message}</Text>
+        )}
+        {mutation.isSuccess && (
+          <Text color="green.600" fontSize="sm">Registered. Patient ID: {mutation.data.patientId}</Text>
+        )}
 
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        disabled={isSubmitting || mutation.isPending}
-      >
-        {mutation.isPending ? "Saving..." : "Register Patient"}
-      </button>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isSubmitting}
+          loading={mutation.isPending}
+          loadingText="Saving..."
+        >
+          Register Patient
+        </Button>
+      </VStack>
     </form>
-  );
-}
-
-function Field({
-  label,
-  children,
-  required,
-  error,
-}: {
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-  error?: string;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="block font-medium mb-1">
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </span>
-      {children}
-      {error && <span className="text-red-600 text-xs">{error}</span>}
-    </label>
   );
 }

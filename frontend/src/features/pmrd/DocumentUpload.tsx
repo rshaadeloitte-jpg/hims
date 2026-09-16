@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, HStack, Input } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import {
   pmrdDocumentUploadSchema,
   PMRD_DOC_CATEGORIES,
@@ -191,9 +193,10 @@ export function DocumentUpload({
                 {(selectedFile.size / 1024).toFixed(1)} KB
               </span>
             </div>
-            <button
+            <Button
               type="button"
-              className="file-uploader__clear-btn"
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 clearFile();
@@ -201,7 +204,7 @@ export function DocumentUpload({
               aria-label="Remove selected file"
             >
               ✕
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="file-uploader__placeholder">
@@ -212,7 +215,7 @@ export function DocumentUpload({
             <p className="file-uploader__hint">Max 10 MB · Images, PDFs, documents</p>
           </div>
         )}
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           className="visually-hidden"
@@ -230,10 +233,8 @@ export function DocumentUpload({
       {selectedFile && (
         <form onSubmit={onSubmit} className="file-uploader__form">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <label className="text-sm">
-              <span className="block font-medium">Document Category *</span>
-              <select
-                className="w-full border rounded px-2 py-1.5"
+            <FormField label="Document Category *" required>
+              <HimsSelect
                 {...register("documentCategory")}
               >
                 {PMRD_DOC_CATEGORIES.map((cat) => (
@@ -241,23 +242,21 @@ export function DocumentUpload({
                     {cat.replace(/_/g, " ")}
                   </option>
                 ))}
-              </select>
-            </label>
+              </HimsSelect>
+            </FormField>
 
-            <label className="text-sm">
-              <span className="block font-medium">Description</span>
-              <input
-                className="w-full border rounded px-2 py-1.5"
+            <FormField label="Description">
+              <TextInput
                 {...register("description")}
                 placeholder="Optional notes"
               />
-            </label>
+            </FormField>
           </div>
 
           {/* Hidden fields for form state */}
-          <input type="hidden" {...register("fileName")} />
-          <input type="hidden" {...register("fileType")} />
-          <input type="hidden" {...register("fileData")} />
+          <TextInput type="hidden" {...register("fileName")} />
+          <TextInput type="hidden" {...register("fileType")} />
+          <TextInput type="hidden" {...register("fileData")} />
 
           {errors.fileName && (
             <p className="text-red-600 text-xs mt-1">{errors.fileName.message}</p>
@@ -275,30 +274,25 @@ export function DocumentUpload({
             </p>
           )}
 
-          <div className="flex gap-2 mt-4">
-            <button
+          <HStack gap={2} mt={4}>
+            <Button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+              variant="primary"
               disabled={uploadDisabled}
+              loading={isUploading}
+              loadingText="Uploading…"
             >
-              {isUploading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin" aria-hidden="true">⏳</span>
-                  Uploading…
-                </span>
-              ) : (
-                "Upload Document"
-              )}
-            </button>
-            <button
+              Upload Document
+            </Button>
+            <Button
               type="button"
-              className="px-4 py-2 border rounded hover:bg-gray-50 transition-colors"
+              variant="secondary"
               onClick={clearFile}
               disabled={isUploading}
             >
               Cancel
-            </button>
-          </div>
+            </Button>
+          </HStack>
         </form>
       )}
 
@@ -324,14 +318,15 @@ export function DocumentUpload({
                 <span className="text-xs text-gray-500">
                   {(doc.fileSize / 1024).toFixed(1)} KB
                 </span>
-                <button
+                <Button
                   type="button"
-                  className="text-xs text-red-600 hover:underline"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => remove.mutate(doc.id)}
                   aria-label={`delete-${doc.id}`}
                 >
                   Delete
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

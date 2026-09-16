@@ -1,4 +1,4 @@
-import { useDashboard, useCounters } from "./queries";
+import { useDashboard } from "./queries";
 import { useQueueRealtime } from "./hooks";
 import { TOKEN_STATUS } from "./zodSchema";
 import type { QueueToken } from "./queries";
@@ -7,8 +7,8 @@ function StatusDot({ status }: { status: string }) {
   return <span className={`q-status-dot q-status-dot--${status}`}>{status}</span>;
 }
 
-function TokenCard({ token, showActions }: { token: QueueToken; showActions?: boolean }) {
-  const statusKey = TOKEN_STATUS[token.status] ?? "WAITING";
+function TokenCard({ token }: { token: QueueToken }) {
+  const statusKey = TOKEN_STATUS[token.status as keyof typeof TOKEN_STATUS] ?? "WAITING";
   const cardClass = [
     "q-token-card",
     token.priority === "EMERGENCY" ? "q-token-card--emergency" : "",

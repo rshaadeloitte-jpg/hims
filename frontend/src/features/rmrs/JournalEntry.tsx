@@ -62,7 +62,7 @@ export function JournalEntry({ onSaved, onCancel }: JournalEntryProps) {
   const legs = watch("legs");
   const totalDebit = legs.reduce((s, l) => s + (l.debit ?? 0), 0);
   const totalCredit = legs.reduce((s, l) => s + (l.credit ?? 0), 0);
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.001;
+  const isBalanced = totalDebit > 0 && Math.abs(totalDebit - totalCredit) < 0.001;
 
   const addLeg = () => {
     append({ accountId: 0, accountName: "", debit: 0, credit: 0 });

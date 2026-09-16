@@ -2,6 +2,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useIssueCreditNote } from "./hooks";
 import { creditNoteExtendedSchema, type CreditNoteExtendedValues } from "./schemas";
+import { Button, Textarea } from "@chakra-ui/react";
+import { FormField, HimsSelect, TextInput } from "../../components/ui";
 
 interface CreditNoteFormProps {
   billId: number;
@@ -67,73 +69,77 @@ export function CreditNoteForm({ billId, maxAmount, onIssued, onCancel }: Credit
       <form onSubmit={handleSubmit(handleSubmitNote)} className="credit-note-form__form">
         {/* Amount */}
         <div className="field">
-          <label htmlFor="credit-amount">Amount</label>
-          <div className="credit-note-form__amount">
-            <span className="credit-note-form__currency">₹</span>
-            <input
-              id="credit-amount"
-              type="number"
-              step="0.01"
-              className="form-input"
-              {...register("amount")}
-              aria-invalid={errors.amount ? true : undefined}
-            />
-          </div>
-          {errors.amount && <span className="field-error">{errors.amount.message}</span>}
+          <FormField label="Amount" error={errors.amount?.message}>
+            <div className="credit-note-form__amount">
+              <span className="credit-note-form__currency">₹</span>
+              <TextInput
+                id="credit-amount"
+                type="number"
+                step="0.01"
+                {...register("amount")}
+                aria-invalid={errors.amount ? true : undefined}
+              />
+            </div>
+          </FormField>
           <div className="credit-note-form__quick">
-            <button
+            <Button
               type="button"
-              className="btn btn--sm btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => setValue("amount", maxAmount)}
             >
               Full refund
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn--sm btn--ghost"
+              variant="ghost"
+              size="sm"
               onClick={() => setValue("amount", maxAmount / 2)}
             >
               50%
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Category */}
         <div className="field">
-          <label htmlFor="credit-category">Reason Category</label>
-          <select id="credit-category" className="form-input" {...register("category")}>
-            <option value="REFUND">Refund</option>
-            <option value="CANCELLATION">Cancellation</option>
-            <option value="DISCOUNT_ADJUSTMENT">Discount Adjustment</option>
-            <option value="OVERCHARGE">Overcharge Correction</option>
-            <option value="OTHER">Other</option>
-          </select>
+          <FormField label="Reason Category">
+            <HimsSelect id="credit-category" {...register("category")}>
+              <option value="REFUND">Refund</option>
+              <option value="CANCELLATION">Cancellation</option>
+              <option value="DISCOUNT_ADJUSTMENT">Discount Adjustment</option>
+              <option value="OVERCHARGE">Overcharge Correction</option>
+              <option value="OTHER">Other</option>
+            </HimsSelect>
+          </FormField>
         </div>
 
         {/* Reason */}
         <div className="field">
-          <label htmlFor="credit-reason">Reason</label>
-          <textarea
-            id="credit-reason"
-            className="form-input"
-            rows={3}
-            placeholder="Explain the reason for this credit note..."
-            {...register("reason")}
-            aria-invalid={errors.reason ? true : undefined}
-          />
-          {errors.reason && <span className="field-error">{errors.reason.message}</span>}
+          <FormField label="Reason" error={errors.reason?.message}>
+            <Textarea
+              id="credit-reason"
+              bg="white"
+              borderColor="gray.300"
+              rows={3}
+              placeholder="Explain the reason for this credit note..."
+              {...register("reason")}
+              aria-invalid={errors.reason ? true : undefined}
+            />
+          </FormField>
         </div>
 
         {/* Refund method (if applicable) */}
         {(category === "REFUND" || category === "OVERCHARGE") && (
           <div className="field">
-            <label htmlFor="credit-refund-method">Refund Method</label>
-            <select id="credit-refund-method" className="form-input" {...register("refundMethod")}>
-              <option value="">Select method</option>
-              <option value="CASH">Cash refund</option>
-              <option value="BANK_TRANSFER">Bank transfer</option>
-              <option value="ORIGINAL_PAYMENT">Original payment method</option>
-            </select>
+            <FormField label="Refund Method">
+              <HimsSelect id="credit-refund-method" {...register("refundMethod")}>
+                <option value="">Select method</option>
+                <option value="CASH">Cash refund</option>
+                <option value="BANK_TRANSFER">Bank transfer</option>
+                <option value="ORIGINAL_PAYMENT">Original payment method</option>
+              </HimsSelect>
+            </FormField>
           </div>
         )}
 
@@ -145,28 +151,23 @@ export function CreditNoteForm({ billId, maxAmount, onIssued, onCancel }: Credit
 
         {/* Actions */}
         <div className="credit-note-form__actions">
-          <button
+          <Button
             type="button"
-            className="btn btn--secondary"
+            variant="secondary"
             onClick={onCancel}
             disabled={issueCredit.isPending}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="btn btn--primary"
+            variant="primary"
             disabled={issueCredit.isPending || (amount ?? 0) <= 0}
+            loading={issueCredit.isPending}
+            loadingText="Issuing..."
           >
-            {issueCredit.isPending ? (
-              <>
-                <span className="spinner spinner--sm" aria-hidden="true" />
-                Issuing...
-              </>
-            ) : (
-              `Issue Credit Note (₹ ${(amount ?? 0).toFixed(2)})`
-            )}
-          </button>
+            {`Issue Credit Note (₹ ${(amount ?? 0).toFixed(2)})`}
+          </Button>
         </div>
 
         {issueCredit.isError && (

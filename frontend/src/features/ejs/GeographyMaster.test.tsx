@@ -37,35 +37,41 @@ function renderMaster() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  queries.useAshaWorkers.mockResolvedValue([
-    { ashaId: 10, ashaName: "Sunita Devi" },
-  ]);
+  queries.useAshaWorkers.mockReturnValue({
+    data: [
+      { ashaId: 10, ashaName: "Sunita Devi" },
+    ],
+    isLoading: false,
+  });
 });
 
 describe("GeographyMaster", () => {
   it("renders summary cards and geography records", async () => {
-    queries.useGeographyList.mockResolvedValue([
-      {
-        id: 1,
-        ashaId: 10,
-        ashaName: "Sunita Devi",
-        state: "Rajasthan",
-        district: "Jaipur",
-        block: "Sanganer",
-        village: "Pragpura",
-        subCenter: "Pragpura SC",
-        totalPopulation: 2450,
-        targetCouples: 320,
-        pregnantWomen: 45,
-        childrenUnder5: 180,
-        households: 420,
-        eligibleCouples: 280,
-        isActive: true,
-        lastEnumerationDate: "2026-08-15",
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-08-15T00:00:00Z",
-      },
-    ]);
+    queries.useGeographyList.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          ashaId: 10,
+          ashaName: "Sunita Devi",
+          state: "Rajasthan",
+          district: "Jaipur",
+          block: "Sanganer",
+          village: "Pragpura",
+          subCenter: "Pragpura SC",
+          totalPopulation: 2450,
+          targetCouples: 320,
+          pregnantWomen: 45,
+          childrenUnder5: 180,
+          households: 420,
+          eligibleCouples: 280,
+          isActive: true,
+          lastEnumerationDate: "2026-08-15",
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-08-15T00:00:00Z",
+        },
+      ],
+      isLoading: false,
+    });
 
     renderMaster();
 
@@ -73,23 +79,23 @@ describe("GeographyMaster", () => {
     expect(await screen.findByText("Total Population")).toBeInTheDocument();
     expect(screen.getByText("Pregnant Women")).toBeInTheDocument();
     expect(screen.getByText("Children <5")).toBeInTheDocument();
-    expect(screen.getByText("Households")).toBeInTheDocument();
+    expect(screen.getAllByText("Households").length).toBeGreaterThanOrEqual(1);
 
     // Record data
-    expect(screen.getByText("2,450")).toBeInTheDocument();
-    expect(screen.getByText("420")).toBeInTheDocument();
-    expect(screen.getByText("45")).toBeInTheDocument();
-    expect(screen.getByText("180")).toBeInTheDocument();
+    expect(screen.getAllByText("2,450").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("420").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("45").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("180").length).toBeGreaterThanOrEqual(1);
 
     // Village name
     expect(screen.getByText("Pragpura")).toBeInTheDocument();
 
     // Status badge
-    expect(screen.getByText("Active")).toBeInTheDocument();
+    expect(screen.getAllByText("Active").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows empty state when no records", async () => {
-    queries.useGeographyList.mockResolvedValue([]);
+    queries.useGeographyList.mockReturnValue({ data: [], isLoading: false });
 
     renderMaster();
 

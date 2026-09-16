@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useItemSales, useSaleReturns, useInterventions } from "./queries";
+import { Table, Text } from "@chakra-ui/react";
 
 export function PharmacyDashboard() {
   const { data: sales = [], isLoading: salesLoading } = useItemSales();
@@ -20,28 +21,28 @@ export function PharmacyDashboard() {
         <Link to="/pharmacy/new" className="btn btn--primary">+ New Sale</Link>
       </header>
       <div className="card-grid">
-        <div className="card"><label>Total Sales</label><strong>{totalSales}</strong></div>
-        <div className="card"><label>Dispensed</label><strong>{dispensed}</strong></div>
-        <div className="card"><label>Pending</label><strong>{pending}</strong></div>
-        <div className="card"><label>Active Returns</label><strong>{activeReturns}</strong></div>
-        <div className="card"><label>Interventions</label><strong>{interventions.length}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Total Sales</Text><strong>{totalSales}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Dispensed</Text><strong>{dispensed}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Pending</Text><strong>{pending}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Active Returns</Text><strong>{activeReturns}</strong></div>
+        <div className="card"><Text fontSize="sm" fontWeight="medium">Interventions</Text><strong>{interventions.length}</strong></div>
       </div>
       <h2>Recent Sales</h2>
-      <table className="table">
-        <thead><tr><th>#</th><th>Patient</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-        <tbody>
+      <Table.Root size="sm" variant="line">
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">#</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Body>
           {sales.slice(0, 20).map((s) => (
-            <tr key={s.saleId}>
-              <td>{s.saleId}</td>
-              <td>{s.patientId}</td>
-              <td>{s.totalAmount?.toFixed(2)}</td>
-              <td>{s.isDispensed ? "Dispensed" : s.isReturned ? "Returned" : "Pending"}</td>
-              <td>{s.createdAt?.slice(0, 10)}</td>
-            </tr>
+            <Table.Row key={s.saleId}>
+              <Table.Cell>{s.saleId}</Table.Cell>
+              <Table.Cell>{s.patientId}</Table.Cell>
+              <Table.Cell>{s.totalAmount?.toFixed(2)}</Table.Cell>
+              <Table.Cell>{s.isDispensed ? "Dispensed" : s.isReturned ? "Returned" : "Pending"}</Table.Cell>
+              <Table.Cell>{s.createdAt?.slice(0, 10)}</Table.Cell>
+            </Table.Row>
           ))}
-          {sales.length === 0 && <tr><td colSpan={5} className="muted">No sales.</td></tr>}
-        </tbody>
-      </table>
+          {sales.length === 0 && <Table.Row><Table.Cell colSpan={5} className="muted">No sales.</Table.Cell></Table.Row>}
+        </Table.Body>
+      </Table.Root>
     </section>
   );
 }
