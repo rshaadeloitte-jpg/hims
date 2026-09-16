@@ -8,6 +8,9 @@ import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/op.css";
 import "./styles/patient.css";
+import "./styles/queue.css";
+import "./styles/grievance.css";
+import "./styles/ejs.css";
 
 // Stale-while-revalidate defaults tuned for master data (rarely changes);
 // devtools/retry stay modest so API errors surface quickly in the UI.

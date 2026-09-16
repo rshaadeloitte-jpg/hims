@@ -17,6 +17,7 @@ export const HimsSelect = forwardRef<
         ref={ref}
         placeholder={placeholder}
         bg="white"
+        border="1px solid"
         borderColor="gray.300"
         _focus={{ borderColor: "brand.600" }}
         {...rest}

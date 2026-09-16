@@ -40,15 +40,15 @@ export function FormField({
 }) {
   const fieldId = id ?? htmlFor ?? findInputId(children);
   return (
-    <Field.Root invalid={!!error} required={required} id={fieldId}>
-      <Field.Label fontSize="sm" fontWeight="medium" htmlFor={fieldId}>
+    <Field.Root invalid={!!error} required={required} id={fieldId} mb={4} gap="1.5">
+      <Field.Label fontSize="sm" fontWeight="semibold" color="gray.700" htmlFor={fieldId}>
         {label}
       </Field.Label>
       {children}
       {error ? (
-        <Field.ErrorText>{error}</Field.ErrorText>
+        <Field.ErrorText fontSize="xs" color="red.600">{error}</Field.ErrorText>
       ) : helper ? (
-        <Field.HelperText>{helper}</Field.HelperText>
+        <Field.HelperText fontSize="xs" color="gray.500">{helper}</Field.HelperText>
       ) : null}
     </Field.Root>
   );
@@ -60,6 +60,7 @@ export const TextInput = forwardRef<HTMLInputElement, InputProps>(
       <Input
         ref={ref}
         bg="white"
+        border="1px solid"
         borderColor="gray.300"
         _focus={{ borderColor: "brand.600" }}
         {...props}
