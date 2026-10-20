@@ -1,0 +1,9 @@
+# M13/M14 — Screens (schemas, 70-key config)
+
+itemMasterSchema · stockListSchema · showIndentListSchema · showGRNSchema · showCurrentStockListSchema · itemEnquirySchema · getReorderListForDirectItemIssue · showStockAdjustmentListSchema · expiryItemReturnSchema · addNewItemSchema · assetRegisterList · damagedItemReturnIndent · expiredDamagedItemReturnIndent · expiryItemReturnToSupplierSchema · getItemEnquirySchema · hospitalWiseDemandListSchema · issueItemReturn · itemWiseDemandListSchema · materialConsumptionDetails · returnItemRecieve · returnToSupplierSchema · showAllItemIssueListSchema · showCurrentReorderListSchema · showDirectItemIssueListSchema · showExpiredItemListSchema · showItemReceiveList · showRecallExpiredItemSchema · showReturnFlowStore · showStockLocationSchema · showStoreComsumptionListSchema · updateBatchExpiry · showPurchaseRequestSchema · showPODetailsSchema · showPOPageSchema · approvePOPageSchema · compareQuotationSchema · supplierPoSchema · customProcessOrder · showCurrentPurchaseOrderList(forOtherUnit)Schema · showCurrentGRNListSchema · showGrnReturnListSchema · showOrderListforInHouseSupplierSchema · ShowIssuedPurchaseOrderDetails/ListForGRNSchema · showPurchaseOrderDetailsSchema · showPoIssueDetails · updatePODetailsForExpDate · updatePurchaseOrderSchema · freezeCurrentPOListSchema · customOrderAssignee · customProcessItemDetails · showConsignmentGRNListSchema · showApproveGrnListSchema · paymentDetailModeForGRNSchema · qcStatusUpdate · showItemReceiveList · stockListSchema.
+
+## Routes
+See features.md (57 inventory routes). Queue sub-app shares `queue:itemSummary`-style screens? — not evidenced; excluded.
+
+## Key endpoints (03 §2.8)
+- `inventoryStockList/*` (226 — 2nd-largest API bucket), `expiryitem/*` (47), `masterConfigService/*`, `eAushadiIndent/*`, `companyapprovedamount/*`, `planmaster/*`, `mdm/*`, `itemmaster/*`, `addUserService/*`.

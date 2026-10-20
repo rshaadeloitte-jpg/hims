@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-005 NON-SELF company path: coPay=40, plan=10, bill=5, doctorShare=10%",
+  "input": {
+    "rate": 1000,
+    "qty": 1,
+    "taxPctA": 0,
+    "taxPctB": 0,
+    "taxPctC": 0,
+    "applyAfterConcession": false,
+    "coPayPct": 40,
+    "concessionPlanPct": 10,
+    "concessionBillPct": 5,
+    "doctorSharePct": 10,
+    "isOtProcedure": false,
+    "selfCompany": false
+  },
+  "expected": {
+    "lineTotal": 1000.0,
+    "selfRate": 400.0,
+    "nonSelfRate": 570.0,
+    "concession": 30.0,
+    "taxA": 0.0,
+    "taxB": 0.0,
+    "taxC": 0.0,
+    "taxTotal": 0.0,
+    "selfAmount": 400.0,
+    "nonSelfAmount": 570.0,
+    "doctorShare": 100.0,
+    "hospitalShare": 900.0
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "identifier": "10.1002/asi.21324",
+  "generatedAt": "2026-08-14T09:12:26.563Z",
+  "source": "openalex",
+  "sourceUrl": "https://api.openalex.org/works?filter=doi%3Ahttps%3A%2F%2Fdoi.org%2F10.1002%2Fasi.21324&per-page=1&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccitation_normalized_percentile%2Creferenced_works%2Crelated_works%2Cauthorships%2Cprimary_location%2Clocations%2Cbest_oa_location%2Copen_access%2Cconcepts%2Ctopics%2Cabstract_inverted_index%2Cids%2Cis_retracted",
+  "paper": {
+    "paperId": "W4234767453",
+    "openAlexId": "https://openalex.org/W4234767453",
+    "doi": "https://doi.org/10.1002/asi.21324",
+    "title": "Computers, systems theory, and the making of a wired hospital: A history of Technicon Medical Information System, 1964–1987",
+    "year": 2010,
+    "publicationDate": "2010-03-11",
+    "type": "article",
+    "authors": [
+      "Rachel Plotnick"
+    ],
+    "venue": "Journal of the American Society for Information Science and Technology",
+    "abstract": "Abstract This paper investigates the controversy surrounding the systems approach in medicine, contributing to the body of literature on systems and information technology in civilian contexts. Specifically, the paper follows the design and implementation of a hospital information system at El Camino Hospital in Mountain View, California, in the 1960s and 1970s. The case study suggests that while many considered “people problems” like healthcare too complex for the systems approach, in fact it could have positive results if system engineers could translate social concerns about medicine into business and organizational strategies. This paper identifies the ways systems designers approached an organization characterized by autonomy rather than collaboration, craft rather than science, and charity rather than business, and helped to redefine that organization as one that emphasized rationality, efficiency, and the coexistence of man and machine.",
+    "concepts": [
+      "Rationality",
+      "Craft",
+      "Information system",
+      "Autonomy",
+      "Healthcare system",
+      "Systems science",
+      "Sociology",
+      "Health informatics",
+      "Knowledge management",
+      "Computer science",
+      "Health care",
+      "Social system",
+      "Social science"
+    ],
+    "topics": [
+      "History of Computing Technologies",
+      "Information Systems Theories and Implementation",
+      "Cybernetics and Technology in Society"
+    ],
+    "urls": [
+      {
+        "type": "landing",
+        "url": "https://doi.org/10.1002/asi.21324",
+        "isOpenAccess": false
+      },
+      {
+        "type": "landing",
+        "url": "http://hdl.handle.net/",
+        "isOpenAccess": false
+      },
+      {
+        "type": "doi",
+        "url": "https://doi.org/10.1002/asi.21324"
+      }
+    ],
+    "citationCount": 9,
+    "normalizedCitationPercentile": 0.94573643,
+    "references": [
+      "https://openalex.org/W169554655",
+      "https://openalex.org/W576012590",
+      "https://openalex.org/W586588263",
+      "https://openalex.org/W614245584",
+      "https://openalex.org/W625081565",
+      "https://openalex.org/W630743614",
+      "https://openalex.org/W1483166441",
+      "https://openalex.org/W1505221106",
+      "https://openalex.org/W1602702994",
+      "https://openalex.org/W1966971029",
+      "https://openalex.org/W1984820015",
+      "https://openalex.org/W1985560190",
+      "https://openalex.org/W1995156820",
+      "https://openalex.org/W2007146957",
+      "https://openalex.org/W2016794396",
+      "https://openalex.org/W2030120287",
+      "https://openalex.org/W2032382473",
+      "https://openalex.org/W2039016678",
+      "https://openalex.org/W2048386373",
+      "https://openalex.org/W2057452843",
+      "https://openalex.org/W2063231494",
+      "https://openalex.org/W2066885778",
+      "https://openalex.org/W2066896616",
+      "https://openalex.org/W2072152083",
+      "https://openalex.org/W2097623181",
+      "https://openalex.org/W2121845960",
+      "https://openalex.org/W2127089424",
+      "https://openalex.org/W2162793665",
+      "https://openalex.org/W2242900147",
+      "https://openalex.org/W2314020836",
+      "https://openalex.org/W2315908873",
+      "https://openalex.org/W3183765052",
+      "https://openalex.org/W4239843412",
+      "https://openalex.org/W4319590163"
+    ],
+    "relatedWorks": [
+      "https://openalex.org/W2270972035",
+      "https://openalex.org/W596680491",
+      "https://openalex.org/W2912796632",
+      "https://openalex.org/W2467716424",
+      "https://openalex.org/W2109094225",
+      "https://openalex.org/W2089500450",
+      "https://openalex.org/W1996599104",
+      "https://openalex.org/W2732212463",
+      "https://openalex.org/W2013488385",
+      "https://openalex.org/W2949297451"
+    ],
+    "sourceRank": 1,
+    "graphRole": "seed",
+    "isOpenAccess": false,
+    "isRetracted": false,
+    "provenance": [
+      {
+        "source": "OpenAlex Works API",
+        "fields": [
+          "id",
+          "ids",
+          "display_name",
+          "publication_year",
+          "cited_by_count",
+          "citation_normalized_percentile",
+          "referenced_works",
+          "abstract_inverted_index",
+          "primary_location",
+          "locations",
+          "best_oa_location",
+          "open_access"
+        ]
+      }
+    ],
+    "fullTextAccess": {
+      "status": "candidates_found",
+      "generatedAt": "2026-08-14T09:12:26.563Z",
+      "candidates": [
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "https://doi.org/10.1002/asi.21324",
+          "isOpenAccess": false,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "http://hdl.handle.net/",
+          "isOpenAccess": false,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "DOI",
+          "kind": "landing_page",
+          "label": "DOI resolver",
+          "identifier": "10.1002/asi.21324",
+          "url": "https://doi.org/10.1002/asi.21324",
+          "canFetch": false,
+          "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+        }
+      ],
+      "bestCandidate": {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1002/asi.21324",
+        "isOpenAccess": false,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      "limits": [
+        "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+        "PDF URLs are recorded as access links unless a source-specific text API is available.",
+        "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+      ]
+    }
+  },
+  "access": {
+    "status": "candidates_found",
+    "generatedAt": "2026-08-14T09:12:26.563Z",
+    "candidates": [
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1002/asi.21324",
+        "isOpenAccess": false,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "http://hdl.handle.net/",
+        "isOpenAccess": false,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "DOI",
+        "kind": "landing_page",
+        "label": "DOI resolver",
+        "identifier": "10.1002/asi.21324",
+        "url": "https://doi.org/10.1002/asi.21324",
+        "canFetch": false,
+        "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+      }
+    ],
+    "bestCandidate": {
+      "source": "OpenAlex",
+      "kind": "landing_page",
+      "label": "OpenAlex landing page",
+      "url": "https://doi.org/10.1002/asi.21324",
+      "isOpenAccess": false,
+      "canFetch": false,
+      "note": "Publisher or repository landing page from OpenAlex location metadata."
+    },
+    "limits": [
+      "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+      "PDF URLs are recorded as access links unless a source-specific text API is available.",
+      "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+    ]
+  },
+  "fullText": {
+    "requested": false,
+    "status": "not_requested"
+  }
+}

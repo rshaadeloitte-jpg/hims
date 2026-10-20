@@ -1,0 +1,1252 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8087
+  description: Generated server url
+tags:
+- name: Diet Orders (MIG-023)
+  description: Diet order lifecycle (raise / sign / cancel) and food item schedule
+    lifecycle (order / advance / uncheck / hold / remove). Patient / admission / ward
+    / bed / doctor / service ids are caller-supplied; cross-domain decoration is deferred.
+- name: Diet Masters (MIG-023)
+  description: "Diet item / session / plan masters, plan detail lines, and the today-menu\
+    \ (add / upsert / remove / list)"
+paths:
+  /api/v1/diet-orders/{id}/status:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Set order status by id
+      description: Set orderStatus on one order (legacy updateDietOrderDetailsById).
+      operationId: updateStatusById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: orderStatus
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: boolean
+  /api/v1/diet-orders/status-by-order-id:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Set order status by business orderId
+      description: Set orderStatus on all rows sharing the business orderId field
+        (legacy updateDietOrderDetails). Returns the number of rows updated.
+      operationId: updateStatusByOrderId
+      parameters:
+      - name: orderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: orderStatus
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int32
+  /api/v1/diet-orders/sign:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Sign diet orders
+      description: "Payload: a JSON array of diet order ids. The first becomes ACTIVE\
+        \ (2); the rest become REPLACED (3) (legacy signPatientDietOrders)."
+      operationId: sign
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: boolean
+  /api/v1/diet-orders/food-items/uncheck:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Uncheck a food item schedule
+      description: "Decrement itemScheduleStatus by 1 and stamp dietStatusTime, keyed\
+        \ on (admissionId, dietOrderId, dietSessionId, foodOrderId) for today (legacy\
+        \ updateUncheckFoodOrder)."
+      operationId: uncheck
+      parameters:
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: foodOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet-orders/food-items/advance:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Advance a food item schedule
+      description: "Increment itemScheduleStatus by 1 and stamp dietStatusTime, keyed\
+        \ on (admissionId, dietOrderId, dietSessionId, foodOrderId) for today (legacy\
+        \ updateDietFoodOrder)."
+      operationId: advance
+      parameters:
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: foodOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet-orders/food-items/action-status:
+    put:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Set food action status
+      description: "Stamp reasonForHold + dietActionStatus (HOLD/CANCEL/REJECT/RELEASE),\
+        \ keyed on (admissionId, dietOrderId, dietSessionId, foodOrderId) for today\
+        \ (legacy updateDietFoodStatusForCancel)."
+      operationId: setActionStatus
+      parameters:
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: foodOrderId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietActionStatus
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: reasonForHold
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet/today-menu:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: List today-menu items
+      description: "Active menu rows for a unit, optionally narrowed to one diet type."
+      operationId: listTodayMenu
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietTypeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TodayDietMenu"
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Add / upsert a today-menu item
+      description: "Payload: {dietTypeId, dietSessionId, itemId, description}. Upsert\
+        \ on the (unitId, dietTypeId, dietSessionId, itemId) key. A missing row is\
+        \ inserted only when the description is present and not the literal 'Add New\
+        \ Item'; an existing row is re-activated and its description replaced."
+      operationId: upsertTodayMenu
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TodayDietMenu"
+  /api/v1/diet/today-menu/remove:
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Remove a today-menu item
+      description: "Soft-delete (status=false) the row keyed on (unitId, dietTypeId,\
+        \ dietSessionId, itemId)."
+      operationId: removeTodayMenu
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietTypeId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/TodayDietMenu"
+  /api/v1/diet/sessions:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: List diet sessions
+      description: Unit-scoped active sessions ordered by dietSequenceNumber.
+      operationId: listSessions
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietSessionMaster"
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Create a diet session
+      description: "Payload: {description, fromTime, toTime, dietSequenceNumber}.\
+        \ A session is a feeding window (breakfast / lunch / dinner) ordered by dietSequenceNumber."
+      operationId: createSession
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietSessionMaster"
+  /api/v1/diet/plans:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: List diet plans
+      description: "Unit-scoped active plans, newest first."
+      operationId: listPlans
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietPlanMaster"
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Create a diet plan
+      description: "Payload: {code, description, planInformation, serviceId}."
+      operationId: createPlan
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietPlanMaster"
+  /api/v1/diet/plans/{planId}/details:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: List diet plan detail lines
+      description: "Active detail lines of one plan, ordered by timing (session)."
+      operationId: listPlanDetails
+      parameters:
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietPlanDetails"
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Add a diet plan detail line
+      description: "Payload: {itemId, timing, itemQty, itemUnit, itemCal, itemCh,\
+        \ itemFat, itemExpectedCal, itemInstruction, itemProtein}. planId is taken\
+        \ from the path."
+      operationId: addPlanDetail
+      parameters:
+      - name: planId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietPlanDetails"
+  /api/v1/diet/items:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: List diet items
+      description: "Unit-scoped active diet items, newest first."
+      operationId: listItems
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietItemMaster"
+    post:
+      tags:
+      - Diet Masters (MIG-023)
+      summary: Create a diet item
+      description: "Payload: {dietItemType, dietItemIen, description, energy, dietTypeIen,\
+        \ dietSessionId, localUnit}. Legacy addDietItem joins dietSessionIds / dietItemTypes\
+        \ arrays into the comma-string columns before save."
+      operationId: createItem
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemMaster"
+  /api/v1/diet-orders:
+    get:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: List diet orders for an admission
+      description: "All orders for an admission in a unit, newest first (legacy getPatientDietOrderList)."
+      operationId: listByAdmission
+      parameters:
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietOrderDetails"
+    post:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Raise a diet order
+      description: "Payload: {patientId, admissionId, wardId, bedId, doctorId, serviceId\
+        \ (diet type), fromDate, toDate, remarks, orderId, orderStatus (2=signed/active,\
+        \ else 1=unreleased)}. Pre-checks that every active session in the unit has\
+        \ a today-menu item for the diet type; replaces the patient's existing ACTIVE\
+        \ order (->3) and its still-raised schedule rows; assigns an autocode order\
+        \ number. Returns 400 BERA035 when serviceId is missing."
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietOrderDetails"
+  /api/v1/diet-orders/{orderId}/food-items:
+    get:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: List food item schedule rows of an order
+      description: "Active schedule rows of one diet order, ordered by session then\
+        \ id."
+      operationId: listFoodItems
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietItemScheduleDetails"
+    post:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Order food items for today
+      description: "Payload: {admissionId, orderId, sessions:[{sessionId, itemIds:[...],\
+        \ caloriesConsume}]}. Per session: invalidates the session's replaceable (<6)\
+        \ rows for today, skips when a COMPLETED (6) row already exists for today,\
+        \ else inserts a new row with itemScheduleStatus=2 and foodOrderedDate=today\
+        \ (legacy addPatFooddItemOrder same-day core)."
+      operationId: orderFoodItems
+      parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet-orders/food-items/remove-item:
+    post:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Remove one item from a food schedule row
+      description: "Remove one itemId from the itemIds CSV; delete the row when the\
+        \ list becomes empty, else update it (legacy removeDietItem)."
+      operationId: removeItem
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: scheduleId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet-orders/filter:
+    post:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Filter diet orders
+      description: "Admission-scoped orders with an optional strict fromDate window\
+        \ (fromDate > :fromDate AND fromDate < :toDate). Payload: {admissionId, fromDate,\
+        \ toDate}."
+      operationId: filter
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietOrderDetails"
+  /api/v1/diet/sessions/{id}:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      operationId: getSession
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietSessionMaster"
+  /api/v1/diet/plans/{id}:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      operationId: getPlan
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietPlanMaster"
+  /api/v1/diet/items/{id}:
+    get:
+      tags:
+      - Diet Masters (MIG-023)
+      operationId: getItem
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietItemMaster"
+  /api/v1/diet-orders/{id}:
+    get:
+      tags:
+      - Diet Orders (MIG-023)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietOrderDetails"
+  /api/v1/diet-orders/kitchen:
+    get:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Kitchen list
+      description: "Active rows at or past the kitchen stage (itemScheduleStatus >=\
+        \ 3) for a unit today, optionally one session (legacy getDietKichenDetails\
+        \ diet-owned half). Ward / service decoration JOINs are deferred."
+      operationId: kitchen
+      parameters:
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dietSessionId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DietItemScheduleDetails"
+  /api/v1/diet-orders/active:
+    get:
+      tags:
+      - Diet Orders (MIG-023)
+      summary: Latest ACTIVE diet order for an admission
+      description: Newest order with orderStatus=2 (legacy getDietOrderDetailByAdmissionId).
+      operationId: getLatestActive
+      parameters:
+      - name: admissionId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/DietOrderDetails"
+components:
+  schemas:
+    JsonNode:
+      type: object
+    DietItemScheduleDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        orderId:
+          type: integer
+          format: int64
+        sessionId:
+          type: integer
+          format: int64
+        itemIds:
+          type: string
+        itemScheduleStatus:
+          type: integer
+          format: int64
+        dietActionStatus:
+          type: string
+          enum:
+          - HOLD
+          - CANCEL
+          - REJECT
+          - RELEASE
+        reasonForHold:
+          type: string
+        dietStatusTime:
+          type: string
+          format: date-time
+        foodOrderedDate:
+          type: string
+          format: date-time
+        presentCalories:
+          type: integer
+          format: int64
+    TodayDietMenu:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        dietTypeId:
+          type: integer
+          format: int64
+        description:
+          type: string
+        dietSessionId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+    DietSessionMaster:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+        fromTime:
+          type: string
+          format: date-time
+        toTime:
+          type: string
+          format: date-time
+        dietSequenceNumber:
+          type: integer
+          format: int64
+    DietPlanMaster:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+        planInformation:
+          type: string
+          format: byte
+        serviceId:
+          type: integer
+          format: int64
+    DietPlanDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        planId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        timing:
+          type: integer
+          format: int64
+        itemQty:
+          type: string
+        itemUnit:
+          type: string
+        itemCal:
+          type: string
+        itemCh:
+          type: string
+        itemFat:
+          type: string
+        itemExpectedCal:
+          type: string
+        itemInstruction:
+          type: string
+          format: byte
+        itemProtein:
+          type: number
+    DietItemMaster:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        dietItemType:
+          type: string
+        dietItemIen:
+          type: integer
+          format: int64
+        description:
+          type: string
+        energy:
+          type: integer
+          format: int64
+        dietTypeIen:
+          type: string
+        dietSessionId:
+          type: string
+        localUnit:
+          type: string
+    DietOrderDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        orderNumber:
+          type: string
+        patientId:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+        bedId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+        serviceId:
+          type: integer
+          format: int64
+        fromDate:
+          type: string
+          format: date-time
+        toDate:
+          type: string
+          format: date-time
+        remarks:
+          type: string
+        orderId:
+          type: integer
+          format: int64
+        orderStatus:
+          type: integer
+          format: int64

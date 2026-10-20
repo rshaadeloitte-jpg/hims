@@ -1,0 +1,504 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8085
+  description: Generated server url
+tags:
+- name: Linen Requests (MIG-023)
+  description: "Linen & laundry request lifecycle: raise, approve, handover, receive\
+    \ at main store, process (wash), dispatch, complete, counts, detail updates"
+paths:
+  /api/v1/linen-requests/{id}/details:
+    get:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: List detail lines of a request
+      description: One row per requested linen item line (quantity/receivedQuantity/damagedQuantity/dispatchedQuantity/finalQuantity/reason).
+      operationId: details
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LinenRequestDetails"
+    put:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Update detail quantity/remark before approval
+      description: "Body [{id, quantity?, remark?}]; request must be PENDING (legacy\
+        \ updateItemsForLinenRequest)."
+      operationId: updateDetails
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LinenRequestDetails"
+  /api/v1/linen-requests:
+    get:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: List linen requests
+      description: "A store sees requests where it is source OR destination (storeId\
+        \ = store_id OR to_store_id). Optional filters: unitId, storeId, requestStatus\
+        \ (1..7), search (requisitionNo LIKE), fromDate/toDate (request date range,\
+        \ inclusive). Newest first."
+      operationId: list
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: storeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: requestStatus
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: toDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LinenRequest"
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Raise a linen request
+      description: "Payload {\"request\": {storeId, toStoreId, ...}, \"details\":\
+        \ [{itemId, batchId, quantity, remark}]}. Server stamps requisitionNo ({unitPrefix}/LR/{yy}/{%05d}),\
+        \ requestStatus=1(PENDING), requestDate. unitPrefix optional (default IHMS\
+        \ until M_UNITMASTER integration)."
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: unitPrefix
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/receive-main-store:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Receive at main store
+      description: "HANDOVERED(3) -> RECEIVED(4). Optional body [{id, receivedQuantity,\
+        \ damagedQuantity?, reason?}]: lines with damagedQuantity stamp receivedQuantity\
+        \ + damagedQuantity + reason (legacy receiveLinenRequestMainStore)."
+      operationId: receiveMainStore
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/process:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Process/wash the request
+      description: RECEIVED(4) -> WASHED(5) (legacy processLinenRequest).
+      operationId: process
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/handover:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Hand over linen to the laundry
+      description: ACCEPTED(2) -> HANDOVERED(3); handedOverTo stamped (legacy handOverLinenItems).
+      operationId: handover
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: handedOverTo
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/dispatch:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Dispatch washed linen back
+      description: "WASHED(5) -> DISPATCHED(6). Optional body [{id, dispatchedQuantity,\
+        \ damagedQuantity?, reason?}]: dispatchedQuantity stamped; damagedQuantity\
+        \ ACCUMULATED (new + previous — legacy dispatchLinenRequest)."
+      operationId: dispatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/complete:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Complete the request (final receive)
+      description: "DISPATCHED(6) -> COMPLETED(7); receivedBy stamped. Optional body\
+        \ [{id, finalQuantity}] stamps per-line finalQuantity (legacy receiveLinenRequest).\
+        \ Damaged-quantity stock subtraction is deferred until the item-service integration\
+        \ slice."
+      operationId: complete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: receivedBy
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}/approve:
+    post:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Approve a request
+      description: PENDING(1) -> ACCEPTED(2) (legacy approveLinenRequest).
+      operationId: approve
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/{id}:
+    get:
+      tags:
+      - Linen Requests (MIG-023)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+    delete:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Soft-delete a request
+      description: status=false + requestStatus=0 (legacy deleteLinenRequest).
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/LinenRequest"
+  /api/v1/linen-requests/counts:
+    get:
+      tags:
+      - Linen Requests (MIG-023)
+      summary: Dashboard request counts
+      description: "TOTAL / PENDING / ACCEPTED / HANDOVERED / RECEIVED / WASHED /\
+        \ DISPATCHED / COMPLETED, scoped by unitId + storeId (source or destination)\
+        \ + optional date range (legacy getLinenRequestCount)."
+      operationId: counts
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: storeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: toDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+components:
+  schemas:
+    JsonNode:
+      type: object
+    LinenRequestDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        linenRequestId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int64
+        remark:
+          type: string
+        receivedQuantity:
+          type: integer
+          format: int64
+        damagedQuantity:
+          type: integer
+          format: int64
+        dispatchedQuantity:
+          type: integer
+          format: int64
+        finalQuantity:
+          type: integer
+          format: int64
+        reason:
+          type: string
+    LinenRequest:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        requisitionNo:
+          type: string
+        storeId:
+          type: integer
+          format: int64
+        toStoreId:
+          type: integer
+          format: int64
+        requestDate:
+          type: string
+          format: date-time
+        requestStatus:
+          type: integer
+          format: int64
+        handedOverTo:
+          type: string
+        receivedBy:
+          type: string

@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: billing-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: billing-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_billing
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_billing
+    create-schemas: true           # history table needs ihms_billing before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topic:
+      billing-events: ${BILLING_EVENTS_TOPIC:ihms.billing.events}
+      dlq: ${BILLING_DLQ_TOPIC:dlt.ihms.billing.events}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: ${SERVER_PORT:8098}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: billing-service
+    description: iHMS Billing & Settlement service (S05) - Wave-4 tranche 4 (Catalog #5); charges/bills/doctor-share, finalize (BR-BILL-001/002/004/005), settlement (BR-BILL-006); outbox E-07 InvoiceGenerated (invoice-generated.v1, partition key billId)
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

@@ -1,0 +1,396 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8091
+  description: Generated server url
+tags:
+- name: Appointments (WP-4)
+  description: >-
+    Appointment booking with unique-slot constraint and a LOCKED forward-only status
+    machine (BR-APT-001): apptStatus 1=BOOKED -> 2=CHECKED_IN -> 3=COMPLETED;
+    terminal branches 4=CANCELLED (from BOOKED), 5=RESCHEDULED (from BOOKED; the
+    reschedule API creates a new linked appointment and retires this one as 5),
+    6=NO_SHOW (from BOOKED). No backward transitions are permitted. Legacy mirror:
+    VisitStatus 11=billed / 12=dispensed is resolved per aggregate (effective =
+    max of both sides); dispense to 12 only from 11 with no undispensed items.
+- name: Doctor Schedules & Slots (WP-4)
+  description: 'Weekly doctor schedule master and slot search for OPD appointment booking'
+paths:
+  /api/v1/appointments:
+    post:
+      tags:
+      - Appointments (WP-4)
+      operationId: book
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '409':
+          description: Slot already booked (BR-OPD-002 unique-slot constraint)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Appointments (WP-4)
+      operationId: list
+      parameters:
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      - name: doctorId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+  /api/v1/appointments/{id}:
+    get:
+      tags:
+      - Appointments (WP-4)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+  /api/v1/appointments/{id}/checkin:
+    post:
+      tags:
+      - Appointments (WP-4)
+      operationId: checkin
+      description: "Creates the encounter and emits E-02 EncounterCreated via the outbox (encounter-created.v1, payload: encounterId, patientId, unitId, doctorId, deptId, visitMark, appointmentType, opdNo/token, visitstatus2, clinicId)."
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+  /api/v1/appointments/{id}/complete:
+    post:
+      tags:
+      - Appointments (WP-4)
+      operationId: complete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+  /api/v1/appointments/{id}/cancel:
+    post:
+      tags:
+      - Appointments (WP-4)
+      operationId: cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+  /api/v1/appointments/{id}/noshow:
+    post:
+      tags:
+      - Appointments (WP-4)
+      operationId: noshow
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Appointment'
+  /api/v1/doctors/{doctorId}/slots:
+    get:
+      tags:
+      - Doctor Schedules & Slots (WP-4)
+      operationId: slots
+      parameters:
+      - name: doctorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotAvailability'
+  /api/v1/doctors/{doctorId}/schedules:
+    post:
+      tags:
+      - Doctor Schedules & Slots (WP-4)
+      operationId: createSchedule
+      parameters:
+      - name: doctorId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: dayOfWeek
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: startTime
+        in: query
+        required: true
+        schema:
+          type: string
+          format: time
+      - name: endTime
+        in: query
+        required: true
+        schema:
+          type: string
+          format: time
+      - name: slotMinutes
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 15
+      - name: deptId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: clinicId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DoctorSchedule'
+  /api/v1/doctors/schedules:
+    get:
+      tags:
+      - Doctor Schedules & Slots (WP-4)
+      operationId: listSchedules
+      parameters:
+      - name: doctorId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorSchedule'
+components:
+  schemas:
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        tokenNo:
+          type: integer
+          format: int32
+        patientId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+        scheduleId:
+          type: integer
+          format: int64
+        apptDate:
+          type: string
+          format: date
+        slotStart:
+          type: string
+          format: time
+        apptStatus:
+          type: integer
+          format: int32
+        deptId:
+          type: integer
+          format: int64
+        clinicId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+    BookingRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+        scheduleId:
+          type: integer
+          format: int64
+        unitId:
+          type: integer
+          format: int64
+        apptDate:
+          type: string
+        slotStart:
+          type: string
+    SlotAvailability:
+      type: object
+      properties:
+        scheduleId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+        date:
+          type: string
+        slotStart:
+          type: string
+        slotEnd:
+          type: string
+        booked:
+          type: boolean
+    DoctorSchedule:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        doctorId:
+          type: integer
+          format: int64
+        dayOfWeek:
+          type: integer
+          format: int32
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        slotMinutes:
+          type: integer
+          format: int32
+        deptId:
+          type: integer
+          format: int64
+        clinicId:
+          type: integer
+          format: int64
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string

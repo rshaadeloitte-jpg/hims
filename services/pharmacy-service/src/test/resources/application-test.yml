@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: pharmacy-service
+  datasource:
+    url: jdbc:h2:mem:ihms_pharmacy;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_pharmacy
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_pharmacy
+    create-schemas: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+app:
+  item-service:
+    base-url: http://localhost:8082
+  pharmacy:
+    store-id: 1
+
+server:
+  port: 0

@@ -1,0 +1,463 @@
+# iHMS Modernization — CI (MIG-003, Wave 0 / slice S0)
+# Container engine: Podman (project standard; docker CLI is NOT required).
+# Images are pulled from docker.io (pinned tags, no floating latest).
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOCKER_HOST: unix:///tmp/podman.sock        # Podman docker-compat API socket
+  JAVA_VERSION: "21"
+
+jobs:
+  reference-service-build-test:
+    name: reference-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/reference-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16/Kafka via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: services/reference-service/target/surefire-reports/
+
+  item-service-build-test:
+    name: item-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/item-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: item-service-surefire-reports
+          path: services/item-service/target/surefire-reports/
+
+  grievance-service-build-test:
+    name: grievance-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/grievance-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grievance-service-surefire-reports
+          path: services/grievance-service/target/surefire-reports/
+
+  waste-service-build-test:
+    name: waste-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/waste-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: waste-service-surefire-reports
+          path: services/waste-service/target/surefire-reports/
+
+  linen-service-build-test:
+    name: linen-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/linen-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linen-service-surefire-reports
+          path: services/linen-service/target/surefire-reports/
+
+  transport-service-build-test:
+    name: transport-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/transport-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: transport-service-surefire-reports
+          path: services/transport-service/target/surefire-reports/
+
+  diet-service-build-test:
+    name: diet-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/diet-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diet-service-surefire-reports
+          path: services/diet-service/target/surefire-reports/
+
+  equipment-service-build-test:
+    name: equipment-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/equipment-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: equipment-service-surefire-reports
+          path: services/equipment-service/target/surefire-reports/
+
+  queue-service-build-test:
+    name: queue-service build + test (L0/L1/L2 via Testcontainers on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/queue-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: queue-service-surefire-reports
+          path: services/queue-service/target/surefire-reports/
+
+  patient-service-build-test:
+    name: patient-service build + test (L0/L1/L2 via Testcontainers PG16+Kafka on Podman)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/patient-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up Podman docker-compat API socket
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+          curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
+
+      - name: Maven verify (unit + contract + Testcontainers PG16/Kafka via Podman)
+        run: mvn -B verify
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: patient-service-surefire-reports
+          path: services/patient-service/target/surefire-reports/
+
+  platform-compose:
+    name: platform compose stack (Podman, docker.io images)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: platform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Podman + compose provider
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman podman-compose curl
+          podman version
+          podman system service --time=0 unix:///tmp/podman.sock &
+          for i in $(seq 1 30); do
+            if curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping >/dev/null 2>&1; then echo "podman socket ready"; break; fi
+            sleep 1
+          done
+
+      - name: Validate compose file
+        run: podman-compose -f docker-compose.yml config --quiet
+
+      - name: Boot the whole platform stack and await health
+        run: |
+          cp .env.example .env
+          podman-compose -f docker-compose.yml up -d
+          podman ps --format 'table {{.Names}}\t{{.Status}}'
+          # await healthchecks (PG/Redis fast; Kafka/Solr slower)
+          for i in $(seq 1 60); do
+            summary=$(podman ps --format '{{.Names}}={{.Status}}' | tr '\n' ' ')
+            echo "t+$((i*10))s: $summary"
+            case "$summary" in
+              *"unhealthy"*) echo "UNHEALTHY"; exit 1;;
+            esac
+            if ! echo "$summary" | grep -q "ihms-pg.*(healthy)"; then sleep 10; continue; fi
+            if ! echo "$summary" | grep -q "ihms-kafka.*(healthy)"; then sleep 10; continue; fi
+            if ! echo "$summary" | grep -q "ihms-solr.*(healthy)"; then sleep 10; continue; fi
+            if ! echo "$summary" | grep -q "ihms-redis.*(healthy)"; then sleep 10; continue; fi
+            if ! echo "$summary" | grep -q "ihms-solr-zk.*(healthy)"; then sleep 10; continue; fi
+            echo "ALL HEALTHY"; break
+          done
+          podman ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+      - name: Tear down
+        if: always()
+        run: podman-compose -f docker-compose.yml down -v

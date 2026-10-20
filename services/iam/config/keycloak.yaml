@@ -1,0 +1,42 @@
+# Keycloak Configuration Template for IAM Service
+# Place this in config/keycloak.yaml
+
+keycloak:
+  url: "https://auth.hims.example.com"
+  client_id: "iam-service"
+  client_secret: "{{KEYCLOAK_CLIENT_SECRET}}"
+
+  # Roles and permissions
+  roles:
+    - name: "patient"
+      permissions:
+        - "read:patient"
+        - "write:patient"
+    - name: "staff"
+      permissions:
+        - "read:all"
+        - "write:all"
+    - name: "admin"
+      permissions:
+        - "read:all"
+        - "write:all"
+
+  # Role hierarchy
+  role_hierarchy:
+    patient -> staff -> admin
+
+  # Permission mappings
+  permission_mappings:
+    - permission: "read:patient"
+      roles:
+        - patient
+    - permission: "write:patient"
+      roles:
+        - patient
+    - permission: "read:all"
+      roles:
+        - staff
+    - permission: "write:all"
+      roles:
+        - staff
+        - admin

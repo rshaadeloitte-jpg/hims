@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: lab-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: lab-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_lab
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_lab
+    create-schemas: true           # history table needs ihms_lab before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topic:
+      lab-events: ${LAB_EVENTS_TOPIC:ihms.lab.events}
+      dlq: ${LAB_DLQ_TOPIC:dlt.ihms.lab.events}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: ${SERVER_PORT:8094}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: lab-service
+    description: iHMS Lab (Pathology) service (S07) - Wave-3 tranche 3 (Catalog #7); result-side slice - patho booking/details status machine, parameter result upsert, finalize-per-detail, machine config CRUD, worklist; outbox E-05 LabResultFinalized (lab-result-finalized.v1, partition key encounterId)
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

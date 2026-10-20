@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-004 Tax after concession NON-SELF: rate=1000, coPay=100, plan=10, bill=5, taxA=9, applyAfterConcession=true. NON-SELF path: conPct = billPct = 5 (replaces planPct=10); taxBase = 1000 - 5% = 950; taxA = 950 * 9% = 85.50.",
+  "input": {
+    "rate": 1000,
+    "qty": 1,
+    "taxPctA": 9,
+    "taxPctB": 0,
+    "taxPctC": 0,
+    "applyAfterConcession": true,
+    "coPayPct": 100,
+    "concessionPlanPct": 10,
+    "concessionBillPct": 5,
+    "doctorSharePct": 0,
+    "isOtProcedure": false,
+    "selfCompany": false
+  },
+  "expected": {
+    "lineTotal": 1000.0,
+    "selfRate": 1000.0,
+    "nonSelfRate": 0.0,
+    "concession": 0.0,
+    "taxA": 85.5,
+    "taxB": 0.0,
+    "taxC": 0.0,
+    "taxTotal": 85.5,
+    "selfAmount": 1085.5,
+    "nonSelfAmount": 0.0,
+    "doctorShare": null,
+    "hospitalShare": null
+  }
+}

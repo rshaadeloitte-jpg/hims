@@ -1,0 +1,295 @@
+openapi: 3.1.0
+info:
+  title: iHMS Blood Bank service (Catalog #13) — Wave-3 tranche 3 (GAP-REGISTER WP-9)
+  description: |
+    Donor registry, requisition BR-BLD-001 status machine (1=new, 2=cross-matched,
+    3=issued, 10=cancelled/expired), bags/components and the BR-BLD-002/003/004/005
+    idempotent job endpoints.
+    NOTE: NO events emitted — BloodRequisitionCreated is DEFERRED per
+    KAFKA-EVENT-CATALOG §3. Cron scheduling of the job endpoints is DEFERRED;
+    an orchestrator invokes them (legacy ran daily crons in ApplicationJobs).
+  version: v0
+servers:
+- url: http://localhost:8096
+  description: Generated server url
+tags:
+- name: Donors (WP-9)
+  description: 'Donor registry (t_blooddonor); touch refreshes last_action_at for the BR-BLD-005 72h staleness gate'
+- name: Bags (WP-9)
+  description: 'Blood bag/component lifecycle (t_bloodbag); components hang off t_bloodcomponent'
+- name: Requisitions (WP-9)
+  description: 'BR-BLD-001 status machine: 1=new, 2=cross-matched (cumulative >= ordered), 3=issued (cumulative issued >= ordered), 10=cancelled/expired'
+- name: Jobs (WP-9)
+  description: 'BR-BLD-002 decross-expired / BR-BLD-003 bag expiry sweep / BR-BLD-004 expire-requisitions / BR-BLD-005 cancel-stale-donors — all idempotent one-shot scans'
+paths:
+  /api/v1/donors:
+    post:
+      tags: [Donors (WP-9)]
+      operationId: createDonor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, bloodGroup]
+              properties:
+                name: { type: string }
+                bloodGroup: { type: string }
+                donationStatus: { type: integer, description: 'DNR enum; defaults 1=DNR_NEW' }
+                unitId: { type: integer, format: int64 }
+      responses:
+        '201': { description: Created }
+        '400': { description: 'Validation error (name/bloodGroup required)', content: { application/json: { schema: { $ref: '#/components/schemas/ApiError' } } } }
+    get:
+      tags: [Donors (WP-9)]
+      operationId: listDonors
+      parameters:
+      - name: donationStatus
+        in: query
+        required: false
+        schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BloodDonor' } } } }
+  /api/v1/donors/{id}:
+    get:
+      tags: [Donors (WP-9)]
+      operationId: getDonor
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: OK }
+        '404': { description: Not found }
+  /api/v1/donors/{id}/touch:
+    post:
+      tags: [Donors (WP-9)]
+      operationId: touchDonor
+      description: Refreshes last_action_at — keeps the donor out of the BR-BLD-005 72h auto-cancellation scan.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: OK }
+        '404': { description: Not found }
+  /api/v1/bags:
+    post:
+      tags: [Bags (WP-9)]
+      operationId: createBag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [donorId, bloodGroup, volumeMl, expirydate]
+              properties:
+                donorId: { type: integer, format: int64 }
+                bloodGroup: { type: string }
+                volumeMl: { type: integer }
+                expirydate: { type: string, format: date }
+                unitId: { type: integer, format: int64 }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error }
+    get:
+      tags: [Bags (WP-9)]
+      operationId: listBags
+      parameters:
+      - name: issued
+        in: query
+        required: false
+        schema: { type: boolean }
+      responses:
+        '200': { description: OK }
+  /api/v1/requisitions:
+    post:
+      tags: [Requisitions (WP-9)]
+      operationId: createRequisition
+      description: 'patientId required. NO event emitted on create — BloodRequisitionCreated DEFERRED per KAFKA-EVENT-CATALOG §3.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, bloodGroup, orderedVolumeMl]
+              properties:
+                patientId: { type: integer, format: int64 }
+                bloodGroup: { type: string }
+                orderedVolumeMl: { type: integer }
+                requesteddate: { type: string, format: date-time }
+                orderValidationHours: { type: integer, description: 'BR-BLD-004 validation period snapshot (default 72)' }
+                components:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      component: { type: string }
+                      volumeMl: { type: integer }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error }
+    get:
+      tags: [Requisitions (WP-9)]
+      operationId: listRequisitions
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema: { type: integer, enum: [1, 2, 3, 10] }
+      - name: patientId
+        in: query
+        required: false
+        schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: OK }
+  /api/v1/requisitions/{id}:
+    get:
+      tags: [Requisitions (WP-9)]
+      operationId: getRequisition
+      description: 'Full view: header + details + linked bags + cumulative volumes. Read-only — BR-BLD-004 expiry runs in POST /api/v1/jobs/expire-requisitions, never on read.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: OK }
+        '404': { description: Not found }
+  /api/v1/requisitions/{id}/crossmatch:
+    post:
+      tags: [Requisitions (WP-9)]
+      operationId: crossmatchBag
+      description: Marks bag crossmatched and adds its volume; cumulative crossmatched >= ordered -> status 2 else stays 1. 409 if bag already crossmatched/issued/expired.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bagId]
+              properties:
+                bagId: { type: integer, format: int64 }
+      responses:
+        '200': { description: Bag crossmatched }
+        '400': { description: Illegal transition (cancelled/expired requisition) }
+        '404': { description: Requisition or bag not found }
+        '409': { description: 'Bag already crossmatched/issued/expired' }
+  /api/v1/requisitions/{id}/issue:
+    post:
+      tags: [Requisitions (WP-9)]
+      operationId: issueBag
+      description: Only crossmatched bags issuable (400 otherwise); cumulative issued volume >= ordered -> status 3 else stays current.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bagId]
+              properties:
+                bagId: { type: integer, format: int64 }
+      responses:
+        '200': { description: Bag issued }
+        '400': { description: Bag not crossmatched against this requisition }
+        '404': { description: Requisition or bag not found }
+        '409': { description: Bag already issued or expired }
+  /api/v1/requisitions/{id}/cancel:
+    post:
+      tags: [Requisitions (WP-9)]
+      operationId: cancelRequisition
+      description: Status 1|2 -> 10; releases unissued crossmatched bags.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+      responses:
+        '200': { description: Cancelled }
+        '400': { description: Already issued/cancelled }
+        '404': { description: Not found }
+  /api/v1/jobs/decross-expired:
+    post:
+      tags: [Jobs (WP-9)]
+      operationId: decrossExpired
+      description: 'BR-BLD-002 + BR-BLD-003 sweeps, idempotent. Decrosses crossmatched unissued bags with crossMatchedTestDate >= 48h; flags expirydate=today unissued bags expired (decrossing those crossmatched); recalculates affected requisitions toward 1. Legacy ran this as a daily cron — scheduler wiring DEFERRED.'
+      responses:
+        '200':
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agedDecrossed: { type: integer }
+                  bagsExpired: { type: integer }
+                  expiredDecrossed: { type: integer }
+                  requisitionsRecalculated: { type: integer }
+  /api/v1/jobs/expire-requisitions:
+    post:
+      tags: [Jobs (WP-9)]
+      operationId: expireRequisitions
+      description: "BR-BLD-004 scan: requesteddate + validation period <= now AND NOT sample_collected AND status=1 -> status=10, order_expired=true, reason 'Order is expired'."
+      parameters:
+      - name: validationHours
+        in: query
+        required: false
+        schema: { type: integer }
+      responses:
+        '200':
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scanned: { type: integer }
+                  expired: { type: integer }
+  /api/v1/jobs/cancel-stale-donors:
+    post:
+      tags: [Jobs (WP-9)]
+      operationId: cancelStaleDonors
+      description: 'BR-BLD-005: DNR_NEW/DNR_FIT donors with no touch within 72h (inclusive) -> donationStatus=7 DNR_CANCELLATION.'
+      responses:
+        '200':
+          description: Summary counts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scanned: { type: integer }
+                  cancelled: { type: integer }
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status: { type: string }
+        errorCode: { type: string }
+        message: { type: string }
+    BloodDonor:
+      type: object
+      properties:
+        donorId: { type: integer, format: int64 }
+        name: { type: string }
+        bloodGroup: { type: string }
+        donationStatus: { type: integer, description: '1=DNR_NEW,2=DNR_FIT,...,7=DNR_CANCELLATION' }
+        lastActionAt: { type: string, format: date-time }

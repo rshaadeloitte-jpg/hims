@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-002 Doctor share CEILING rounding: rate=13.33, doctorSharePct=33.33",
+  "input": {
+    "rate": 13.33,
+    "qty": 1,
+    "taxPctA": 0,
+    "taxPctB": 0,
+    "taxPctC": 0,
+    "applyAfterConcession": false,
+    "coPayPct": 0,
+    "concessionPlanPct": 0,
+    "concessionBillPct": 0,
+    "doctorSharePct": 33.33,
+    "isOtProcedure": false,
+    "selfCompany": true
+  },
+  "expected": {
+    "lineTotal": 13.33,
+    "selfRate": 13.33,
+    "nonSelfRate": 0.0,
+    "concession": 0.0,
+    "taxA": 0.0,
+    "taxB": 0.0,
+    "taxC": 0.0,
+    "taxTotal": 0.0,
+    "selfAmount": 13.33,
+    "nonSelfAmount": 0.0,
+    "doctorShare": 4.45,
+    "hospitalShare": 8.88
+  }
+}

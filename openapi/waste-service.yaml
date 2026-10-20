@@ -1,0 +1,654 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8084
+  description: Generated server url
+tags:
+- name: Bio-medical Waste (MIG-023)
+  description: "Disposal request lifecycle: raise (bag expansion + barcodes), approve,\
+    \ handover, receive, process, per-bag status, counts, barcode validation"
+- name: Waste Bag Masters (MIG-023)
+  description: Bio-medical waste bag category master CRUD
+paths:
+  /api/v1/waste-bag-masters/{id}:
+    get:
+      tags:
+      - Waste Bag Masters (MIG-023)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WasteBagMaster"
+    put:
+      tags:
+      - Waste Bag Masters (MIG-023)
+      summary: "Update a waste bag category (patch semantics: null fields untouched)"
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WasteBagMaster"
+    delete:
+      tags:
+      - Waste Bag Masters (MIG-023)
+      summary: Delete a waste bag category (hard delete)
+      operationId: remove
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WasteBagMaster"
+  /api/v1/biomedical-waste/{id}/bags:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: List bags of a request
+      description: "One row per physical bag (qty=1, unique barcodeNo, bagStatus)."
+      operationId: bags
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BioMedicalWasteDetails"
+    put:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Update bag quantity/remark/weight before approval
+      description: "Body [{id, quantity?, remark?, weight?}]; request must be PENDING\
+        \ (legacy updateBioRequest)."
+      operationId: updateBags
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BioMedicalWasteDetails"
+  /api/v1/waste-bag-masters:
+    get:
+      tags:
+      - Waste Bag Masters (MIG-023)
+      summary: List active waste bag categories
+      description: "Optional unitId scope; default all active categories, id ascending."
+      operationId: list
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WasteBagMaster"
+    post:
+      tags:
+      - Waste Bag Masters (MIG-023)
+      summary: Create a waste bag category
+      description: Server stamps id (waste_bag_master_seq) + audit fields; code+name
+        required.
+      operationId: create
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WasteBagMaster"
+  /api/v1/biomedical-waste:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: List disposal requests
+      description: "Optional filters: unitId, requestStatus (1..5), search (requisitionNo;\
+        \ numeric search also matches bag barcodes — legacy getbioMedicalWasteStatus\
+        \ semantics). Newest first."
+      operationId: list_1
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: requestStatus
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BioMedicalWaste"
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Raise a disposal request
+      description: "Payload {\"request\": {storeId, toStoreId, ...}, \"details\":\
+        \ [{bagId, quantity, remark, weight}]}. Server stamps requisitionNo ({unitPrefix}/BW/{yy}/{%05d}),\
+        \ requestStatus=1(PENDING), requestDate; each detail with quantity>0 expands\
+        \ into quantity bag rows (qty=1) with unique 13-char barcodes ({yyyyMM}{%07d\
+        \ monthly counter}). unitPrefix optional (default IHMS until M_UNITMASTER\
+        \ integration)."
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: unitPrefix
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/receive:
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Receive at main store
+      description: "HANDOVERED(3) -> RECEIVED(4); receivedBy stamped. Optional body\
+        \ [{id, weight}] captures per-bag weights (legacy receiveBioRequestMainStore)."
+      operationId: receive
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: receivedBy
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/process:
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Process/complete the request
+      description: RECEIVED(4) -> COMPLETED(5); firmName/contactPerson/contactNo stamped
+        on all bags (legacy processBioRequest).
+      operationId: process
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: firmName
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: contactPerson
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: contactNo
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/handover:
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Hand over bags to the collection firm
+      description: ACCEPTED(2) -> HANDOVERED(3); handedOverTo stamped on request +
+        bags (legacy handOverBags).
+      operationId: handover
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: handedOverTo
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/bag-status:
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Advance per-bag statuses
+      description: "Body [{id, bagStatus?, weight?, remark?, handedOverTo?}]: each\
+        \ listed bag advances bagStatus+1 (capped at COMPLETED); entries with bagStatus=2\
+        \ stamp handedOverTo. Request status re-derived as min bag status (legacy\
+        \ updateBagStatus)."
+      operationId: updateBagStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/approve:
+    post:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Approve a request
+      description: PENDING(1) -> ACCEPTED(2); stamps request + all bag statuses (legacy
+        approveBioMedicalRequest).
+      operationId: approve
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      operationId: get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+    delete:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Soft-delete a request
+      description: status=false + requestStatus=0 (legacy deleteBioRequest).
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/BioMedicalWaste"
+  /api/v1/biomedical-waste/{id}/barcode/{barcode}/weight:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Bag weight by barcode (legacy getBagWeightByBarcode)
+      operationId: bagWeight
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: barcode
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+  /api/v1/biomedical-waste/{id}/barcode/{barcode}/valid:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Validate a barcode against a request (legacy validateBarcode)
+      operationId: validateBarcode
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: barcode
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+  /api/v1/biomedical-waste/counts:
+    get:
+      tags:
+      - Bio-medical Waste (MIG-023)
+      summary: Dashboard request counts
+      description: TOTAL / PENDING / ACCEPTED / HANDOVERED / RECEIVED / COMPLETED
+        (legacy getBioMedWasteCount).
+      operationId: counts
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+components:
+  schemas:
+    JsonNode:
+      type: object
+    WasteBagMaster:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    BioMedicalWasteDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        bioMedicalWasteId:
+          type: integer
+          format: int64
+        bagId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int64
+        remark:
+          type: string
+        weight:
+          type: number
+        barcodeNo:
+          type: string
+        bagStatus:
+          type: integer
+          format: int64
+        handedOverTo:
+          type: string
+        firmName:
+          type: string
+        contactPerson:
+          type: string
+        contactNo:
+          type: integer
+          format: int64
+    BioMedicalWaste:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        requisitionNo:
+          type: string
+        storeId:
+          type: integer
+          format: int64
+        toStoreId:
+          type: integer
+          format: int64
+        requestDate:
+          type: string
+          format: date-time
+        requestStatus:
+          type: integer
+          format: int64
+        handedOverTo:
+          type: string
+        receivedBy:
+          type: string

@@ -1,0 +1,256 @@
+openapi: 3.1.0
+info:
+  title: Search & Index Service (WP-T3)
+  version: v0
+  description: |
+    Catalog #27 Wave-5 tranche 6 slice (GAP-REGISTER-6 WP-T3). Owns ihms_search:
+    the t_index_request journal (the durable side of the indexing pipeline — Solr
+    document state itself lives in Solr), an INTERNAL event-routing ingress that
+    models the future Kafka consumer of sibling events, a pluggable SearchIndexer
+    backend (HttpSolrIndexer to SOLR_BASE_URL when SEARCH_BACKEND=solr; deterministic
+    InMemoryIndexer fallback otherwise), and the live-collection search API.
+    The 5 live collections per 07-integrations-and-search §1.2 are patient /
+    encounter / item / icd10cm / healthfactor ('service' orphan dropped).
+    Redis current_pat_*/current_enc_* mirrors are OUT OF SCOPE per register.
+    Emits NOTHING — negative outbox assertion pinned by tests.
+servers:
+- url: http://localhost:8107
+  description: Generated server url
+tags:
+- name: Internal event ingress (WP-T3)
+  description: 'Models the future Kafka consumer of sibling events: routes eventType to the t_index_request journal + dispatches to the indexer backend'
+- name: Search (WP-T3)
+  description: 'Free-text search over the indexer backend (Solr edismax in prod; deterministic in-memory fallback otherwise) and the 5 live collections per 07 §1.2'
+- name: Index requests (WP-T3)
+  description: 't_index_request journal queries and retry. Status machine 0=PENDING 1=INDEXED 2=FAILED; retry guard FAILED-only (SEARCH_ILLEGAL_TRANSITION otherwise)'
+paths:
+  /api/v1/internal/events:
+    post:
+      tags:
+      - Internal event ingress (WP-T3)
+      operationId: ingestInternalEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventRequest'
+        required: true
+      responses:
+        '201':
+          description: Created — new journal row written (0=PENDING then synchronous dispatch -> 1=INDEXED | 2=FAILED)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IndexRequest'
+        '200':
+          description: Dedupe hit — latest-row query returned the existing PENDING/INDEXED row for (collection, doc_id, action); no new write
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IndexRequest'
+        '400':
+          description: 'Guards: eventType required, payload.docId required (<=60 chars), MasterDataChanged payload.collection must be icd10cm|healthfactor when present (BEXA003); unknown eventType (SEARCH_UNKNOWN_EVENT_TYPE)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/search:
+    get:
+      tags:
+      - Search (WP-T3)
+      operationId: searchCollection
+      parameters:
+      - name: collection
+        in: query
+        required: true
+        description: 'One of the 5 LIVE collections; else 400 SEARCH_UNKNOWN_COLLECTION'
+        schema:
+          type: string
+          enum: [patient, encounter, item, icd10cm, healthfactor]
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: rows
+        in: query
+        required: false
+        description: Page size, default 10, clamped 1..100
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      - name: start
+        in: query
+        required: false
+        description: Offset, default 0, clamped >= 0
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        '200':
+          description: Results envelope (numFound + docs page). Patient-collection edismax qf boosts come from config app.search.patient-qf — exact legacy weights (mrno^18, mobile^16, civilid^16, janaadhar^17, name^8-12 per 07 §1.4/§1.7) are COMMENT-ONLY until the managed schema lands
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Unknown collection (SEARCH_UNKNOWN_COLLECTION) or missing/blank q (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/search/collections:
+    get:
+      tags:
+      - Search (WP-T3)
+      operationId: listCollections
+      responses:
+        '200':
+          description: The 5 live collections (patient, encounter, item, icd10cm, healthfactor); the legacy 'service' orphan is dropped per 07 §1.2
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/v1/index-requests:
+    get:
+      tags:
+      - Index requests (WP-T3)
+      operationId: listIndexRequests
+      parameters:
+      - name: collection
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        description: '0=PENDING 1=INDEXED 2=FAILED'
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: Journal rows, newest first
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IndexRequest'
+        '400':
+          description: Unknown status filter value (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/index-requests/{id}/retry:
+    put:
+      tags:
+      - Index requests (WP-T3)
+      operationId: retryIndexRequest
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Retried — FAILED -> PENDING then immediate re-dispatch (-> INDEXED or back to FAILED with attempts incremented)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IndexRequest'
+        '400':
+          description: Guard violated — only FAILED rows can be retried (SEARCH_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown index-request id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ERROR
+        errorCode:
+          type: string
+          example: BEXA003
+        message:
+          type: string
+    IngestEventRequest:
+      type: object
+      properties:
+        eventType:
+          type: string
+          enum: [PatientRegistered, EncounterCreated, PatientAdmitted, PatientDischarged,
+                 InventoryUpdated, MasterDataChanged]
+        payload:
+          type: object
+          additionalProperties: true
+          description: 'Must carry docId (<=60 chars); MasterDataChanged may carry collection (icd10cm|healthfactor, default healthfactor)'
+    IndexRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        collection:
+          type: string
+        action:
+          type: integer
+          format: int32
+          description: '1=INDEX 2=DELETE (DELETE reserved for the encounter-retention job, OUT OF SCOPE)'
+        docId:
+          type: string
+        payload:
+          type: string
+          description: JSONB journal copy of the event payload
+        status:
+          type: integer
+          format: int32
+          description: '0=PENDING 1=INDEXED 2=FAILED'
+        attempts:
+          type: integer
+          format: int32
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedDatetime:
+          type: string
+          format: date-time
+    SearchResponse:
+      type: object
+      properties:
+        collection:
+          type: string
+        q:
+          type: string
+        start:
+          type: integer
+          format: int32
+        rows:
+          type: integer
+          format: int32
+        numFound:
+          type: integer
+          format: int64
+        docs:
+          type: array
+          items:
+            type: object
+            additionalProperties: true

@@ -5,55 +5,76 @@ import {
   defineRecipe,
 } from "@chakra-ui/react";
 
-/**
- * HIMS Enterprise design system for Chakra UI v3.
- * Carries the Deloitte brand tokens (previously tokens.css) into Chakra
- * so every migrated component gets brand greens, type and buttons
- * from the theme instead of hand-written CSS.
- */
-
 const FONT_SANS =
-  `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif`;
+  `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
 
+const FONT_HEADING =
+  `'Plus Jakarta Sans', 'Inter', sans-serif`;
+
+/**
+ * Contrast-safe color assignments per WCAG 4.5:1 for normal text.
+ * Brand green (#86BC25) is accent-only: rails, dots, logos, decorative highlights.
+ * Never use brand.500 for body text, labels, or focus rings.
+ */
 const buttonRecipe = defineRecipe({
   className: "hims-button",
   base: {
-    fontWeight: "semibold",
+    fontWeight: "600",
     borderRadius: "md",
     cursor: "pointer",
+    transition: "all 0.22s ease",
     _disabled: {
-      opacity: 0.5,
+      opacity: 0.6,
       cursor: "not-allowed",
+      transform: "none",
+      shadow: "none",
+    },
+    _hover: {
+      transform: "translateY(-1px)",
+      shadow: "md",
+    },
+    _focusVisible: {
+      outline: "2px solid",
+      outlineColor: "border.focus",
+      outlineOffset: "2px",
     },
   },
   variants: {
     variant: {
-      // Deloitte black primary — turns forest green on hover.
+      // Primary action: Deloitte black for main decisions
       primary: {
-        bg: "black",
+        bg: "deloitte.black",
         color: "white",
         border: "1px solid",
-        borderColor: "black",
-        _hover: { bg: "forest", borderColor: "forest", color: "white" },
+        borderColor: "deloitte.black",
+        _hover: { bg: "deloitte.warm", borderColor: "deloitte.warm" },
       },
-      // Neutral secondary action.
+      // Confirmation/completion: readable green
+      success: {
+        bg: "success.DEFAULT",
+        color: "white",
+        border: "1px solid",
+        borderColor: "success.DEFAULT",
+        _hover: { bg: "forest", borderColor: "forest" },
+      },
+      // Neutral secondary action
       secondary: {
         bg: "white",
-        color: "black",
+        color: "text.primary",
         border: "1px solid",
-        borderColor: "gray.300",
-        _hover: { borderColor: "black", bg: "gray.50" },
+        borderColor: "border.strong",
+        _hover: { borderColor: "text.primary", bg: "surface.muted" },
       },
       ghost: {
         bg: "transparent",
-        color: "black",
-        _hover: { bg: "gray.100" },
+        color: "text.primary",
+        _hover: { bg: "surface.muted" },
       },
-      // Brand-green solid for success / go actions.
+      // Brand-green for non-critical actions (darker for readability)
       solid: {
-        bg: "brand.500",
+        bg: "brand.700",
         color: "white",
-        _hover: { bg: "brand.600" },
+        _hover: { bg: "brand.800" },
       },
       outline: {
         bg: "transparent",
@@ -66,6 +87,20 @@ const buttonRecipe = defineRecipe({
         bg: "brand.100",
         color: "brand.800",
         _hover: { bg: "brand.200" },
+      },
+      // TMS teal accent variant
+      accent: {
+        bg: "teal.DEFAULT",
+        color: "white",
+        _hover: { bg: "teal.dark" },
+      },
+      // Danger/destructive
+      danger: {
+        bg: "danger.DEFAULT",
+        color: "white",
+        border: "1px solid",
+        borderColor: "danger.DEFAULT",
+        _hover: { bg: "#B91C1C" },
       },
     },
     size: {
@@ -88,47 +123,101 @@ const himsConfig = defineConfig({
     },
     body: {
       fontFamily: FONT_SANS,
-      fontSize: "14px",
+      fontSize: "13.5px",
       lineHeight: 1.5,
-      color: "#111827",
-      background: "#F4F6F8",
+      color: "text.primary",
+      background: "surface.canvas",
     },
     ":focus-visible": {
-      outline: "2px solid {colors.brand.500}",
+      outline: "2px solid {colors.border.focus}",
       outlineOffset: "2px",
     },
   },
   theme: {
     tokens: {
       colors: {
-        // Deloitte primary green ramp, anchored at #86BC25.
+        // ── Deloitte Brand Palette (accent-only for #86BC25) ─────────────
         brand: {
           50: { value: "#f5fae9" },
           100: { value: "#e9f4cf" },
           200: { value: "#d4e9a6" },
           300: { value: "#b7da74" },
           400: { value: "#9ccb46" },
-          500: { value: "#86bc25" },
+          500: { value: "#86bc25" },  // ACCENT ONLY: rails, dots, logos
           600: { value: "#699a1c" },
-          700: { value: "#527a19" },
+          700: { value: "#527a19" },  // Readable green text minimum
           800: { value: "#416117" },
           900: { value: "#374f16" },
           950: { value: "#1a280a" },
         },
-        // Deloitte forest green (single-step accent).
-        forest: { value: "#008040" },
+        // ── Readable Greens (for text, actions, status) ──────────────────
+        forest: { value: "#008040" },      // Success text minimum
+        success: {
+          DEFAULT: { value: "#15803D" },   // WCAG 4.5:1 on white
+          soft: { value: "#DCFCE7" },
+        },
+        warning: {
+          DEFAULT: { value: "#B45309" },   // WCAG 4.5:1 on white
+          soft: { value: "#FEF3C7" },
+        },
+        danger: {
+          DEFAULT: { value: "#DC2626" },
+          soft: { value: "#FEE2E2" },
+        },
+        // ── TMS Deloitte Teal Accent ─────────────────────────────────────
+        teal: {
+          DEFAULT: { value: "#007680" },
+          dark: { value: "#005C63" },
+        },
+        // ── TMS Deloitte Gold Accent ─────────────────────────────────────
+        gold: { value: "#FFB81C" },
+        // ── Deloitte Blacks ──────────────────────────────────────────────
+        deloitte: {
+          black: { value: "#1F1F1F" },
+          warm: { value: "#2C2C2C" },
+        },
+        // ── Semantic Text Colors (contrast-safe) ─────────────────────────
+        text: {
+          primary: { value: "#111827" },   // Main decisions, actions
+          secondary: { value: "#4B5563" }, // Supporting info
+          muted: { value: "#6B7280" },     // Helper text, placeholders
+          inverse: { value: "#FFFFFF" },
+        },
+        // ── Semantic Surface Colors ──────────────────────────────────────
+        surface: {
+          canvas: { value: "#F4F5F7" },    // App background
+          panel: { value: "#FFFFFF" },     // Cards, modals
+          muted: { value: "#F8F9FA" },     // Subtle sections
+          header: { value: "#FFFFFF" },    // Top header
+          sidebar: { value: "#1F1F1F" },   // Navigation
+        },
+        // ── Semantic Border Colors ───────────────────────────────────────
+        border: {
+          DEFAULT: { value: "#E5E7EB" },   // Default structure
+          focus: { value: "#527A19" },     // Focus state (dark green)
+          strong: { value: "#D1D5DB" },    // Selected/active controls
+        },
       },
       fonts: {
         body: { value: FONT_SANS },
-        heading: { value: FONT_SANS },
+        heading: { value: FONT_HEADING },
+      },
+      shadows: {
+        xs: { value: "0 1px 2px rgba(31, 31, 31, 0.06)" },
+        sm: { value: "0 1px 4px rgba(31, 31, 31, 0.08), 0 2px 8px rgba(31, 31, 31, 0.04)" },
+        md: { value: "0 4px 16px rgba(31, 31, 31, 0.1), 0 2px 6px rgba(31, 31, 31, 0.06)" },
+        lg: { value: "0 8px 32px rgba(31, 31, 31, 0.14), 0 4px 12px rgba(31, 31, 31, 0.08)" },
+        xl: { value: "0 20px 56px rgba(31, 31, 31, 0.2)" },
+        primary: { value: "0 4px 16px rgba(134, 188, 37, 0.28)" },
       },
     },
     semanticTokens: {
       colors: {
-        // App surfaces so pages read `bg="surface"` etc.
-        canvas: { value: "#F4F6F8" },
-        surface: { value: "#FFFFFF" },
-        muted: { value: "#F8FAFC" },
+        canvas: { value: "{colors.surface.canvas}" },
+        surface: { value: "{colors.surface.panel}" },
+        muted: { value: "{colors.surface.muted}" },
+        headerBg: { value: "{colors.surface.header}" },
+        sidebarBg: { value: "{colors.surface.sidebar}" },
       },
     },
     recipes: {
@@ -138,6 +227,4 @@ const himsConfig = defineConfig({
 });
 
 export const himsSystem = createSystem(defaultConfig, himsConfig);
-
-/** Alias named `system` for the Chakra CLI typegen (expects this name). */
 export const system = himsSystem;

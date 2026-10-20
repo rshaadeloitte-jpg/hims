@@ -1,0 +1,20 @@
+version: 1
+hooks:
+  session_start:
+    command: "echo '=== Starting HIMS Modernization Iteratr Session: {{session}} ==='"
+    timeout: 30
+  pre_iteration:
+    command: "echo '--- Starting Iteration #{{iteration}} ---'"
+    timeout: 10
+  post_iteration:
+    command: "echo '--- Completed Iteration #{{iteration}} ---'"
+    timeout: 30
+  task_complete:
+    command: "echo 'Task completed: {{task_id}} - {{task_content}}'"
+    timeout: 10
+  on_error:
+    command: "echo 'Iteration error in session {{session}}: {{error}}' >> .iteratr/error.log"
+    timeout: 10
+  session_end:
+    command: "echo '=== All Modernization Tasks in Session {{session}} Completed ==='"
+    timeout: 30

@@ -1,0 +1,41 @@
+{
+  "description": "Multi-line bill with mixed tax/concession scenarios",
+  "input": {
+    "charges": [
+      {
+        "rate": 1000,
+        "qty": 1,
+        "taxPctA": 9,
+        "taxPctB": 0,
+        "taxPctC": 0,
+        "applyAfterConcession": false,
+        "coPayPct": 40,
+        "concessionPlanPct": 10,
+        "concessionBillPct": 5,
+        "doctorSharePct": 10,
+        "isOtProcedure": false
+      },
+      {
+        "rate": 500,
+        "qty": 2,
+        "taxPctA": 0,
+        "taxPctB": 9,
+        "taxPctC": 0,
+        "applyAfterConcession": true,
+        "coPayPct": 100,
+        "concessionPlanPct": 20,
+        "concessionBillPct": 0,
+        "doctorSharePct": 0,
+        "isOtProcedure": false
+      }
+    ],
+    "selfCompany": true
+  },
+  "expected": {
+    "totalAmount": 2000.0,
+    "taxAmount": 162.0,
+    "concessionAmount": 260.0,
+    "selfAmount": 1302.0,
+    "nonSelfAmount": 600.0
+  }
+}

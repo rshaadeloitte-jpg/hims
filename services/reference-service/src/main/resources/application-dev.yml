@@ -1,0 +1,9 @@
+# DEV-ONLY profile (Wave 1 local UI development; IMP-DEC-019).
+# Enables HTTP Basic auth for the React workspace. Credentials are dev-only
+# placeholders, env-overridable. REMOVED at MIG-004 (OIDC resource server).
+spring:
+  security:
+    user:
+      name: ${DEV_USERNAME:devops}
+      password: ${DEV_PASSWORD:devops-dev-only}
+      roles: DEV

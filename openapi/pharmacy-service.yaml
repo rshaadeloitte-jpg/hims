@@ -1,0 +1,455 @@
+openapi: 3.1.0
+info:
+  title: Pharmacy & Dispensing Service (WP-R2)
+  version: v0
+  description: |
+    Catalog #9 Wave-5 tranche 5 slice (GAP-REGISTER-5 WP-R2). Owns ihms_pharmacy:
+    item sales header+lines (status 1=PENDING 2=PARTIALLY_DISPENSED 3=FULLY_DISPENSED),
+    pharmacy-LOCAL prescription dispense projection (legacy T_PRESCRIPTIONDISPENSE
+    semantics; ordering-service remains owner of truth via E-06), drug interventions,
+    ward picklists. STOCK STAYS IN item-service (single-writer D-1): every dispense
+    POSTs a SUBTRACT movement to the item-service stock API synchronously; on failure
+    the transaction rolls back and the sale stays PENDING.
+    Emits NOTHING to the outbox: DispensingCompleted is PROPOSED (no multi-consumer
+    evidence — not in KAFKA-EVENT-CATALOG). Consuming PrescriptionCreated (E-06) /
+    InventoryUpdated is post-saga (comment-only).
+servers:
+- url: http://localhost:8101
+  description: Generated server url
+tags:
+- name: Item Sales (WP-R2)
+  description: 'Item sale header+lines (Catalog #9): status 1=PENDING 2=PARTIALLY_DISPENSED 3=FULLY_DISPENSED; BR-PHAR-001 dispense flags + BR-PHAR-002 prescription projection close/decrement; stock borrowed from item-service per dispense (D-1); no events emitted'
+- name: Drug Interventions (WP-R2)
+  description: 'Pharmacist clinical interventions: interventionType, notes, pharmacistId; listed per patient'
+- name: Ward Picklists (WP-R2)
+  description: 'Pick list rows tying a ward to an item sale; picked_at stamped server-side'
+- name: Prescription Projection (WP-R2)
+  description: 'Pharmacy-local T_PRESCRIPTIONDISPENSE projection (ordering-service keeps truth via E-06): EMR number stamping'
+paths:
+  /api/v1/item-sales:
+    post:
+      tags:
+      - Item Sales (WP-R2)
+      operationId: createItemSale
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemSaleRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (status PENDING; stock is NOT touched until dispense)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemSale'
+        '400':
+          description: 'Guards: patientId required, >=1 line required, itemId required per line, qty > 0 integer (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Item Sales (WP-R2)
+      operationId: listItemSales
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..3 or name (PENDING, PARTIALLY_DISPENSED, FULLY_DISPENSED)'
+        schema:
+          type: string
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemSale'
+  /api/v1/item-sales/{id}:
+    get:
+      tags:
+      - Item Sales (WP-R2)
+      operationId: getItemSale
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Full item sale with lines
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemSale'
+        '404':
+          description: Unknown item sale id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/item-sales/{id}/dispense:
+    post:
+      tags:
+      - Item Sales (WP-R2)
+      operationId: dispenseItemSale
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispenseRequest'
+        required: true
+      responses:
+        '200':
+          description: 'Dispensed (partial allowed): qty == pending_qty closes the line; ALL lines closed -> sale.dispensed=true + FULLY_DISPENSED (BR-PHAR-001); linked prescription projection closes/decrements per BR-PHAR-002. Emits NOTHING to the outbox.'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemSale'
+        '400':
+          description: 'Guards: >=1 dispense line, unknown lineNo, qty > 0, qty <= pending_qty (BEXA003); FULLY_DISPENSED is terminal (PH_ILLEGAL_TRANSITION)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown item sale id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: item-service stock movement call failed — tx rolled back, sale stays PENDING (STOCK_SERVICE_UNAVAILABLE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/interventions:
+    post:
+      tags:
+      - Drug Interventions (WP-R2)
+      operationId: createIntervention
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInterventionRequest'
+        required: true
+      responses:
+        '201':
+          description: Created. Emits nothing.
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DrugIntervention'
+        '400':
+          description: 'Guards: patientId, interventionType and pharmacistId required (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Drug Interventions (WP-R2)
+      operationId: listInterventions
+      parameters:
+      - name: patientId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DrugIntervention'
+  /api/v1/picklists:
+    post:
+      tags:
+      - Ward Picklists (WP-R2)
+      operationId: createPicklist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wardId:
+                  type: integer
+                  format: int64
+                saleId:
+                  type: integer
+                  format: int64
+          required: true
+      responses:
+        '201':
+          description: Created with server-stamped picked_at. Emits nothing.
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/WardPicklist'
+        '400':
+          description: 'Guards: wardId and saleId required (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown item sale id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/prescriptions/{id}/emr-no:
+    put:
+      tags:
+      - Prescription Projection (WP-R2)
+      operationId: setPrescriptionEmrNo
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emrNo:
+                  type: string
+          required: true
+      responses:
+        '200':
+          description: EMR number stamped on the projection master
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PrescriptionDispense'
+        '404':
+          description: No pharmacy dispensing record exists for the prescription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    SaleLineInput:
+      required:
+      - itemId
+      - qty
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: string
+          nullable: true
+          description: forwarded to item-service as the numeric batch reference when it parses as a number
+        qty:
+          type: integer
+          description: '> 0 (INT)'
+    CreateItemSaleRequest:
+      required:
+      - patientId
+      - lines
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        prescriptionId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ordering-service prescription (E-06 domain); seeds the local BR-PHAR-002 projection
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SaleLineInput'
+    DispenseLineInput:
+      required:
+      - lineNo
+      - qty
+      type: object
+      properties:
+        lineNo:
+          type: integer
+          format: int64
+        qty:
+          type: integer
+          description: '> 0 and <= remaining pending_qty of the line (qty == pending closes the line)'
+    DispenseRequest:
+      required:
+      - lines
+      type: object
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DispenseLineInput'
+    ItemSaleDetail:
+      type: object
+      properties:
+        saleId:
+          type: integer
+          format: int64
+        lineNo:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: string
+          nullable: true
+        qty:
+          type: integer
+        pendingQty:
+          type: integer
+        dispensed:
+          type: boolean
+          description: BR-PHAR-001 line flag — true once pending_qty reaches 0 via dispensing
+        verified:
+          type: boolean
+        partialDispense:
+          type: boolean
+    ItemSale:
+      type: object
+      properties:
+        saleId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        visitRef:
+          type: string
+          nullable: true
+        prescriptionId:
+          type: integer
+          format: int64
+          nullable: true
+        statusCode:
+          type: integer
+          format: int32
+          description: '1=PENDING 2=PARTIALLY_DISPENSED 3=FULLY_DISPENSED (terminal)'
+        dispensed:
+          type: boolean
+          description: BR-PHAR-001 header flag — true iff every detail line dispensed
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemSaleDetail'
+    CreateInterventionRequest:
+      required:
+      - patientId
+      - interventionType
+      - pharmacistId
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        saleId:
+          type: integer
+          format: int64
+          nullable: true
+        interventionType:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        pharmacistId:
+          type: integer
+          format: int64
+    DrugIntervention:
+      type: object
+      properties:
+        interventionId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        saleId:
+          type: integer
+          format: int64
+          nullable: true
+        interventionType:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        pharmacistId:
+          type: integer
+          format: int64
+    WardPicklist:
+      type: object
+      properties:
+        picklistId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+        saleId:
+          type: integer
+          format: int64
+        pickedAt:
+          type: string
+          format: date-time
+    PrescriptionDispense:
+      type: object
+      properties:
+        dispenseId:
+          type: integer
+          format: int64
+        prescriptionId:
+          type: integer
+          format: int64
+        emrNo:
+          type: string
+          nullable: true
+        closed:
+          type: boolean
+          description: BR-PHAR-002 master flag — true iff ALL projected detail rows are closed

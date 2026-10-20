@@ -1,0 +1,10 @@
+# iteratr configuration for hims_new_deloitte modernization
+model: opencode/muse-spark-1.2-contributor-free
+auto_commit: true
+data_dir: ".iteratr"
+log_level: "info"
+log_file: ".iteratr/iteratr.log"
+iterations: 0
+headless: false
+spec_dir: "specs"
+commit_data_dir: false

@@ -1,0 +1,889 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8092
+  description: Generated server url
+tags:
+- name: Wards (WP-5)
+  description: 'Ward master (m_ward) — ownership moved to the ADT service per Catalog #3'
+- name: Beds (WP-5)
+  description: 'Bed master (m_bed) and free-bed search per BR-IPD-002 (occupied=false AND status=true AND isnoncensus/isot/ispreop/ispostop=false AND isrelease=true)'
+- name: Admissions (WP-5)
+  description: 'IPD admission with CAS bed claim (BR-IPD-002), CLEANING-on-transfer, multi-department clearance gate and discharge per BR-DIS-001..003; outbox events to ihms.adt.lifecycle (PatientAdmitted E-03, PatientDischarged E-04, BedTransferred, BedStatusChanged E-11)'
+- name: Bed Reservations (WP-5)
+  description: 'Planned-admission bed holds — one ACTIVE reservation per bed (partial unique index); consumed on the owner admission, skipped for others during auto-allocation'
+paths:
+  /api/v1/wards:
+    post:
+      tags:
+      - Wards (WP-5)
+      operationId: createWard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WardRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Ward'
+        '400':
+          description: Validation error (name required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Wards (WP-5)
+      operationId: listWards
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ward'
+  /api/v1/wards/{id}:
+    get:
+      tags:
+      - Wards (WP-5)
+      operationId: getWard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Ward'
+        '404':
+          description: Ward not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags:
+      - Wards (WP-5)
+      operationId: updateWard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WardRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Ward'
+  /api/v1/beds:
+    post:
+      tags:
+      - Beds (WP-5)
+      operationId: createBed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BedRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bed'
+        '400':
+          description: Validation error (bedNo/wardId required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Beds (WP-5)
+      operationId: listBeds
+      parameters:
+      - name: wardId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bed'
+  /api/v1/beds/available:
+    get:
+      tags:
+      - Beds (WP-5)
+      operationId: availableBeds
+      parameters:
+      - name: wardId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Free beds matching BR-IPD-002 predicate (+BR-IPD-003 isrelease gate)
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bed'
+  /api/v1/beds/{id}:
+    get:
+      tags:
+      - Beds (WP-5)
+      operationId: getBed
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bed'
+        '404':
+          description: Bed not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags:
+      - Beds (WP-5)
+      operationId: updateBed
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BedRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bed'
+  /api/v1/admissions:
+    get:
+      tags:
+      - Admissions (WP-5)
+      operationId: listAdmissions
+      summary: List admissions
+      description: Filter by patientId and/or active (not discharged, not cancelled). Both params optional; active=true excludes discharged/cancelled rows.
+      parameters:
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Admission'
+    post:
+      tags:
+      - Admissions (WP-5)
+      operationId: admit
+      summary: Admit a patient
+      description: |
+        BR-IPD-001: admitting doctor required (BERA022), no duplicate active admission (BERB013).
+        BR-IPD-002: auto-allocates a free bed via atomic CAS claim when bedId omitted.
+        BR-IPD-003: bed status isrelease gate (BERB005). ipdNo = 'IPD-<id>'.
+        Writes E-03 PatientAdmitted (patient-admitted.v1, partition key patientId) to the outbox.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdmissionRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Admission'
+        '400':
+          description: BERA022 (doctor missing) / validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Bed not found (explicit bedId path)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: BERB013 duplicate active admission / BEXB001 bed claim lost
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}:
+    get:
+      tags:
+      - Admissions (WP-5)
+      operationId: getAdmission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Admission'
+        '404':
+          description: Admission not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}/transfer:
+    post:
+      tags:
+      - Admissions (WP-5)
+      operationId: transfer
+      summary: Transfer the patient to another bed
+      description: |
+        CAS-claims the target bed (409 BEXB001 on loss; 400 BERB005 if its status master
+        isrelease=false), releases the vacated bed to CLEANING (status 2) with a
+        t_bed_transfer_log row, updates admission bed/ward and emits BedTransferred
+        (partition key patientId) plus two BedStatusChanged events (partition key bedId).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                toBedId:
+                  type: integer
+                  format: int64
+                reason:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Admission'
+        '400':
+          description: Not active / BERB005 gate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: BEXB001 CAS claim lost
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}/discharge:
+    post:
+      tags:
+      - Admissions (WP-5)
+      operationId: discharge
+      summary: Discharge the patient
+      description: |
+        Gated by the 4-department clearance checklist (BR-DIS-001; ABSCOND types bypass).
+        Fills the discharge block on t_admission and releases the bed per BR-DIS-003
+        (occupied=false, pinned literal bed_status_id=6). Emits E-04 PatientDischarged
+        (patient-discharged.v1, partition key patientId) plus a BedStatusChanged event
+        for the released bed. isExpired=true records deathDate (BR-DIS-002).
+        400 when already discharged/cancelled.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dischargeType:
+                  type: string
+                isExpired:
+                  type: boolean
+                deathDate:
+                  type: string
+                  format: date-time
+                handoverDate:
+                  type: string
+                  format: date-time
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Admission'
+        '400':
+          description: Already discharged or cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}/abscond:
+    post:
+      tags:
+      - Admissions (WP-5)
+      operationId: abscond
+      summary: Mark the admission as absconded
+      description: |
+        Cancels the stay with dischargeType=ABSCOND and stamps abscond_datetime
+        (bypasses the clearance gate — no stay left to settle). Emits PatientDischarged.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Admission'
+        '400':
+          description: Already discharged/cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}/clearance:
+    get:
+      tags:
+      - Admissions (WP-5)
+      operationId: clearance
+      summary: Discharge clearance checklist
+      description: NURSING/PHARMACY/BILLING/LAB rows; all must be CLEARED before discharge (BR-DIS-001).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClearanceChecklistItem'
+  /api/v1/admissions/{id}/clearance/{department}:
+    post:
+      tags:
+      - Admissions (WP-5)
+      operationId: clearDepartment
+      summary: Clear one department
+      description: Marks PENDING -> CLEARED for NURSING|PHARMACY|BILLING|LAB (idempotent).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: department
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [NURSING, PHARMACY, BILLING, LAB]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clearedBy:
+                  type: integer
+                  format: int64
+                remarks:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ClearanceChecklistItem'
+        '400':
+          description: Unknown department
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/admissions/{id}/transfers:
+    get:
+      tags:
+      - Admissions (WP-5)
+      operationId: transfers
+      summary: Bed transfer history
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BedTransferLog'
+  /api/v1/beds/{id}/cleaning-complete:
+    post:
+      tags:
+      - Beds (WP-5)
+      operationId: cleaningComplete
+      summary: Finish cleaning a vacated bed
+      description: CLEANING (2) -> FREE (1); 400 ADT_BED_NOT_CLEANING when the bed is not in CLEANING state. Emits BedStatusChanged (key bedId).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bed'
+        '400':
+          description: ADT_BED_NOT_CLEANING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bed-reservations:
+    post:
+      tags:
+      - Bed Reservations (WP-5)
+      operationId: reserve
+      summary: Reserve a bed for a planned admission
+      description: 409 ADT_BED_RESERVED when the bed already has an ACTIVE reservation.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bedId, patientId, expiresAt]
+              properties:
+                bedId:
+                  type: integer
+                  format: int64
+                patientId:
+                  type: integer
+                  format: int64
+                expiresAt:
+                  type: string
+                  format: date-time
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BedReservation'
+        '400':
+          description: Missing/invalid fields or past expiresAt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags:
+      - Bed Reservations (WP-5)
+      operationId: cancelReservation
+      summary: Cancel a reservation by id (idempotent)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '204':
+          description: No Content
+  /api/v1/admissions:
+    get:
+      tags:
+      - Admissions (WP-5)
+      operationId: listAdmissions
+      summary: List admissions
+      description: '?patientId=&active='
+      parameters:
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Admission'
+components:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    Ward:
+      type: object
+      properties:
+        wardId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        wardType:
+          type: string
+        iscensus:
+          type: boolean
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+    WardRequest:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        wardType:
+          type: string
+        iscensus:
+          type: boolean
+        censusFlag:
+          type: boolean
+    Bed:
+      type: object
+      properties:
+        bedId:
+          type: integer
+          format: int64
+        bedNo:
+          type: string
+        wardId:
+          type: integer
+          format: int64
+        category:
+          type: string
+        building:
+          type: string
+        occupied:
+          type: boolean
+        bedStatusId:
+          type: integer
+        isnoncensus:
+          type: boolean
+        isot:
+          type: boolean
+        ispreop:
+          type: boolean
+        ispostop:
+          type: boolean
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+    BedRequest:
+      type: object
+      properties:
+        bedNo:
+          type: string
+        wardId:
+          type: integer
+          format: int64
+        category:
+          type: string
+        building:
+          type: string
+        bedStatusId:
+          type: integer
+        isnoncensus:
+          type: boolean
+        isot:
+          type: boolean
+        ispreop:
+          type: boolean
+        ispostop:
+          type: boolean
+        unitId:
+          type: integer
+          format: int64
+    Admission:
+      type: object
+      properties:
+        admissionId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        bedId:
+          type: integer
+          format: int64
+          nullable: true
+        wardId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionType:
+          type: string
+        ipdNo:
+          type: string
+        doctorId:
+          type: integer
+          format: int64
+        admittedAt:
+          type: string
+          format: date-time
+        isCancel:
+          type: boolean
+        dischargeId:
+          type: integer
+          format: int64
+          nullable: true
+        dischargeType:
+          type: string
+          nullable: true
+        isExpired:
+          type: boolean
+          nullable: true
+        dischargeDate:
+          type: string
+          format: date-time
+          nullable: true
+        unitId:
+          type: integer
+          format: int64
+          nullable: true
+    AdmissionRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+          description: Admitting doctor — required (BR-IPD-001, BERA022)
+        admissionType:
+          type: string
+        unitId:
+          type: integer
+          format: int64
+        bedId:
+          type: integer
+          format: int64
+          description: Optional; omitted triggers BR-IPD-002 auto-allocation
+
+    ClearanceChecklistItem:
+      type: object
+      properties:
+        clearanceId:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        department:
+          type: string
+          enum: [NURSING, PHARMACY, BILLING, LAB]
+        clrStatus:
+          type: string
+          enum: [PENDING, CLEARED]
+        clearedBy:
+          type: integer
+          format: int64
+        clearedAt:
+          type: string
+          format: date-time
+        remarks:
+          type: string
+
+    BedTransferLog:
+      type: object
+      properties:
+        transferId:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        fromBedId:
+          type: integer
+          format: int64
+        toBedId:
+          type: integer
+          format: int64
+        fromWardId:
+          type: integer
+          format: int64
+        toWardId:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        transferredAt:
+          type: string
+          format: date-time
+
+    BedReservation:
+      type: object
+      properties:
+        reservationId:
+          type: integer
+          format: int64
+        bedId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        reservedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        releasedAt:
+          type: string
+          format: date-time
+        resStatus:
+          type: string
+          enum: [ACTIVE, CONSUMED, CANCELLED, EXPIRED]

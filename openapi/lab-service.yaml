@@ -1,0 +1,525 @@
+openapi: 3.1.0
+info:
+  title: Lab (Pathology) Service — result-side slice (WP-7)
+  version: v0
+  description: |
+    Catalog #7 Wave-3 slice. Order BOOKING stays monolith until Wave 4 per MIGRATION-WAVES;
+    this service owns the RESULT/WORKLIST side: patho order booking + details status machine
+    (1=ORDERED 2=SAMPLE_COLLECTED 3=IN_PROGRESS 4=FINALIZED 5=CANCELLED), parameter result
+    upsert, finalize-per-detail, machine configuration CRUD and worklist.
+    Emits E-05 LabResultFinalized (schema lab-result-finalized.v1, partition key encounterId)
+    via the transactional outbox ONLY when the whole booking finalizes.
+servers:
+- url: http://localhost:8094
+  description: Generated server url
+tags:
+- name: Lab Orders (WP-7)
+  description: 'Patho order booking result-side slice (Catalog #7): status machine, parameter results, finalize-per-detail; E-05 LabResultFinalized on whole-booking finalization'
+- name: Machines (WP-7)
+  description: 'Analyser/machine configuration (t_machineconfiguration): name, protocol (HL7/ASTM/file), active flag'
+paths:
+  /api/v1/lab/orders:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: createOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (bookingNo LAB-&lt;id&gt;, status ORDERED)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '400':
+          description: patientId missing or no test lines (LAB_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: worklist
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..5 or name (ORDERED, SAMPLE_COLLECTED, IN_PROGRESS, FINALIZED, CANCELLED)'
+        schema:
+          type: string
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PathOrderBooking'
+  /api/v1/lab/orders/{id}:
+    get:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: getOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK (full booking with details + parameters)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/lab/orders/{id}/collect:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: collect
+      summary: 'ORDERED -> SAMPLE_COLLECTED'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '400':
+          description: Illegal transition (LAB_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/lab/orders/{id}/start:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: start
+      summary: 'SAMPLE_COLLECTED -> IN_PROGRESS'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '400':
+          description: Illegal transition (LAB_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/lab/orders/{id}/cancel:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: cancel
+      summary: 'ORDERED/SAMPLE_COLLECTED/IN_PROGRESS -> CANCELLED'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '400':
+          description: Illegal transition (already finalized/cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/lab/orders/{id}/details/{detailId}/results:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: upsertResults
+      summary: Upsert result parameter rows for one detail
+      description: 'Keyed by parameterName (case-insensitive); rows absent from the payload are removed; locked after finalize.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: detailId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResultsRequest'
+        required: true
+      responses:
+        '200':
+          description: OK (updated detail)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderDetail'
+        '400':
+          description: Locked/finalized detail, wrong booking, empty payload (400 codes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/lab/orders/{id}/details/{detailId}/finalize:
+    post:
+      tags:
+      - Lab Orders (WP-7)
+      operationId: finalizeDetail
+      summary: Finalize one detail
+      description: >-
+        Marks the detail's parameter rows final (is_final=true, finalized_at). When ALL details
+        of the booking are final the header flips to FINALIZED and E-05 LabResultFinalized is
+        emitted once via the outbox (schema lab-result-finalized.v1, partition key encounterId,
+        payload keys exactly {bookingId, detailIds[], patientId, encounterId,
+        results[{parameterName,value,unit}], status, finalizedAt}). Per-detail finalization
+        alone emits nothing.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: detailId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK (booking; status FINALIZED only when all details done)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PathOrderBooking'
+        '400':
+          description: Illegal transition (wrong status / already finalized / no results yet)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/machines:
+    post:
+      tags:
+      - Machines (WP-7)
+      operationId: createMachine
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MachineRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MachineConfiguration'
+        '400':
+          description: Validation error (name required)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Machines (WP-7)
+      operationId: listMachines
+      parameters:
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MachineConfiguration'
+  /api/v1/machines/{id}:
+    get:
+      tags:
+      - Machines (WP-7)
+      operationId: getMachine
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MachineConfiguration'
+        '404':
+          description: Machine not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags:
+      - Machines (WP-7)
+      operationId: updateMachine
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MachineRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MachineConfiguration'
+    delete:
+      tags:
+      - Machines (WP-7)
+      operationId: deactivateMachine
+      summary: Soft-delete (active=false)
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK (deactivated machine)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MachineConfiguration'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    TestLine:
+      type: object
+      required: [testCode, testName]
+      properties:
+        testCode:
+          type: string
+        testName:
+          type: string
+    CreateOrderRequest:
+      type: object
+      required: [patientId]
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        isOutSourced:
+          type: boolean
+          default: false
+        tests:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestLine'
+    ResultRow:
+      type: object
+      required: [parameterName]
+      properties:
+        parameterName:
+          type: string
+        value:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        referenceRange:
+          type: string
+          nullable: true
+    ResultsRequest:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultRow'
+    ParameterDetail:
+      type: object
+      properties:
+        paramId:
+          type: integer
+          format: int64
+        detailId:
+          type: integer
+          format: int64
+        parameterName:
+          type: string
+        value:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        referenceRange:
+          type: string
+          nullable: true
+        isFinal:
+          type: boolean
+        finalizedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PathOrderDetail:
+      type: object
+      properties:
+        detailId:
+          type: integer
+          format: int64
+        bookingId:
+          type: integer
+          format: int64
+        testCode:
+          type: string
+        testName:
+          type: string
+        detailStatus:
+          type: integer
+          description: 'Mirrors header machine: 1=ORDERED 2=SAMPLE_COLLECTED 3=IN_PROGRESS 4=FINALIZED 5=CANCELLED'
+        isFinal:
+          type: boolean
+        finalizedAt:
+          type: string
+          format: date-time
+          nullable: true
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterDetail'
+    PathOrderBooking:
+      type: object
+      properties:
+        bookingId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        bookingNo:
+          type: string
+        bookingStatus:
+          type: integer
+          description: '1=ORDERED 2=SAMPLE_COLLECTED 3=IN_PROGRESS 4=FINALIZED 5=CANCELLED'
+        isOutSourced:
+          type: boolean
+        finalizedAt:
+          type: string
+          format: date-time
+          nullable: true
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/PathOrderDetail'
+    MachineRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        protocol:
+          type: string
+        active:
+          type: boolean
+          default: true
+    MachineConfiguration:
+      type: object
+      properties:
+        machineId:
+          type: integer
+          format: int64
+        name:
+          type: string
+        protocol:
+          type: string
+          nullable: true
+        active:
+          type: boolean

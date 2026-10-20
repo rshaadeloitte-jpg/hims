@@ -41,14 +41,14 @@ export function FormField({
   const fieldId = id ?? htmlFor ?? findInputId(children);
   return (
     <Field.Root invalid={!!error} required={required} id={fieldId} mb={4} gap="1.5">
-      <Field.Label fontSize="sm" fontWeight="semibold" color="gray.700" htmlFor={fieldId}>
+      <Field.Label fontSize="sm" fontWeight="600" color="text.primary" htmlFor={fieldId}>
         {label}
       </Field.Label>
       {children}
       {error ? (
-        <Field.ErrorText fontSize="xs" color="red.600">{error}</Field.ErrorText>
+        <Field.ErrorText fontSize="xs" color="danger.DEFAULT">{error}</Field.ErrorText>
       ) : helper ? (
-        <Field.HelperText fontSize="xs" color="gray.500">{helper}</Field.HelperText>
+        <Field.HelperText fontSize="xs" color="text.muted">{helper}</Field.HelperText>
       ) : null}
     </Field.Root>
   );
@@ -59,10 +59,18 @@ export const TextInput = forwardRef<HTMLInputElement, InputProps>(
     return (
       <Input
         ref={ref}
-        bg="white"
+        bg="surface.panel"
         border="1px solid"
-        borderColor="gray.300"
-        _focus={{ borderColor: "brand.600" }}
+        borderColor="border.DEFAULT"
+        color="text.primary"
+        _placeholder={{ color: "text.muted", opacity: 1 }}
+        _focus={{
+          borderColor: "border.focus",
+          outline: "2px solid",
+          outlineColor: "border.focus",
+          outlineOffset: "0px",
+        }}
+        _hover={{ borderColor: "border.strong" }}
         {...props}
       />
     );

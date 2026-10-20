@@ -1,0 +1,270 @@
+package com.hims.item.application;
+
+import com.hims.item.application.exceptions.InvalidItemRequestException;
+import com.hims.item.application.exceptions.ItemNotFoundException;
+import com.hims.item.domain.model.Item;
+import com.hims.item.domain.model.ItemStockBalance;
+import com.hims.item.domain.repository.ItemRepository;
+import com.hims.item.domain.repository.ItemStockBalanceRepository;
+import com.hims.item.domain.repository.ItemSupplierRepository;
+import com.hims.item.domain.repository.StoreRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * M13 item enquiry (read-side, V3). Read-only service covering the four
+ * item-master search screens that previously sat on the legacy
+ * {@code CIMS_GETITEMLISTBYITEMNAME} / {@code CIMS_GETITEMSENQUIRYDETAILS} /
+ * {@code CIMS_GETITEMSENQUIRYSUPPLIERS} / {@code CIMS_GETITEMBATCHLISTFORSEARCH_NEWONE_OUTER_IMPROVED}
+ * stored procs (ItemEnquiryView / GetAllEnquiriesResultDto / GetItemsEnquiryDetailsResultDto_1
+ * / EnquirySuppliersResultDto in the legacy tree). Mirrors the application
+ * conventions of {@link GrnService} / {@link IndentService}:
+ * {@code @Transactional(readOnly = true)} on every read path, the same
+ * {@link InvalidItemRequestException} (BEXA003) for bad input, the same
+ * {@link ItemNotFoundException} (NOT_FOUND) for missing master data, no
+ * mutation, no outbox events.
+ *
+ * <p>Endpoints (new controller {@code ItemEnquiryController}, all under the
+ * existing {@code /api/v1/items} prefix):
+ * <ul>
+ *   <li>GET /api/v1/items/search?name=&storeId=&includeZeroStock=&page=&size=
+ *       — paginated item list with optional stock qty, ordered by trigram
+ *       name match (uses the GIN trgm index on {@code item.item_name}).</li>
+ *   <li>GET /api/v1/items/{id}/batches?storeId= — FEFO batch availability
+ *       (delegates to {@link StockService#getAvailableBatches}).</li>
+ *   <li>GET /api/v1/items/{id}/stock?storeId= — current balances across
+ *       stores, optionally filtered by store.</li>
+ *   <li>GET /api/v1/items/{id}/suppliers — item_supplier links joined
+ *       with the supplier master.</li>
+ * </ul>
+ */
+@Service
+public class ItemEnquiryService {
+
+    private static final Logger log = LoggerFactory.getLogger(ItemEnquiryService.class);
+
+    /** Default page size when the caller does not pass one. */
+    public static final int DEFAULT_PAGE_SIZE = 50;
+    /** Hard upper bound on page size to avoid pathological scans. */
+    public static final int MAX_PAGE_SIZE = 500;
+
+    private final ItemRepository itemRepository;
+    private final ItemStockBalanceRepository balanceRepository;
+    private final ItemSupplierRepository itemSupplierRepository;
+    private final StoreRepository storeRepository;
+    private final StockService stockService;
+
+    public ItemEnquiryService(ItemRepository itemRepository,
+                              ItemStockBalanceRepository balanceRepository,
+                              ItemSupplierRepository itemSupplierRepository,
+                              StoreRepository storeRepository,
+                              StockService stockService) {
+        this.itemRepository = itemRepository;
+        this.balanceRepository = balanceRepository;
+        this.itemSupplierRepository = itemSupplierRepository;
+        this.storeRepository = storeRepository;
+        this.stockService = stockService;
+    }
+
+    // ------------------------------------------------------------------ search
+
+    /**
+     * Paginated item search. {@code name} is the fuzzy typeahead; {@code storeId}
+     * (optional) joins a per-item {@code available_qty} sum from
+     * {@code item_stock_balance}; {@code includeZeroStock} (default {@code true})
+     * filters out items with zero stock when {@code storeId} is present.
+     */
+    @Transactional(readOnly = true)
+    public List<ItemEnquiryView.SearchRow> search(String name, Long storeId,
+                                                  boolean includeZeroStock,
+                                                  int page, int size) {
+        Pageable pageable = PageRequest.of(normalisePage(page), normaliseSize(size));
+        String trimmed = name == null ? null : name.trim();
+        if (trimmed != null && trimmed.isEmpty()) {
+            trimmed = null;
+        }
+
+        long total = itemRepository.countByName(trimmed);
+        List<Item> items = itemRepository.searchByName(trimmed, pageable);
+        if (items.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Optional per-item stock aggregation, single round trip per store.
+        Map<Long, BigDecimal> stockByItem = Collections.emptyMap();
+        if (storeId != null) {
+            if (!storeRepository.existsById(storeId)) {
+                throw new ItemNotFoundException("NOT_FOUND", "Store not found");
+            }
+            // Sum available_qty across all (item, batch) rows for the store;
+            // then index by itemId for the per-row lookup below.
+            stockByItem = balanceRepository.findByStoreId(storeId).stream()
+                    .filter(b -> b.getItemId() != null)
+                    .collect(Collectors.toMap(
+                            ItemStockBalance::getItemId,
+                            b -> b.getAvailableQty() == null ? BigDecimal.ZERO : b.getAvailableQty(),
+                            BigDecimal::add));
+        }
+
+        List<ItemEnquiryView.SearchRow> rows = new ArrayList<>(items.size());
+        for (Item i : items) {
+            BigDecimal qty = storeId == null ? null : stockByItem.getOrDefault(i.getId(), BigDecimal.ZERO);
+            if (storeId != null && !includeZeroStock && qty.signum() == 0) {
+                continue;
+            }
+            rows.add(new ItemEnquiryView.SearchRow(
+                    i.getId(),
+                    i.getItemCode(),
+                    i.getItemName(),
+                    i.getBrandName(),
+                    i.getStrength(),
+                    i.getItemGroupId(),
+                    i.getItemCategoryId(),
+                    i.getPurchaseRate(),
+                    i.getMrp(),
+                    i.getSalePrice(),
+                    storeId,
+                    qty,
+                    total));
+        }
+        log.debug("Item enquiry search name='{}' storeId={} includeZero={} page={}/{} -> {} rows (of {} total)",
+                trimmed, storeId, includeZeroStock, page, size, rows.size(), total);
+        return rows;
+    }
+
+    // ------------------------------------------------------------------ batches
+
+    /**
+     * FEFO batch availability for one item in one store. Pure passthrough to
+     * the existing D-1 FEFO projection
+     * ({@link StockService#getAvailableBatches}) so the enquiry screen
+     * shares the exact same row shape, ordering, and freeze-recall filter as
+     * the dispensing/issue screens.
+     */
+    @Transactional(readOnly = true)
+    public List<BatchAvailabilityView> getBatches(Long itemId, Long storeId) {
+        if (storeId == null) {
+            throw new InvalidItemRequestException("BEXA003", "storeId is required");
+        }
+        if (!itemRepository.existsById(itemId)) {
+            throw new ItemNotFoundException("NOT_FOUND", "Item not found");
+        }
+        return stockService.getAvailableBatches(storeId, itemId);
+    }
+
+    // ------------------------------------------------------------------ stock
+
+    /**
+     * Current balances for one item across stores. With {@code storeId} set,
+     * returns that one store's balance rows (same shape as
+     * {@code GET /stock/balances?storeId=&itemId=}). With {@code storeId}
+     * omitted, returns all balance rows for the item across every store,
+     * ordered by store id.
+     */
+    @Transactional(readOnly = true)
+    public List<ItemStockBalance> getStock(Long itemId, Long storeId) {
+        if (!itemRepository.existsById(itemId)) {
+            throw new ItemNotFoundException("NOT_FOUND", "Item not found");
+        }
+        if (storeId != null) {
+            if (!storeRepository.existsById(storeId)) {
+                throw new ItemNotFoundException("NOT_FOUND", "Store not found");
+            }
+            return balanceRepository.findByStoreIdAndItemId(storeId, itemId);
+        }
+        return balanceRepository.findByItemIdOrderByStoreIdAsc(itemId);
+    }
+
+    // ------------------------------------------------------------------ suppliers
+
+    /**
+     * Item-supplier links for one item, joined over the supplier master.
+     * Returns suppliers in {@code code ASC} order; empty list when the item
+     * has no supplier links.
+     */
+    @Transactional(readOnly = true)
+    public List<ItemEnquiryView.SupplierLink> getSuppliers(Long itemId) {
+        if (!itemRepository.existsById(itemId)) {
+            throw new ItemNotFoundException("NOT_FOUND", "Item not found");
+        }
+        List<Object[]> rows = itemSupplierRepository.findSuppliersForItemRaw(itemId);
+        List<ItemEnquiryView.SupplierLink> out = new ArrayList<>(rows.size());
+        for (Object[] r : rows) {
+            out.add(new ItemEnquiryView.SupplierLink(
+                    asLong(r[0]),
+                    asLong(r[1]),
+                    asString(r[2]),
+                    asString(r[3]),
+                    asBoolean(r[4]),
+                    asBoolean(r[5]),
+                    asBoolean(r[6]),
+                    asLong(r[7])));
+        }
+        return out;
+    }
+
+    // ------------------------------------------------------------------ helpers
+
+    private static int normalisePage(int page) {
+        return Math.max(0, page);
+    }
+
+    private static int normaliseSize(int size) {
+        if (size <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(size, MAX_PAGE_SIZE);
+    }
+
+    private static Long asLong(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Number n) {
+            return n.longValue();
+        }
+        return Long.valueOf(o.toString());
+    }
+
+    private static String asString(Object o) {
+        return o == null ? null : o.toString();
+    }
+
+    private static Boolean asBoolean(Object o) {
+        if (o == null) {
+            return null;
+        }
+        if (o instanceof Boolean b) {
+            return b;
+        }
+        if (o instanceof Number n) {
+            // pg returns tinyint for boolean; 1=true 0=false
+            return n.intValue() != 0;
+        }
+        return Boolean.valueOf(o.toString());
+    }
+
+    /** Visible for tests: expose the most recent stock-touched timestamp lookup helper. */
+    static Timestamp latestAddedAt(List<ItemStockBalance> rows) {
+        Timestamp latest = null;
+        for (ItemStockBalance b : rows) {
+            Timestamp t = b.getAddedDatetime();
+            if (t != null && (latest == null || t.after(latest))) {
+                latest = t;
+            }
+        }
+        return latest;
+    }
+}

@@ -1,0 +1,88 @@
+package com.hims.item.api;
+
+import com.hims.item.application.BatchAvailabilityView;
+import com.hims.item.application.ItemEnquiryService;
+import com.hims.item.application.ItemEnquiryView;
+import com.hims.item.domain.model.ItemStockBalance;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * M13 item enquiry (read-side, V3) controller. Read-only endpoints over the
+ * existing {@code ihms_item} tables (item / item_batch / item_stock_balance /
+ * item_supplier / supplier); no new schema, no mutations, no outbox events.
+ * Mounted under the existing {@code /api/v1/items} prefix so it sits next to
+ * the master CRUD ({@link ItemMasterController}) and shares the same default
+ * security posture (authenticated for all non-actuator paths).
+ *
+ * <p>Mirrors the {@code application/*Service} + {@code api/*Controller} DDD
+ * split used by Grn/Indent/Stock: business rules live in
+ * {@link ItemEnquiryService} ({@code @Transactional(readOnly = true)}); this
+ * controller is a thin MVC adapter that converts query params into the
+ * service call.
+ */
+@RestController
+@RequestMapping("/api/v1/items")
+@Tag(name = "Item Masters (MIG-012)", description = "Item / Store / Batch master CRUD + MasterDataChanged outbox + M13 item enquiry")
+public class ItemEnquiryController {
+
+    private final ItemEnquiryService enquiryService;
+
+    public ItemEnquiryController(ItemEnquiryService enquiryService) {
+        this.enquiryService = enquiryService;
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Item enquiry search (M13, V3 read-side)",
+            description = "Paginated item list. name: optional fuzzy typeahead (GIN trgm index "
+                    + "ihms_item.ix_item_name_trgm on item.item_name). storeId: optional; when "
+                    + "present, rows include the sum of item_stock_balance.available_qty for that "
+                    + "item in that store. includeZeroStock: when storeId is set, default true; "
+                    + "false hides items with zero stock. page/size: 0-based page index, default "
+                    + "size 50 (max 500). Each row carries totalRows = the unpaginated match count "
+                    + "for the same name predicate.")
+    public List<ItemEnquiryView.SearchRow> search(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long storeId,
+            @RequestParam(required = false, defaultValue = "true") boolean includeZeroStock,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "50") int size) {
+        return enquiryService.search(name, storeId, includeZeroStock, page, size);
+    }
+
+    @GetMapping("/{id}/batches")
+    @Operation(summary = "FEFO batch availability for one item in one store",
+            description = "Delegates to StockService.getAvailableBatches: batches of one item in one "
+                    + "store with availableQty > 0, not expired, not freeze-recalled, ordered FEFO "
+                    + "(expiryDate ASC NULLS LAST, batchId ASC). storeId is required.")
+    public List<BatchAvailabilityView> batches(@PathVariable Long id,
+                                               @RequestParam Long storeId) {
+        return enquiryService.getBatches(id, storeId);
+    }
+
+    @GetMapping("/{id}/stock")
+    @Operation(summary = "Current stock balances for an item, optionally filtered by store",
+            description = "Returns item_stock_balance rows. With storeId: that store's balance rows. "
+                    + "Without storeId: all balance rows for the item across every store, ordered by "
+                    + "storeId ascending. Empty list when the item has no stock anywhere.")
+    public List<ItemStockBalance> stock(@PathVariable Long id,
+                                        @RequestParam(required = false) Long storeId) {
+        return enquiryService.getStock(id, storeId);
+    }
+
+    @GetMapping("/{id}/suppliers")
+    @Operation(summary = "Item-supplier links joined with the supplier master",
+            description = "Reads ihms_item.item_supplier joined with ihms_item.supplier, ordered by "
+                    + "supplier code ascending. Empty list when the item has no supplier links. "
+                    + "Read-only; no new tables, no new columns.")
+    public List<ItemEnquiryView.SupplierLink> suppliers(@PathVariable Long id) {
+        return enquiryService.getSuppliers(id);
+    }
+}

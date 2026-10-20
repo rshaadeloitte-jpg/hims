@@ -1,0 +1,66 @@
+package com.hims.item.application;
+
+import java.math.BigDecimal;
+
+/**
+ * Read-only projections for the M13 item enquiry slice. Ported from the legacy
+ * ItemEnquiryView / GetItemsEnquiryDetailsResultDto_1 / EnquirySuppliersResultDto
+ * family, narrowed to the columns we can satisfy on the clean ihms_item schema
+ * (item / item_batch / item_stock_balance / item_supplier / supplier) with NO
+ * new tables and NO new columns.
+ *
+ * <ul>
+ *   <li>{@link SearchRow}         - GET /items/search result row (item + optional stock qty)</li>
+ *   <li>{@link SupplierLink}      - GET /items/{id}/suppliers row (item_supplier join supplier)</li>
+ * </ul>
+ *
+ * FEFO batch availability is already covered by {@link BatchAvailabilityView}
+ * (reused from StockService.getAvailableBatches), and the current stock is
+ * represented by the existing {@link com.hims.item.domain.model.ItemStockBalance}
+ * entity.
+ */
+public final class ItemEnquiryView {
+
+    private ItemEnquiryView() {
+        // view records only
+    }
+
+    /**
+     * One row of the item search result list. {@code availableQty} is null when
+     * no {@code storeId} filter is given, otherwise it is the sum of
+     * {@code item_stock_balance.available_qty} for that item in that store.
+     * Ordered by trigram similarity to the {@code name} query (uses the GIN
+     * trigram index {@code ix_item_name_trgm} on {@code item.item_name}); falls
+     * back to {@code item_name} for stable ties.
+     */
+    public record SearchRow(
+            Long itemId,
+            String itemCode,
+            String itemName,
+            String brandName,
+            String strength,
+            Long itemGroupId,
+            Long itemCategoryId,
+            BigDecimal purchaseRate,
+            BigDecimal mrp,
+            BigDecimal salePrice,
+            Long storeId,
+            BigDecimal availableQty,
+            Long totalRows) {
+    }
+
+    /**
+     * One item-supplier link. Joined over {@code ihms_item.item_supplier} ->
+     * {@code ihms_item.supplier}; legacy parity: T_ITEMSUPPLIER -> M_SUPPLIER.
+     */
+    public record SupplierLink(
+            Long itemSupplierId,
+            Long supplierId,
+            String supplierCode,
+            String supplierName,
+            Boolean isManufacturer,
+            Boolean isInhouseSupplier,
+            Boolean isEmpanelled,
+            Long itemCategoryId) {
+    }
+}

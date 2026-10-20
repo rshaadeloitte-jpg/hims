@@ -1,0 +1,1289 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8082
+  description: Generated server url
+tags:
+- name: Stock (MIG-012, D-1)
+  description: Single-writer stock movements, balances, ledger
+- name: Item Masters (MIG-012)
+  description: Item / Store / Batch master CRUD + MasterDataChanged outbox
+- name: Procurement (WP-2)
+  description: Supplier master, GRN posting (stock ledger + GRNPosted outbox), indents (IndentApproved outbox)
+paths:
+  /api/v1/stores/{id}:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: getStore
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Store'
+    put:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: updateStore
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Store'
+    delete:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: removeStore
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Store'
+  /api/v1/items/{id}:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: getItem
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Item'
+    put:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: updateItem
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Item'
+    delete:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: removeItem
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Item'
+  /api/v1/batches/{id}:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: getBatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemBatch'
+    put:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: updateBatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemBatch'
+    delete:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: removeBatch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemBatch'
+  /api/v1/stores:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: listStores
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+    post:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: createStore
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Store'
+  /api/v1/stock/movements:
+    post:
+      tags:
+      - Stock (MIG-012, D-1)
+      summary: Record a stock movement (single writer)
+      description: 'operation: 1=ADD 2=SUBTRACT; movementType 1..30 (1=OPENING_BALANCE 2=GRN/RECEIPT 3=ISSUE 4=SALE 5=RETURN
+        6=TRANSFER_IN 7=TRANSFER_OUT 8=ADJUSTMENT 9=EXPIRY 10=DAMAGE 11=RECALL). Same tx: lock balance (FOR UPDATE) + ledger
+        append + balance update + InventoryUpdated outbox event.'
+      operationId: movement
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemStockBalance'
+  /api/v1/items:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: listItems
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+    post:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: createItem
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Item'
+  /api/v1/batches:
+    get:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: listBatches
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemBatch'
+    post:
+      tags:
+      - Item Masters (MIG-012)
+      operationId: createBatch
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ItemBatch'
+  /api/v1/stock/ledger:
+    get:
+      tags:
+      - Stock (MIG-012, D-1)
+      operationId: ledger
+      parameters:
+      - name: storeId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemStockLedger'
+  /api/v1/stock/balances:
+    get:
+      tags:
+      - Stock (MIG-012, D-1)
+      operationId: balances
+      parameters:
+      - name: storeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemStockBalance'
+  /api/v1/stock/available-batches:
+    get:
+      tags:
+      - Stock (MIG-012, D-1)
+      summary: FEFO batch availability for dispensing/issue (UNKNOWN-012 resolved)
+      description: 'Batches of one item in one store with availableQty > 0, not expired (expiryDate IS NULL OR > today), not
+        freeze-recalled, ordered FEFO: expiryDate ASC NULLS LAST, batchId ASC. Legacy parity: CIMS_GETITEMBATCHLISTFORSEARCH_NEWONE_OUTER_IMPROVED
+        (Order By ExpiryDate,BatchId).'
+      operationId: availableBatches
+      parameters:
+      - name: storeId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BatchAvailabilityView'
+  /api/v1/suppliers:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: List suppliers
+      operationId: listSuppliers
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Supplier'
+    post:
+      tags:
+      - Procurement (WP-2)
+      summary: Create a supplier
+      operationId: createSupplier
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Supplier'
+  /api/v1/suppliers/{id}:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: Get a supplier by id
+      operationId: getSupplier
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Supplier'
+    put:
+      tags:
+      - Procurement (WP-2)
+      summary: Update a supplier
+      operationId: updateSupplier
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Supplier'
+  /api/v1/grn:
+    post:
+      tags:
+      - Procurement (WP-2)
+      summary: Post a GRN (goods received note)
+      description: 'One tx per GRN: header + lines (+ new batches), stock ledger + balance updates through
+        the D-1 StockService path (SELECT ... FOR UPDATE), InventoryUpdated per line + a single GRNPosted
+        outbox event. Body: {storeId, supplierId?, grnNo?, invoiceNo?, invoiceDate?, receivedDate?, remarks?,
+        lines:[{itemId, quantity, batchId | batchCode+expiryDate+mrp+purchaseRate}]}.'
+      operationId: postGrn
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Grn'
+  /api/v1/grn/{id}:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: Get a GRN header by id
+      operationId: getGrn
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Grn'
+  /api/v1/grn/{id}/lines:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: Get GRN lines
+      operationId: getGrnLines
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrnDetail'
+  /api/v1/indents:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: List indents, optionally filtered by doc_status
+      description: 'status: 1=PENDING 2=APPROVED 3=REJECTED 4=CANCELLED.'
+      operationId: listIndents
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Indent'
+    post:
+      tags:
+      - Procurement (WP-2)
+      summary: Create an indent (doc_status=1 PENDING)
+      description: 'Body: {storeId, departmentId?, indentNo?, remarks?, lines:[{itemId, quantity, remarks?}]}.'
+      operationId: createIndent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Indent'
+  /api/v1/indents/{id}/approve:
+    post:
+      tags:
+      - Procurement (WP-2)
+      summary: Approve a pending indent
+      description: doc_status PENDING -> APPROVED; emits an IndentApproved outbox event in the same tx.
+      operationId: approveIndent
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Indent'
+  /api/v1/indents/{id}:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: Get an indent header by id
+      operationId: getIndent
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Indent'
+  /api/v1/indents/{id}/lines:
+    get:
+      tags:
+      - Procurement (WP-2)
+      summary: Get indent lines
+      operationId: getIndentLines
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IndentDetail'
+components:
+  schemas:
+    JsonNode:
+      type: object
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        pincode:
+          type: string
+        phoneNo:
+          type: string
+        drugLicenceNumber:
+          type: string
+        panNumber:
+          type: string
+        isManufacturer:
+          type: boolean
+        isEmpanelled:
+          type: boolean
+        status:
+          type: boolean
+    Grn:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        grnNo:
+          type: string
+        storeId:
+          type: integer
+          format: int64
+        supplierId:
+          type: integer
+          format: int64
+        invoiceNo:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        receivedDate:
+          type: string
+          format: date
+        remarks:
+          type: string
+        docStatus:
+          type: integer
+          format: int32
+          description: 1=PENDING 2=APPROVED 3=REJECTED 4=CANCELLED
+        approvedBy:
+          type: integer
+          format: int64
+        approvedDatetime:
+          type: string
+          format: date-time
+    GrnDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        grnId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: integer
+          format: int64
+        quantity:
+          type: number
+        purchaseRate:
+          type: number
+        mrp:
+          type: number
+        remarks:
+          type: string
+    Indent:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        indentNo:
+          type: string
+        storeId:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        remarks:
+          type: string
+        docStatus:
+          type: integer
+          format: int32
+          description: 1=PENDING 2=APPROVED 3=REJECTED 4=CANCELLED
+        approvedBy:
+          type: integer
+          format: int64
+        approvedDatetime:
+          type: string
+          format: date-time
+    IndentDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        indentId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        quantity:
+          type: number
+        issuedQty:
+          type: number
+        remarks:
+          type: string
+    Store:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+        isMainStore:
+          type: boolean
+        isCentralStore:
+          type: boolean
+        isPharmacyStore:
+          type: boolean
+        isCssdStore:
+          type: boolean
+        isImplantStore:
+          type: boolean
+        isAssetStore:
+          type: boolean
+        isSubStore:
+          type: boolean
+        isPatientRequisition:
+          type: boolean
+        itemGroupId:
+          type: integer
+          format: int64
+        wingId:
+          type: integer
+          format: int64
+        floorId:
+          type: integer
+          format: int64
+        prefix:
+          type: string
+        sequenceName:
+          type: string
+        gstNo:
+          type: string
+        pharmacyLicenseNo:
+          type: string
+        phoneNo:
+          type: string
+        email:
+          type: string
+    Item:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        itemCode:
+          type: string
+        itemName:
+          type: string
+        itemNameHindi:
+          type: string
+        itemNameRefId:
+          type: integer
+          format: int64
+        brandName:
+          type: string
+        brandId:
+          type: integer
+          format: int64
+        strength:
+          type: string
+        strengthUomId:
+          type: integer
+          format: int64
+        moleculeId:
+          type: integer
+          format: int64
+        itemGroupId:
+          type: integer
+          format: int64
+        itemCategoryId:
+          type: integer
+          format: int64
+        dispensingTypeId:
+          type: integer
+          format: int64
+        storageTypeId:
+          type: integer
+          format: int64
+        pregnancyClassId:
+          type: integer
+          format: int64
+        therapeuticClassId:
+          type: integer
+          format: int64
+        routeId:
+          type: integer
+          format: int64
+        codeTypeId:
+          type: integer
+          format: int64
+        manufacturerId:
+          type: integer
+          format: int64
+        marketerId:
+          type: integer
+          format: int64
+        purchaseRate:
+          type: number
+        mrp:
+          type: number
+        salePrice:
+          type: number
+        vatPercent:
+          type: number
+        vatApplicableOn:
+          type: integer
+          format: int32
+        inclusiveOfTax:
+          type: boolean
+        discountOnSale:
+          type: number
+        guideCost:
+          type: number
+        packingUomId:
+          type: integer
+          format: int64
+        stockingUomId:
+          type: integer
+          format: int64
+        conversionFactor:
+          type: number
+        batchesRequired:
+          type: boolean
+        reorderQty:
+          type: integer
+          format: int32
+        avgDailyDemand:
+          type: integer
+          format: int64
+        safetyStock:
+          type: integer
+          format: int64
+        isReorder:
+          type: boolean
+        otc:
+          type: boolean
+        nursingOrderable:
+          type: boolean
+        doctorOrderable:
+          type: boolean
+        usedForKit:
+          type: boolean
+        usedForCssd:
+          type: boolean
+        decimalConsumption:
+          type: boolean
+        isReusable:
+          type: boolean
+        isKit:
+          type: boolean
+        partialDispensing:
+          type: boolean
+        isCompound:
+          type: boolean
+        isCustomOrder:
+          type: boolean
+        isNonStockable:
+          type: boolean
+        controlledSubstance:
+          type: boolean
+        isLifeSaving:
+          type: boolean
+        isHighRisk:
+          type: boolean
+        isHighCost:
+          type: boolean
+        isAsset:
+          type: boolean
+        vedClass:
+          type: integer
+          format: int32
+        inventoryCode:
+          type: string
+        uniqueCountryDrugCode:
+          type: string
+        hsnCodeId:
+          type: string
+        snomedCode:
+          type: string
+        snomedDisplay:
+          type: string
+        edlNumber:
+          type: string
+        orderIen:
+          type: string
+        eaushadhiItemId:
+          type: integer
+          format: int64
+        documentName:
+          type: string
+        sourceUrl:
+          type: string
+        document:
+          type: string
+          format: byte
+        suggestions:
+          type: string
+        remarks:
+          type: string
+    ItemBatch:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchCode:
+          type: string
+        expiryDate:
+          type: string
+          format: date-time
+        manufacturingDate:
+          type: string
+          format: date-time
+        quantity:
+          type: number
+        conversionFactor:
+          type: number
+        purchaseRate:
+          type: number
+        mrp:
+          type: number
+        vatPercentage:
+          type: number
+        vatAmount:
+          type: number
+        discountOnSale:
+          type: number
+        landedRate:
+          type: number
+        isFreezeRecall:
+          type: boolean
+        freezeRecallRemark:
+          type: string
+        isExpiryDateUpdated:
+          type: boolean
+        previousExpiryDate:
+          type: string
+          format: date-time
+        remarks:
+          type: string
+    ItemStockBalance:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        qtyInHand:
+          type: number
+        blockedQty:
+          type: number
+        availableQty:
+          type: number
+        damagedQty:
+          type: number
+        expiredQty:
+          type: number
+        avgDailyDemand:
+          type: number
+        safetyStock:
+          type: number
+        isReorder:
+          type: boolean
+        isReorderIndent:
+          type: boolean
+        lastLedgerId:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          format: int64
+    ItemStockLedger:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        batchId:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        movementType:
+          type: integer
+          format: int32
+        operation:
+          type: integer
+          format: int32
+        quantity:
+          type: number
+        prevBalance:
+          type: number
+        newBalance:
+          type: number
+        refDocType:
+          type: string
+        refDocId:
+          type: integer
+          format: int64
+        grnId:
+          type: integer
+          format: int64
+        itemSupplierId:
+          type: integer
+          format: int64
+        remarks:
+          type: string
+        isCancel:
+          type: boolean
+    BatchAvailabilityView:
+      type: object
+      properties:
+        batchId:
+          type: integer
+          format: int64
+        batchCode:
+          type: string
+        expiryDate:
+          type: string
+          format: date-time
+        availableQty:
+          type: number
+        mrp:
+          type: number
+        purchaseRate:
+          type: number
+        vatPercentage:
+          type: number
+        vatAmount:
+          type: number
+        discountOnSale:
+          type: number
+        conversionFactor:
+          type: number
+        freezeRecall:
+          type: boolean
+        itemId:
+          type: integer
+          format: int64
+        itemName:
+          type: string
+        itemCode:
+          type: string

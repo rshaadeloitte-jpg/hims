@@ -1,0 +1,330 @@
+{
+  "identifier": "10.1016/0020-7101(91)90036-E",
+  "generatedAt": "2026-08-14T09:13:59.159Z",
+  "source": "openalex",
+  "sourceUrl": "https://api.openalex.org/works?filter=doi%3Ahttps%3A%2F%2Fdoi.org%2F10.1016%2F0020-7101%2891%2990036-E&per-page=1&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccitation_normalized_percentile%2Creferenced_works%2Crelated_works%2Cauthorships%2Cprimary_location%2Clocations%2Cbest_oa_location%2Copen_access%2Cconcepts%2Ctopics%2Cabstract_inverted_index%2Cids%2Cis_retracted",
+  "paper": {
+    "paperId": "W2014640834",
+    "openAlexId": "https://openalex.org/W2014640834",
+    "doi": "https://doi.org/10.1016/0020-7101(91)90036-e",
+    "pmid": "1778634",
+    "title": "A brief historical overview of hospital information system (HIS) evolution in the United States",
+    "year": 1991,
+    "publicationDate": "1991-12-01",
+    "type": "article",
+    "authors": [
+      "Morris F. Collen"
+    ],
+    "venue": "International Journal of Bio-Medical Computing",
+    "concepts": [
+      "Context (archaeology)",
+      "Quality assurance",
+      "Hospital information system",
+      "Information system",
+      "Medical record",
+      "Computer science",
+      "Data science",
+      "Medicine"
+    ],
+    "topics": [
+      "Electronic Health Records Systems",
+      "Data Quality and Management",
+      "Biomedical Text Mining and Ontologies"
+    ],
+    "urls": [
+      {
+        "type": "landing",
+        "url": "https://doi.org/10.1016/0020-7101(91)90036-e",
+        "isOpenAccess": false
+      },
+      {
+        "type": "landing",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/1778634",
+        "isOpenAccess": false
+      },
+      {
+        "type": "doi",
+        "url": "https://doi.org/10.1016/0020-7101(91)90036-e"
+      }
+    ],
+    "citationCount": 34,
+    "normalizedCitationPercentile": 0.90550414,
+    "references": [
+      "https://openalex.org/W20388190",
+      "https://openalex.org/W26463184",
+      "https://openalex.org/W48359454",
+      "https://openalex.org/W59639971",
+      "https://openalex.org/W64795801",
+      "https://openalex.org/W74550822",
+      "https://openalex.org/W79716178",
+      "https://openalex.org/W103264734",
+      "https://openalex.org/W115789563",
+      "https://openalex.org/W118405771",
+      "https://openalex.org/W167161910",
+      "https://openalex.org/W169554655",
+      "https://openalex.org/W194370832",
+      "https://openalex.org/W238259767",
+      "https://openalex.org/W241399650",
+      "https://openalex.org/W405137957",
+      "https://openalex.org/W630743614",
+      "https://openalex.org/W632769655",
+      "https://openalex.org/W958787207",
+      "https://openalex.org/W1034813901",
+      "https://openalex.org/W1430939862",
+      "https://openalex.org/W1832856171",
+      "https://openalex.org/W1942166320",
+      "https://openalex.org/W1958702524",
+      "https://openalex.org/W1969734791",
+      "https://openalex.org/W1973103888",
+      "https://openalex.org/W1981001688",
+      "https://openalex.org/W1983486461",
+      "https://openalex.org/W2007421322",
+      "https://openalex.org/W2011674016",
+      "https://openalex.org/W2018891169",
+      "https://openalex.org/W2026690030",
+      "https://openalex.org/W2029784638",
+      "https://openalex.org/W2030280053",
+      "https://openalex.org/W2031797491",
+      "https://openalex.org/W2035308679",
+      "https://openalex.org/W2038177978",
+      "https://openalex.org/W2038798012",
+      "https://openalex.org/W2044443301",
+      "https://openalex.org/W2045518953",
+      "https://openalex.org/W2047822169",
+      "https://openalex.org/W2050095769",
+      "https://openalex.org/W2055292802",
+      "https://openalex.org/W2057973958",
+      "https://openalex.org/W2066885778",
+      "https://openalex.org/W2077007948",
+      "https://openalex.org/W2078097105",
+      "https://openalex.org/W2078708865",
+      "https://openalex.org/W2079889962",
+      "https://openalex.org/W2088228083",
+      "https://openalex.org/W2088833820",
+      "https://openalex.org/W2093039955",
+      "https://openalex.org/W2104718920",
+      "https://openalex.org/W2109923991",
+      "https://openalex.org/W2122166155",
+      "https://openalex.org/W2124839181",
+      "https://openalex.org/W2126724949",
+      "https://openalex.org/W2139152901",
+      "https://openalex.org/W2192785767",
+      "https://openalex.org/W2198367488",
+      "https://openalex.org/W2204943443",
+      "https://openalex.org/W2210723461",
+      "https://openalex.org/W2254954849",
+      "https://openalex.org/W2277633092",
+      "https://openalex.org/W2291796715",
+      "https://openalex.org/W2315908873",
+      "https://openalex.org/W2340158464",
+      "https://openalex.org/W2341706654",
+      "https://openalex.org/W2397937590",
+      "https://openalex.org/W2400828400",
+      "https://openalex.org/W2401805594",
+      "https://openalex.org/W2402218557",
+      "https://openalex.org/W2408979737",
+      "https://openalex.org/W2411264427",
+      "https://openalex.org/W2412628066",
+      "https://openalex.org/W2443785800",
+      "https://openalex.org/W2465980945",
+      "https://openalex.org/W2472196538",
+      "https://openalex.org/W2613406210",
+      "https://openalex.org/W2942706405",
+      "https://openalex.org/W2993213820",
+      "https://openalex.org/W2993432364",
+      "https://openalex.org/W2993778668",
+      "https://openalex.org/W4233849996",
+      "https://openalex.org/W4239438351",
+      "https://openalex.org/W4256643282",
+      "https://openalex.org/W4318750711",
+      "https://openalex.org/W6601081318",
+      "https://openalex.org/W6601963663",
+      "https://openalex.org/W6602624447",
+      "https://openalex.org/W6603019513",
+      "https://openalex.org/W6603250103",
+      "https://openalex.org/W6604211891",
+      "https://openalex.org/W6604713529",
+      "https://openalex.org/W6604827771",
+      "https://openalex.org/W6607880622",
+      "https://openalex.org/W6609044410",
+      "https://openalex.org/W6625094830",
+      "https://openalex.org/W6626827390",
+      "https://openalex.org/W6638560078",
+      "https://openalex.org/W6640674461",
+      "https://openalex.org/W6641138040",
+      "https://openalex.org/W6660046362",
+      "https://openalex.org/W6661525319",
+      "https://openalex.org/W6665141511",
+      "https://openalex.org/W6673566486",
+      "https://openalex.org/W6675634482",
+      "https://openalex.org/W6676663307",
+      "https://openalex.org/W6680828962",
+      "https://openalex.org/W6687371172",
+      "https://openalex.org/W6691611038",
+      "https://openalex.org/W6696758116",
+      "https://openalex.org/W6703684932",
+      "https://openalex.org/W6737509960",
+      "https://openalex.org/W6771166437",
+      "https://openalex.org/W7010366860",
+      "https://openalex.org/W7066447550",
+      "https://openalex.org/W7074012765"
+    ],
+    "relatedWorks": [
+      "https://openalex.org/W3028737823",
+      "https://openalex.org/W2940939274",
+      "https://openalex.org/W2259362071",
+      "https://openalex.org/W4226436156",
+      "https://openalex.org/W2278055057",
+      "https://openalex.org/W2371275450",
+      "https://openalex.org/W2362329270",
+      "https://openalex.org/W4312448788",
+      "https://openalex.org/W2351947907",
+      "https://openalex.org/W2386206020"
+    ],
+    "sourceRank": 1,
+    "graphRole": "seed",
+    "isOpenAccess": false,
+    "isRetracted": false,
+    "provenance": [
+      {
+        "source": "OpenAlex Works API",
+        "fields": [
+          "id",
+          "ids",
+          "display_name",
+          "publication_year",
+          "cited_by_count",
+          "citation_normalized_percentile",
+          "referenced_works",
+          "abstract_inverted_index",
+          "primary_location",
+          "locations",
+          "best_oa_location",
+          "open_access"
+        ]
+      },
+      {
+        "source": "Europe PMC search",
+        "fields": [
+          "pmid"
+        ]
+      }
+    ],
+    "fullTextAccess": {
+      "status": "candidates_found",
+      "generatedAt": "2026-08-14T09:13:59.159Z",
+      "candidates": [
+        {
+          "source": "Europe PMC",
+          "kind": "metadata",
+          "label": "Europe PMC DOI/PMID lookup",
+          "identifier": "1778634",
+          "url": "https://europepmc.org/search?query=EXT_ID:1778634",
+          "canFetch": false,
+          "note": "Europe PMC can be used to check whether a PubMed record has an open PMC full-text deposit."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "https://doi.org/10.1016/0020-7101(91)90036-e",
+          "isOpenAccess": false,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/1778634",
+          "isOpenAccess": false,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "DOI",
+          "kind": "landing_page",
+          "label": "DOI resolver",
+          "identifier": "10.1016/0020-7101(91)90036-e",
+          "url": "https://doi.org/10.1016/0020-7101(91)90036-e",
+          "canFetch": false,
+          "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+        }
+      ],
+      "bestCandidate": {
+        "source": "Europe PMC",
+        "kind": "metadata",
+        "label": "Europe PMC DOI/PMID lookup",
+        "identifier": "1778634",
+        "url": "https://europepmc.org/search?query=EXT_ID:1778634",
+        "canFetch": false,
+        "note": "Europe PMC can be used to check whether a PubMed record has an open PMC full-text deposit."
+      },
+      "limits": [
+        "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+        "PDF URLs are recorded as access links unless a source-specific text API is available.",
+        "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+      ]
+    }
+  },
+  "access": {
+    "status": "candidates_found",
+    "generatedAt": "2026-08-14T09:13:59.159Z",
+    "candidates": [
+      {
+        "source": "Europe PMC",
+        "kind": "metadata",
+        "label": "Europe PMC DOI/PMID lookup",
+        "identifier": "1778634",
+        "url": "https://europepmc.org/search?query=EXT_ID:1778634",
+        "canFetch": false,
+        "note": "Europe PMC can be used to check whether a PubMed record has an open PMC full-text deposit."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1016/0020-7101(91)90036-e",
+        "isOpenAccess": false,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/1778634",
+        "isOpenAccess": false,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "DOI",
+        "kind": "landing_page",
+        "label": "DOI resolver",
+        "identifier": "10.1016/0020-7101(91)90036-e",
+        "url": "https://doi.org/10.1016/0020-7101(91)90036-e",
+        "canFetch": false,
+        "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+      }
+    ],
+    "bestCandidate": {
+      "source": "Europe PMC",
+      "kind": "metadata",
+      "label": "Europe PMC DOI/PMID lookup",
+      "identifier": "1778634",
+      "url": "https://europepmc.org/search?query=EXT_ID:1778634",
+      "canFetch": false,
+      "note": "Europe PMC can be used to check whether a PubMed record has an open PMC full-text deposit."
+    },
+    "limits": [
+      "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+      "PDF URLs are recorded as access links unless a source-specific text API is available.",
+      "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+    ]
+  },
+  "fullText": {
+    "requested": false,
+    "status": "not_requested"
+  }
+}

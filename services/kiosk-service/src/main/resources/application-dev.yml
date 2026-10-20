@@ -1,0 +1,6 @@
+spring:
+  security:
+    user:
+      name: ${DEV_USERNAME:devops}
+      password: ${DEV_PASSWORD:devops-dev-only}
+      roles: DEV

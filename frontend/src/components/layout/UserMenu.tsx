@@ -53,6 +53,7 @@ export function UserMenu() {
         px={2}
         py={1.5}
         borderRadius="lg"
+        _hover={{ bg: "gray.100" }}
       >
         <HStack gap={2.5}>
           <Avatar.Root
@@ -61,7 +62,7 @@ export function UserMenu() {
             borderColor="brand.500"
             borderRadius="full"
           >
-            <Avatar.Fallback name={user.name} fontSize="xs" fontWeight="bold" />
+            <Avatar.Fallback name={user.name} fontSize="xs" fontWeight="bold" bg="brand.100" color="brand.800" />
           </Avatar.Root>
           <VStack
             align="flex-start"
@@ -69,20 +70,20 @@ export function UserMenu() {
             lineHeight={1.2}
             display={{ base: "none", md: "flex" }}
           >
-            <Text fontSize="sm" fontWeight="bold" color="black" maxW="150px" truncate>
+            <Text fontSize="13px" fontWeight="bold" color="gray.900" maxW="150px" truncate>
               {user.name}
             </Text>
-            <Text fontSize="xs" color="gray.600">
+            <Text fontSize="11px" color="gray.500">
               {user.role}
             </Text>
           </VStack>
           <Box
-            color="gray.500"
+            color="gray.400"
             display={{ base: "none", md: "block" }}
             transform={open ? "rotate(180deg)" : undefined}
             transition="transform 120ms ease"
           >
-            <LayoutIcon name="chevron" size={15} />
+            <LayoutIcon name="chevron" size={14} />
           </Box>
         </HStack>
       </Button>

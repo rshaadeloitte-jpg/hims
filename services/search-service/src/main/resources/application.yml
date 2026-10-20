@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: search-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: search-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_search
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_search
+    create-schemas: true           # journal table needs ihms_search before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+app:
+  search:
+    # Indexer backend selection (register WP-T3): 'memory' = deterministic
+    # in-process indexer (default; tests + local), 'solr' = HttpSolrIndexer
+    # (prod profile sets SEARCH_BACKEND=solr + SOLR_BASE_URL).
+    backend: ${SEARCH_BACKEND:memory}
+    live-collections: patient,encounter,item,icd10cm,healthfactor   # 'service' orphan dropped per 07 §1.2
+    solr:
+      base-url: ${SOLR_BASE_URL:http://localhost:8983}
+      connect-timeout-ms: 3000
+      read-timeout-ms: 10000
+    # edismax qf boost weights for the patient collection per 07 §1.7 ("bq
+    # weights are load-bearing"). Legacy exact weights (mrno^18, mobile^16,
+    # civilid^16, janaadhar^17, name^8-12) are COMMENT-ONLY here — the modernized
+    # field names (_s dynamic fields) make 1:1 weight carry-over unverifiable
+    # until the managed schema lands; values below are the documented starting
+    # configuration, tunable without redeploy.
+    patient-qf: ${SEARCH_PATIENT_QF:text_t^1 mrno_s^18 mobile_s^16 civilid_s^16 janaadhar_s^17 name_s^8}
+
+# Redis current_pat_*/current_enc_* mirrors (legacy TTL 100s, 07 §2): OUT OF
+# SCOPE per register WP-T3 (promote-or-drop decision open) — comment-only, no
+# Redis dependency exists in this service.
+
+server:
+  port: ${SERVER_PORT:8107}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: search-service
+    description: iHMS Search & Index service (Catalog #27) - Wave-5 tranche 6 (GAP-REGISTER-6 WP-T3); t_index_request journal (0=PENDING 1=INDEXED 2=FAILED, dedupe via latest-row), internal event-routing ingress, SearchIndexer backend (solr | memory); emits NOTHING (negative outbox asserted); Redis mirrors OUT OF SCOPE
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

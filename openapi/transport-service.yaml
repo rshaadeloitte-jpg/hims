@@ -1,0 +1,1307 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8086
+  description: Generated server url
+tags:
+- name: Transport Requests (MIG-023)
+  description: "Vehicle / ambulance transport request lifecycle: raise, allocate vehicle+driver,\
+    \ approve, vehicle-out, vehicle-in, cancel, counts, list, fare preview"
+- name: Transport Fleet (MIG-023)
+  description: "Vehicle + driver masters, request-type + ambulance-type dictionaries,\
+    \ fuel station details, and vehicle maintenance lifecycle"
+paths:
+  /api/v1/transport/vehicles:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: List vehicles
+      description: "Unit-scoped active vehicles, optional vehicleType filter (legacy\
+        \ getAllVehicleDetails)."
+      operationId: listVehicles
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: vehicleType
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Create a vehicle
+      description: Vehicle / ambulance master (legacy M_AMBULANCEMASTER).
+      operationId: createVehicle
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+  /api/v1/transport/request-types:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      operationId: listRequestTypes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleRequestType"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Create a request type
+      description: Request-type dictionary (legacy M_VEHICLEREQUESTTYPEMASTER; emergency/normal/scheduled).
+      operationId: createRequestType
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequestType"
+  /api/v1/transport/maintenance:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: List maintenance requests
+      description: "Unit-scoped records in [fromDate, toDate] (toDate inclusive to\
+        \ end of day), optional vehicleTypeId / vehicleId filters (legacy getVehicleMaintenanceDetails).\
+        \ Newest first."
+      operationId: listMaintenance
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: toDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: vehicleTypeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: vehicleId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleMaintenance"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Raise a maintenance request
+      description: Vehicle maintenance (legacy addVehicleMaintenanceRequest); requestDate
+        defaults to now and the vehicle flips isAvailable=false.
+      operationId: addMaintenance
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleMaintenance"
+  /api/v1/transport/maintenance/{id}/complete:
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Complete a maintenance request
+      description: "Body {actualCost?, maintenanceDate?}; isCompleted=true and the\
+        \ vehicle flips isAvailable=true (legacy completeVehicleMaintenanceRequest)."
+      operationId: completeMaintenance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleMaintenance"
+  /api/v1/transport/maintenance/{id}/approve:
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Approve a maintenance request
+      description: isApproved=true (legacy approveVehicleMaintenanceRequest).
+      operationId: approveMaintenance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleMaintenance"
+  /api/v1/transport/fuel:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: List fuel records
+      description: "Unit-scoped records in [fromDate, toDate] (toDate inclusive to\
+        \ end of day), optional vehicleTypeId / vehicleId filters (legacy getFuelStationDetails).\
+        \ Newest first."
+      operationId: listFuel
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: toDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: vehicleTypeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: vehicleId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FuelStationDetails"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Add a fuel record
+      description: Fuel fill-up for a vehicle (legacy addFuelStationDetails); dateTime
+        defaults to now.
+      operationId: addFuel
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/FuelStationDetails"
+  /api/v1/transport/drivers:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: List drivers
+      description: Unit-scoped active drivers (legacy getDriverDetails).
+      operationId: listDrivers
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Driver"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Create a driver
+      description: Driver master (legacy M_DRIVERMASTER).
+      operationId: createDriver
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Driver"
+  /api/v1/transport/ambulance-types:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      operationId: listAmbulanceTypes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AmbulanceType"
+    post:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Create an ambulance type
+      description: Ambulance-type dictionary (legacy M_AMBULANCETYPEMASTER).
+      operationId: createAmbulanceType
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AmbulanceType"
+  /api/v1/transport-requests:
+    get:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: List transport requests
+      description: "Unit-scoped day-window search (fromDate truncated to midnight,\
+        \ window = [fromDate, fromDate+1d)). Optional filters: unitId, fromDate, requestType,\
+        \ search (requisitionBy LIKE), mobileNo, isDoctorRequest. Newest first. Cross-domain\
+        \ mrno/designation decoration is deferred."
+      operationId: list
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: requestType
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: mobileNo
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: isDoctorRequest
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleRequest"
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Raise a transport request
+      description: "Payload is the request body itself: {requisitionBy, mobileNo,\
+        \ vehicleTypeId, requestType, tripType:[0=drop,1=pickup,3=deadbody], requestMode:[...],\
+        \ isDoctorRequest, patientId, doctorId, staffId, requestDateTime, requestToDateTime,\
+        \ ...}. Patient (non-doctor) requests are auto-approved; requestDateTime defaults\
+        \ to now; expiryDateTime defaults to (requestToDateTime or now) midnight +\
+        \ 1 day."
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/vehicle-out:
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Mark vehicle out
+      description: "Body {startOdmReading?, calculatedTripFare?, tripDistanceEstimated?,\
+        \ outTime?}. Inserts (or updates) a detail row and flips the request isVehicleOut=true\
+        \ (legacy saveVehicleOutDetails)."
+      operationId: vehicleOut
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/vehicle-in:
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Mark vehicle in (complete trip)
+      description: "Body {endOdmReading?, tripDistance?, actualFare?, inTime?}. Stamps\
+        \ the request's detail rows, flips completed=true, and releases the vehicle\
+        \ + driver (legacy saveVehicleInDetails). Billing charges are deferred until\
+        \ the billing integration slice."
+      operationId: vehicleIn
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/cancel:
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Cancel a request
+      description: Flips isCancelled=true and releases any allocated vehicle + driver
+        (legacy cancelTransportRequest).
+      operationId: cancel
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/approve:
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Approve a request
+      description: Stamps approvedBy + isApproved=true (legacy approveTransportRequest).
+      operationId: approve
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: approvedBy
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/allocate:
+    post:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Allocate a vehicle + driver
+      description: "Body {vehicleId, driverId, location?, requestDateTime?, isChargeExempted?,\
+        \ exemptionCatgId?, requestMode?, allocatedDoctors?, allocatedNurses?}. Stamps\
+        \ the request, flips vehicle+driver isAvailable=false; doctor requests flip\
+        \ isCharged=true (legacy allocateVehicle)."
+      operationId: allocate
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport/vehicles/{id}:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      operationId: getVehicle
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+  /api/v1/transport/maintenance/{id}:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      summary: Get a maintenance request
+      description: Single read by id (legacy getVehicleMaintenanceRequest; id-only
+        like the request lifecycle).
+      operationId: getMaintenance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleMaintenance"
+  /api/v1/transport/drivers/{id}:
+    get:
+      tags:
+      - Transport Fleet (MIG-023)
+      operationId: getDriver
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Driver"
+  /api/v1/transport-requests/{id}:
+    get:
+      tags:
+      - Transport Requests (MIG-023)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequest"
+  /api/v1/transport-requests/{id}/fare:
+    get:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Fare preview for a request
+      description: Newest detail row decorated with the vehicle's farePerKm (legacy
+        getDetailsForVehicleFare).
+      operationId: fare
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: vehicleId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/VehicleRequestDetails"
+  /api/v1/transport-requests/{id}/details:
+    get:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: List trip detail rows of a request
+      description: Vehicle-out / vehicle-in readings + fare (startOdmReading/endOdmReading/tripDistance/calculatedTripFare/actualFare/outTime/inTime).
+        Oldest first.
+      operationId: details
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleRequestDetails"
+  /api/v1/transport-requests/counts:
+    get:
+      tags:
+      - Transport Requests (MIG-023)
+      summary: Dashboard request counts
+      description: TOTAL / EMERGENCY / NORMAL / SCHEDULED for the day window starting
+        at fromDate (default today). Type ids resolved from the vehicle_request_type
+        dictionary by description (legacy getTripRequestCount).
+      operationId: counts
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: fromDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+components:
+  schemas:
+    JsonNode:
+      type: object
+    Vehicle:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        vehicleName:
+          type: string
+        vehicleMake:
+          type: string
+        vehicleType:
+          type: string
+        vehicleNo:
+          type: string
+        purchaseDate:
+          type: string
+          format: date-time
+        purchaseAmount:
+          type: number
+        cashLeaseDonated:
+          type: integer
+          format: int32
+        instituteName:
+          type: string
+        contactPerson:
+          type: string
+        contactNo:
+          type: string
+        chasyNo:
+          type: string
+        address:
+          type: string
+        noOfLeaseMonths:
+          type: integer
+          format: int32
+        amountEachMonth:
+          type: number
+        invoiceNo:
+          type: string
+        vehicleLocation:
+          type: string
+        isAvailable:
+          type: boolean
+        farePerKm:
+          type: number
+        vehicleAverage:
+          type: integer
+          format: int64
+        insuranceNo:
+          type: string
+        insuranceExpiryDate:
+          type: string
+          format: date-time
+        pucNo:
+          type: string
+        pucExpiryDate:
+          type: string
+          format: date-time
+        is108:
+          type: boolean
+    VehicleRequestType:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+    VehicleMaintenance:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        workshopName:
+          type: string
+        vehicleId:
+          type: integer
+          format: int64
+        vehicleTypeId:
+          type: integer
+          format: int64
+        estimatedCost:
+          type: number
+        requestDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        maintenanceDate:
+          type: string
+          format: date-time
+        isApproved:
+          type: boolean
+        isCompleted:
+          type: boolean
+        actualCost:
+          type: number
+        isAccidentalCase:
+          type: boolean
+        dateOfAccident:
+          type: string
+          format: date-time
+        accidentalCause:
+          type: string
+        accidentalType:
+          type: string
+        accidentalTypeId:
+          type: integer
+          format: int64
+        workshopId:
+          type: integer
+          format: int64
+        repairWorks:
+          type: string
+    FuelStationDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        stationDetails:
+          type: string
+        vehicleId:
+          type: integer
+          format: int64
+        vehicleTypeId:
+          type: integer
+          format: int64
+        qty:
+          type: number
+        rate:
+          type: number
+        fuelType:
+          type: integer
+          format: int64
+        receiptNo:
+          type: string
+        dateTime:
+          type: string
+          format: date-time
+    Driver:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        firstName:
+          type: string
+        dob:
+          type: string
+          format: date-time
+        mobileNo:
+          type: integer
+          format: int64
+        genderId:
+          type: integer
+          format: int64
+        drivingLicNo:
+          type: string
+        isAvailable:
+          type: boolean
+        licenseType:
+          type: string
+        licenseExpDate:
+          type: string
+          format: date-time
+        driverExperience:
+          type: integer
+          format: int64
+    AmbulanceType:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+        isForPatient:
+          type: boolean
+    VehicleRequest:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        requisitionBy:
+          type: string
+        mobileNo:
+          type: integer
+          format: int64
+        mobileCountryCode:
+          type: integer
+          format: int64
+        vehicleTypeId:
+          type: integer
+          format: int64
+        vehicleId:
+          type: integer
+          format: int64
+        location:
+          type: string
+        requestType:
+          type: integer
+          format: int64
+        isChargeExempted:
+          type: boolean
+        exemptionCatgId:
+          type: integer
+          format: int64
+        bidAid:
+          type: string
+        requestDateTime:
+          type: string
+          format: date-time
+        expiryDateTime:
+          type: string
+          format: date-time
+        remarks:
+          type: string
+        isDoctorRequest:
+          type: boolean
+        userType:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64
+        staffId:
+          type: integer
+          format: int64
+        isPickupTrip:
+          type: boolean
+        isDropTrip:
+          type: boolean
+        isDeadbodyTrip:
+          type: boolean
+        staffInstrumentReq:
+          type: string
+        isVehicleOut:
+          type: boolean
+        completed:
+          type: boolean
+        patientId:
+          type: integer
+          format: int64
+        driverId:
+          type: integer
+          format: int64
+        isApproved:
+          type: boolean
+        allocatedDoctors:
+          type: string
+        allocatedNurses:
+          type: string
+        requestToDateTime:
+          type: string
+          format: date-time
+        isCancelled:
+          type: boolean
+        approvedBy:
+          type: string
+        isCharged:
+          type: boolean
+        opdIpd:
+          type: integer
+          format: int32
+        opdIpdId:
+          type: integer
+          format: int64
+    VehicleRequestDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        vehicleRequestId:
+          type: integer
+          format: int64
+        startOdmReading:
+          type: integer
+          format: int64
+        endOdmReading:
+          type: integer
+          format: int64
+        tripDistanceEstimated:
+          type: integer
+          format: int64
+        tripDistance:
+          type: integer
+          format: int64
+        calculatedTripFare:
+          type: integer
+          format: int64
+        actualFare:
+          type: integer
+          format: int64
+        chargeType:
+          type: integer
+          format: int64
+        outTime:
+          type: string
+          format: date-time
+        inTime:
+          type: string
+          format: date-time
+        farePerKm:
+          type: number

@@ -1,0 +1,234 @@
+{
+  "identifier": "10.1055/s-0040-1710007",
+  "generatedAt": "2026-08-14T09:23:40.588Z",
+  "source": "openalex",
+  "sourceUrl": "https://api.openalex.org/works?filter=doi%3Ahttps%3A%2F%2Fdoi.org%2F10.1055%2Fs-0040-1710007&per-page=1&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccitation_normalized_percentile%2Creferenced_works%2Crelated_works%2Cauthorships%2Cprimary_location%2Clocations%2Cbest_oa_location%2Copen_access%2Cconcepts%2Ctopics%2Cabstract_inverted_index%2Cids%2Cis_retracted",
+  "paper": {
+    "paperId": "W3029182195",
+    "openAlexId": "https://openalex.org/W3029182195",
+    "doi": "https://doi.org/10.1055/s-0040-1710007",
+    "title": "Data Migration: A Thorny Issue in Electronic Health Record Transitions—Case Studies and Review of the Literature",
+    "year": 2020,
+    "publicationDate": "2020-01-01",
+    "type": "article",
+    "authors": [
+      "Richard Schreiber",
+      "Lawrence Garber"
+    ],
+    "venue": "ACI Open",
+    "abstract": "Abstract Objective To review the existing literature regarding data migration during electronic health record (EHR)-to-EHR transitions and add two case studies on this topic. Methods Very few publications exist that detail the processes and potential pitfalls of data migration during EHR transitions. One of the authors participated in a panel discussion at the American Medical Informatics Association symposium in 2015; at the time, only five empiric or experiential research articles on any aspect of EHR transitions were available. Of those, only two mentioned their experiences with data migration or conversions. A detailed PubMed and CINAHL (Cumulative Index to Nursing and Allied Health Literature) search in March 2019 yielded only one more article giving details about data migration. Results The two new case studies contrast starkly: one relied on manual abstraction and data entry, whereas the other leveraged several electronic tools. The literature reflects this diversity of approach: no two sites have reported the same approaches. The authors identify nine domains of potential consequences of the currently available techniques and offer mitigating strategies. Discussion Very little empiric information exists in the peer-reviewed literature regarding data migrations during EHR-to-EHR transitions; yet the case studies reflect that much remains suitable for a prospective study. Conclusion This report adds two new case studies to the six already reported in the literature. There is a wide disparity in techniques of data migration, each with its own set of pros and cons, which sites must consider during an EHR-to-EHR transition. Such transitions would benefit from prospective research on evaluation and knowledge discovery.",
+    "concepts": [
+      "CINAHL",
+      "Data science",
+      "Electronic health record",
+      "Health informatics",
+      "Set (abstract data type)",
+      "Computer science",
+      "MEDLINE",
+      "Medicine",
+      "Political science"
+    ],
+    "topics": [
+      "Electronic Health Records Systems",
+      "Data Quality and Management",
+      "Healthcare Systems and Technology"
+    ],
+    "urls": [
+      {
+        "type": "landing",
+        "url": "https://doi.org/10.1055/s-0040-1710007",
+        "isOpenAccess": true
+      },
+      {
+        "type": "pdf",
+        "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+        "isOpenAccess": true
+      },
+      {
+        "type": "open_access",
+        "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+        "isOpenAccess": true
+      },
+      {
+        "type": "doi",
+        "url": "https://doi.org/10.1055/s-0040-1710007"
+      }
+    ],
+    "citationCount": 8,
+    "normalizedCitationPercentile": 0.79662283,
+    "references": [
+      "https://openalex.org/W91635551",
+      "https://openalex.org/W1608651070",
+      "https://openalex.org/W1928141807",
+      "https://openalex.org/W1964696417",
+      "https://openalex.org/W1970224726",
+      "https://openalex.org/W2001911314",
+      "https://openalex.org/W2017574619",
+      "https://openalex.org/W2032296034",
+      "https://openalex.org/W2038043749",
+      "https://openalex.org/W2084121220",
+      "https://openalex.org/W2134763305",
+      "https://openalex.org/W2135414916",
+      "https://openalex.org/W2296831575",
+      "https://openalex.org/W2405885907",
+      "https://openalex.org/W2502504834",
+      "https://openalex.org/W2512034123",
+      "https://openalex.org/W2893043319",
+      "https://openalex.org/W2896716318",
+      "https://openalex.org/W2921100752",
+      "https://openalex.org/W2941400566",
+      "https://openalex.org/W6650577373"
+    ],
+    "relatedWorks": [
+      "https://openalex.org/W2164143189",
+      "https://openalex.org/W2105116477",
+      "https://openalex.org/W1999383655",
+      "https://openalex.org/W2093949750",
+      "https://openalex.org/W2996791236",
+      "https://openalex.org/W3112832253",
+      "https://openalex.org/W2013326109",
+      "https://openalex.org/W2069214859",
+      "https://openalex.org/W2561905085",
+      "https://openalex.org/W2766839180"
+    ],
+    "sourceRank": 1,
+    "graphRole": "seed",
+    "isOpenAccess": true,
+    "isRetracted": false,
+    "provenance": [
+      {
+        "source": "OpenAlex Works API",
+        "fields": [
+          "id",
+          "ids",
+          "display_name",
+          "publication_year",
+          "cited_by_count",
+          "citation_normalized_percentile",
+          "referenced_works",
+          "abstract_inverted_index",
+          "primary_location",
+          "locations",
+          "best_oa_location",
+          "open_access"
+        ]
+      }
+    ],
+    "fullTextAccess": {
+      "status": "candidates_found",
+      "generatedAt": "2026-08-14T09:23:40.588Z",
+      "candidates": [
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "https://doi.org/10.1055/s-0040-1710007",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "pdf",
+          "label": "OpenAlex PDF URL",
+          "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "OpenAlex reported a direct PDF URL; the resolver records it as access evidence without PDF text extraction."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex open-access URL",
+          "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "OpenAlex open_access.oa_url candidate."
+        },
+        {
+          "source": "DOI",
+          "kind": "landing_page",
+          "label": "DOI resolver",
+          "identifier": "10.1055/s-0040-1710007",
+          "url": "https://doi.org/10.1055/s-0040-1710007",
+          "canFetch": false,
+          "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+        }
+      ],
+      "bestCandidate": {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1055/s-0040-1710007",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      "limits": [
+        "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+        "PDF URLs are recorded as access links unless a source-specific text API is available.",
+        "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+      ]
+    }
+  },
+  "access": {
+    "status": "candidates_found",
+    "generatedAt": "2026-08-14T09:23:40.588Z",
+    "candidates": [
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1055/s-0040-1710007",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "pdf",
+        "label": "OpenAlex PDF URL",
+        "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "OpenAlex reported a direct PDF URL; the resolver records it as access evidence without PDF text extraction."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex open-access URL",
+        "url": "http://www.thieme-connect.de/products/ejournals/pdf/10.1055/s-0040-1710007.pdf",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "OpenAlex open_access.oa_url candidate."
+      },
+      {
+        "source": "DOI",
+        "kind": "landing_page",
+        "label": "DOI resolver",
+        "identifier": "10.1055/s-0040-1710007",
+        "url": "https://doi.org/10.1055/s-0040-1710007",
+        "canFetch": false,
+        "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+      }
+    ],
+    "bestCandidate": {
+      "source": "OpenAlex",
+      "kind": "landing_page",
+      "label": "OpenAlex landing page",
+      "url": "https://doi.org/10.1055/s-0040-1710007",
+      "isOpenAccess": true,
+      "canFetch": false,
+      "note": "Publisher or repository landing page from OpenAlex location metadata."
+    },
+    "limits": [
+      "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+      "PDF URLs are recorded as access links unless a source-specific text API is available.",
+      "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+    ]
+  },
+  "fullText": {
+    "requested": false,
+    "status": "not_requested"
+  }
+}

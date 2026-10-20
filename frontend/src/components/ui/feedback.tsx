@@ -5,7 +5,7 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
     <Flex align="center" justify="center" py={12} gap={3}>
       <Spinner size="md" color="brand.600" />
-      <Text color="gray.600">{label}</Text>
+      <Text color="text.secondary">{label}</Text>
     </Flex>
   );
 }
@@ -21,11 +21,11 @@ export function EmptyStateView({
 }) {
   return (
     <VStack py={12} gap={2} textAlign="center">
-      <Text fontWeight="semibold" color="black">
+      <Text fontWeight="600" color="text.primary" fontSize="md">
         {title}
       </Text>
       {description && (
-        <Text fontSize="sm" color="gray.600" maxW="md">
+        <Text fontSize="sm" color="text.secondary" maxW="md">
           {description}
         </Text>
       )}

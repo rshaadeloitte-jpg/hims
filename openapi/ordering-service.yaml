@@ -1,0 +1,585 @@
+openapi: 3.1.0
+info:
+  title: Ordering & Prescription Service (MIG-033)
+  version: v1
+  description: |
+    Catalog #4 (S04). MIG-033 replaces the legacy AddServiceOrderServiceImpl
+    mega-transaction with saga choreography backed by the transactional outbox.
+
+    Owns ihms_ordering: clinical_order + order_item + saga_state + prescription +
+    prescription_item + outbox.
+
+    Saga flow: place order -> clinical_order(1=INITIATED) + order_item + saga_state
+    (IN_PROGRESS) + ONE OrderInitiated event (schema order-initiated.v1, topic
+    ihms.ordering.events, partition key encounterId — fallback '<admissionId>',
+    then 'no-context:<id>') written in a SINGLE Postgres tx. Downstream consumers
+    confirm or fail their step via the internal endpoints:
+      BILLING   — always applicable (legacy CIMS_ADDBILL/CIMS_ADDCHARGE)
+      LAB       — when any LAB item exists        (legacy T_PATHORDERBOOKING)
+      RADIOLOGY — when any RADIOLOGY item exists  (legacy T_RADIOLOGYORDERBOOKINGDETAILS)
+      NURSING   — when any NURSING item exists
+      PHARMACY  — when pharmacyPrescriptionId was linked at creation
+    All applicable steps SUCCEEDED -> clinical_order(2=CONFIRMED), saga COMPLETED.
+    A failed step -> succeeded steps COMPENSATED, order FAILED(4) with the reason
+    persisted, and an OrderFailed compensation event (order-failed.v1) written in
+    the SAME tx so downstream reservations roll back. Cancel (INITIATED-only) also
+    compensates and emits OrderFailed with failedStep=CANCELLED_BY_USER.
+
+    Business rules: BR-ORD-001 identity/context (patient+prescriber required,
+    encounterId XOR admissionId); BR-ORD-002 line integrity (>=1 typed item,
+    rate>=0 qty>0, server-computed totals); BR-ORD-003 concession pre-validation
+    (percent [0,100], HALF_UP 2dp, amount<=gross); BR-ORD-004 doctor-share tags
+    (per-item percent [0,100] travelling in OrderInitiated for Billing);
+    BR-ORD-005 prescription safety (qty>0 AND dose+frequency required per line).
+
+    Prescriptions keep their own aggregate: E-06 PrescriptionCreated (schema
+    prescription-created.v1) on CREATE ONLY; cancel emits nothing.
+servers:
+- url: http://localhost:8097
+  description: Generated server url
+tags:
+- name: Orders (MIG-033)
+  description: 'Clinical-order saga owner: status machine 1=INITIATED 2=CONFIRMED 3=CANCELLED 4=FAILED; OrderInitiated on create, OrderFailed on failure/cancel — both same-tx via the outbox'
+- name: Prescriptions
+  description: 'Prescription header+lines: status machine 1=ACTIVE 2=COMPLETED 3=CANCELLED, cancel guard ACTIVE-only; BR-ORD-005 dose+frequency required; E-06 PrescriptionCreated on create ONLY'
+- name: Orders internal saga callbacks
+  description: 'Service-to-service step choreography: confirm/fail a downstream step (BILLING|LAB|RADIOLOGY|NURSING|PHARMACY); failure triggers compensation + OrderFailed'
+paths:
+  /api/v1/orders:
+    post:
+      tags:
+      - Orders (MIG-033)
+      operationId: createOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+        required: true
+      responses:
+        '201':
+          description: Placed — order INITIATED with an IN_PROGRESS saga and one OrderInitiated outbox event in the same tx
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: 'BR-ORD violation or invalid payload (BEXA003 | BR-ORD-003 | BR-ORD-004), legacy error envelope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Orders (MIG-033)
+      operationId: listOrders
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          description: 'numeric 1..4 or name (INITIATED|CONFIRMED|CANCELLED|FAILED)'
+      - name: patientId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Orders newest first (items + saga attached)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+  /api/v1/orders/{id}:
+    get:
+      tags:
+      - Orders (MIG-033)
+      operationId: getOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: 'Full order: items, totals, statusCode, rejectionReason, saga step states'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Unknown order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/orders/{id}/cancel:
+    post:
+      tags:
+      - Orders (MIG-033)
+      operationId: cancelOrder
+      description: 'Guard INITIATED-only -> CANCELLED(3). Succeeded saga steps are COMPENSATED and OrderFailed (failedStep=CANCELLED_BY_USER) is emitted in the same tx so downstream reservations roll back.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: ORD_ILLEGAL_TRANSITION from any non-INITIATED state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/internal/orders/{id}/steps/{step}/confirm:
+    post:
+      tags:
+      - Orders internal saga callbacks
+      operationId: confirmStep
+      description: 'Downstream SUCCESS callback: PENDING -> SUCCEEDED for an applicable step. Idempotent on redelivery (mid-flight and after completion). All-applicable-SUCCEEDED flips the order CONFIRMED(2) / saga COMPLETED.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: step
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [BILLING, LAB, RADIOLOGY, NURSING, PHARMACY]
+      responses:
+        '200':
+          description: Updated order (with saga state)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: ORD_SAGA_STEP_INVALID (unknown/non-applicable step) or ORD_ILLEGAL_TRANSITION
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/internal/orders/{id}/steps/{step}/fail:
+    post:
+      tags:
+      - Orders internal saga callbacks
+      operationId: failStep
+      description: 'Downstream FAILURE callback (compensation trigger): failing step -> FAILED, every SUCCEEDED step -> COMPENSATED, order -> FAILED(4) with reason persisted as rejectionReason, and ONE OrderFailed event (order-failed.v1) written in the SAME tx. Idempotent on replay (reason refreshed).'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: step
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [BILLING, LAB, RADIOLOGY, NURSING, PHARMACY]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StepFailRequest'
+        required: true
+      responses:
+        '200':
+          description: Failed order (with compensated saga state)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: BEXA003 (missing reason), ORD_SAGA_STEP_INVALID or ORD_ILLEGAL_TRANSITION
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/prescriptions:
+    post:
+      tags:
+      - Prescriptions
+      operationId: createPrescription
+      description: 'BR-ORD-005: every line needs qty > 0 AND non-blank dose + frequency. Emits E-06 PrescriptionCreated once in the same tx.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePrescriptionRequest'
+        required: true
+      responses:
+        '201':
+          description: Created ACTIVE prescription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '400':
+          description: 'BEXA003 | BR-ORD-005, legacy error envelope'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Prescriptions
+      operationId: listPrescriptions
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: patientId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Prescriptions newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prescription'
+  /api/v1/prescriptions/{id}:
+    get:
+      tags:
+      - Prescriptions
+      operationId: getPrescription
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Full prescription with items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '404':
+          description: Unknown prescription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/prescriptions/{id}/cancel:
+    post:
+      tags:
+      - Prescriptions
+      operationId: cancelPrescription
+      description: Guard ACTIVE(1)-only -> CANCELLED(3). Emits nothing (E-06 is create-only).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+        '400':
+          description: ORD_ILLEGAL_TRANSITION
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ERROR
+        errorCode:
+          type: string
+        message:
+          type: string
+    CreateOrderRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        prescriberId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+          nullable: true
+        concessionPercent:
+          type: number
+          description: 'BR-ORD-003: within [0,100]; amount derived HALF_UP 2dp server-side'
+          nullable: true
+        pharmacyPrescriptionId:
+          type: integer
+          format: int64
+          nullable: true
+          description: Links a prescription -> PHARMACY saga step becomes applicable
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+    OrderItemInput:
+      type: object
+      properties:
+        itemType:
+          type: string
+          enum: [LAB, RADIOLOGY, NURSING, CONSULTATION]
+        itemId:
+          type: integer
+          format: int64
+        serviceName:
+          type: string
+        rate:
+          type: number
+          minimum: 0
+        qty:
+          type: integer
+          minimum: 1
+        doctorSharePercent:
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: BR-ORD-004 doctor-share tag; default 0
+    Order:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        prescriberId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+          nullable: true
+        statusCode:
+          type: integer
+          description: 1=INITIATED 2=CONFIRMED 3=CANCELLED 4=FAILED
+        grossTotal:
+          type: number
+        concessionPercent:
+          type: number
+        concessionAmount:
+          type: number
+        netTotal:
+          type: number
+        rejectionReason:
+          type: string
+          nullable: true
+        pharmacyPrescriptionId:
+          type: integer
+          format: int64
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        saga:
+          $ref: '#/components/schemas/SagaState'
+    OrderItem:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        lineNo:
+          type: integer
+          format: int64
+        itemType:
+          type: string
+          enum: [LAB, RADIOLOGY, NURSING, CONSULTATION]
+        itemId:
+          type: integer
+          format: int64
+        serviceName:
+          type: string
+        rate:
+          type: number
+        qty:
+          type: integer
+        doctorSharePercent:
+          type: number
+    SagaState:
+      type: object
+      properties:
+        sagaId:
+          type: integer
+          format: int64
+        orderId:
+          type: integer
+          format: int64
+        sagaStatus:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED, CANCELLED, FAILED]
+        billingStep:
+          type: string
+          nullable: true
+        labStep:
+          type: string
+          nullable: true
+        radiologyStep:
+          type: string
+          nullable: true
+        nursingStep:
+          type: string
+          nullable: true
+        pharmacyStep:
+          type: string
+          nullable: true
+        failedStep:
+          type: string
+          nullable: true
+        failureReason:
+          type: string
+          nullable: true
+      description: 'Step values PENDING|SUCCEEDED|FAILED|COMPENSATED; null = step not applicable'
+    StepFailRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    CreatePrescriptionRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        prescriberId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+          nullable: true
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PrescriptionLineInput'
+    PrescriptionLineInput:
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: number
+          exclusiveMinimum: 0
+        dose:
+          type: string
+          description: BR-ORD-005 required
+        frequency:
+          type: string
+          description: BR-ORD-005 required
+    Prescription:
+      type: object
+      properties:
+        prescriptionId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        prescriberId:
+          type: integer
+          format: int64
+        wardId:
+          type: integer
+          format: int64
+          nullable: true
+        statusCode:
+          type: integer
+          description: 1=ACTIVE 2=COMPLETED 3=CANCELLED
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrescriptionItem'
+    PrescriptionItem:
+      type: object
+      properties:
+        prescriptionId:
+          type: integer
+          format: int64
+        lineNo:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: number
+        dose:
+          type: string
+        frequency:
+          type: string

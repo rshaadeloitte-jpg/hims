@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: patient-service
+  datasource:
+    url: jdbc:h2:mem:ihms_patient;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;INIT=CREATE SCHEMA IF NOT EXISTS "ihms_patient";SET SCHEMA "ihms_patient"
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+  flyway:
+    enabled: false
+
+server:
+  port: 0

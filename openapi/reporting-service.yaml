@@ -1,0 +1,316 @@
+openapi: 3.1.0
+info:
+  title: Reporting & Analytics Service (WP-T2)
+  version: v0
+  description: |
+    Catalog #26 Wave-5 tranche 6 slice. Owns ihms_reporting: rm_* read models
+    (rm_patient_registry, rm_encounter_stats, rm_revenue_daily) fed by an INTERNAL
+    event-relay ingress (PatientRegistered / EncounterCreated / InvoiceGenerated /
+    PaymentReceived — production would be a Kafka consumer; contract stub,
+    disclosed) with STRICT idempotency (re-ingest => no double count), report
+    master/execute engine over the read models (kind 1=TABULAR 2=SUMMARY;
+    inline dispatcher emulation stores JSONB results — Jasper/Velocity rendering
+    and regulatory exports GSTR/NHM/RGHS, NMC/PCTS push jobs are OUT OF SCOPE),
+    and dashboard counts.
+    Emits NOTHING to the outbox (negative outbox assertion pinned by tests).
+servers:
+- url: http://localhost:8106
+  description: Generated server url
+tags:
+- name: Internal Event Ingress (WP-T2)
+  description: 'Internal event-relay ingress feeding the rm_* read models (production: Kafka consumer — contract stub, disclosed). Strict idempotency: replays return DUPLICATE without double counting.'
+- name: Reports & Dashboard (WP-T2)
+  description: 'Report master (kind 1=TABULAR 2=SUMMARY) over the rm_* read models; inline dispatcher emulation stores JSONB results (Jasper/regulatory OUT OF SCOPE); dashboard counts {patients, encounters, revenueTotal}. Emits nothing.'
+paths:
+  /api/v1/internal/events:
+    post:
+      tags:
+      - Internal Event Ingress (WP-T2)
+      operationId: ingestEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventRequest'
+        required: true
+      responses:
+        '200':
+          description: 'APPLIED (first delivery) or DUPLICATE (replay — no read-model change, no double count)'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IngestResult'
+        '400':
+          description: 'Guards: eventType required and must be one of PatientRegistered / EncounterCreated / InvoiceGenerated / PaymentReceived (REPORTING_UNKNOWN_EVENT_TYPE); source document id required in payload; amount >= 0 (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/reports:
+    post:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: createReport
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (isActive defaults true)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReportMaster'
+        '400':
+          description: 'Guards: reportCode/title required (<=40/<=120 chars), kind IN (1=TABULAR, 2=SUMMARY), definition whitelist-validated against the rm_* tables (BEXA003 / REPORTING_INVALID_DEFINITION)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Duplicate reportCode (REPORTING_DUPLICATE_REPORT_CODE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: listReports
+      parameters:
+      - name: active
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportMaster'
+  /api/v1/reports/{code}/execute:
+    post:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: executeReport
+      parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Execution stored DONE with result JSONB + rowCount (inline dispatcher emulation)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReportExecution'
+        '400':
+          description: Invalid stored definition vs rm_* whitelist (REPORTING_INVALID_DEFINITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown report code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/reports/executions:
+    get:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: listExecutions
+      parameters:
+      - name: reportCode
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        description: '0..2 or QUEUED/DONE/FAILED'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportExecution'
+  /api/v1/reports/executions/{id}:
+    get:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: getExecution
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReportExecution'
+        '404':
+          description: Unknown execution id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/dashboard/counts:
+    get:
+      tags:
+      - Reports & Dashboard (WP-T2)
+      operationId: dashboardCounts
+      parameters:
+      - name: asOf
+        in: query
+        required: false
+        description: 'yyyy-MM-dd; bounds encounters/revenueTotal to stat_date <= asOf'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: '{patients, encounters, revenueTotal} from the read models'
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties: true
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    IngestEventRequest:
+      required:
+      - eventType
+      - payload
+      type: object
+      properties:
+        eventType:
+          type: string
+          description: 'PatientRegistered | EncounterCreated | InvoiceGenerated | PaymentReceived (anything else -> 400 REPORTING_UNKNOWN_EVENT_TYPE)'
+        payload:
+          type: object
+          additionalProperties: true
+          description: 'PatientRegistered: {patientId, mrn?, name?, registeredAt?}; EncounterCreated: {encounterId, statDate?, encounterType?}; InvoiceGenerated: {invoiceId, statDate?, headCode?, amount}; PaymentReceived: {paymentId, statDate?, headCode?, amount}. headCode defaults OPD.'
+    IngestResult:
+      type: object
+      properties:
+        status:
+          type: string
+          description: 'APPLIED | DUPLICATE (DUPLICATE = replay; strict idempotency, no double count)'
+        eventType:
+          type: string
+        eventKey:
+          type: string
+          description: 'Source-document dedupe key: patient:<id> | encounter:<id> | invoice:<id> | payment:<id>'
+    CreateReportRequest:
+      required:
+      - reportCode
+      - title
+      - kind
+      - definition
+      type: object
+      properties:
+        reportCode:
+          type: string
+        title:
+          type: string
+        kind:
+          type: integer
+          format: int32
+          description: '1=TABULAR 2=SUMMARY'
+        definition:
+          type: object
+          additionalProperties: true
+          description: 'TABULAR: {table, columns[], dateField?}; SUMMARY: {table, aggregate: cnt|total} — table/columns validated against the rm_* whitelist'
+    ExecuteReportRequest:
+      type: object
+      properties:
+        params:
+          type: object
+          additionalProperties: true
+          properties:
+            dateFrom:
+              type: string
+            dateTo:
+              type: string
+          description: 'Optional yyyy-MM-dd date range applied to the definition dateField/stat_date'
+    ReportMaster:
+      type: object
+      properties:
+        reportId:
+          type: integer
+          format: int64
+        reportCode:
+          type: string
+        title:
+          type: string
+        kind:
+          type: integer
+          description: '1=TABULAR 2=SUMMARY'
+          format: int32
+        definition:
+          type: string
+        isActive:
+          type: boolean
+    ReportExecution:
+      type: object
+      properties:
+        executionId:
+          type: integer
+          format: int64
+        reportId:
+          type: integer
+          format: int64
+        params:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          description: '0=QUEUED 1=DONE 2=FAILED (this engine produces DONE only — dispatcher emulation, disclosed)'
+          format: int32
+        rowCount:
+          type: integer
+          nullable: true
+          format: int32
+        result:
+          type: string
+          nullable: true
+        executedAt:
+          type: string
+          format: date-time
+          nullable: true

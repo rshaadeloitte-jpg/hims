@@ -1,0 +1,559 @@
+openapi: 3.1.0
+info:
+  title: RMRS & PMRD Treasury Service (WP-R5)
+  version: v0
+  description: |
+    Catalog #24 Wave-5 tranche 5 slice (GAP-REGISTER-5 WP-R5). Owns ihms_rmrs:
+    treasury heads/authorities/ledgers (CRUD-minimal), cash collections with
+    receipt uniqueness, and BALANCED double-entry postings — DR the treasury-head
+    ledger / CR the collection ledger, exactly-one-sided entries, SUM(debit)=SUM(credit)
+    per collection, written in the SAME tx as the collection.
+    CollectionPosted event is PROPOSED with NO consumers — NOTHING is written to the
+    outbox. Consuming E-08 PaymentReceived for auto-receipt generation is a Wave-5b
+    read-model concern (payment_ref column ready).
+    Legacy ROWNUM pagination (:1361-1366) replaced by limit-offset (?page=&size=,
+    size capped at 200).
+servers:
+- url: http://localhost:8104
+  description: Generated server url
+tags:
+- name: Treasury Masters (WP-R5)
+  description: 'Treasury heads, authorities, ledgers — CRUD-minimal POST/GET'
+- name: Collections (WP-R5)
+  description: 'Cash collections with receipt uniqueness and balanced double-entry postings in the same tx; service-wise + user-wise summaries; CollectionPosted PROPOSED -> no outbox writes'
+paths:
+  /api/v1/masters/heads:
+    post:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: createHead
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHeadRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (is_active=true)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/HeadMaster'
+        '400':
+          description: headCode/headName required (BEXA003); ledger head unknown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: headCode already exists (RMRS_DUPLICATE_CODE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: listHeads
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HeadMaster'
+  /api/v1/masters/authorities:
+    post:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: createAuthority
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthorityRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (headId optional; must exist when supplied)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AuthorityMaster'
+        '400':
+          description: authorityCode/authorityName required or unknown headId (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: authorityCode already exists (RMRS_DUPLICATE_CODE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: listAuthorities
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuthorityMaster'
+  /api/v1/masters/ledgers:
+    post:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: createLedger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLedgerRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (head_id FK NOT NULL)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/LedgerMaster'
+        '400':
+          description: ledgerCode/ledgerName/headId required or unknown head (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: ledgerCode already exists (RMRS_DUPLICATE_CODE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Treasury Masters (WP-R5)
+      operationId: listLedgers
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerMaster'
+  /api/v1/collections:
+    post:
+      tags:
+      - Collections (WP-R5)
+      operationId: createCollection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+        required: true
+      responses:
+        '201':
+          description: Created — collection + balanced DR/CR postings written in ONE tx; emits NOTHING to the outbox (CollectionPosted PROPOSED)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RmrsCollection'
+        '400':
+          description: 'Guards: receiptNo/collectionDate required, amount > 0, headCode/ledgerCode must EXIST, HEAD-LEDGER CONSISTENCY (ledger must belong to the head), optional authorityCode must exist (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: receipt_no UNIQUE violated (RMRS_DUPLICATE_RECEIPT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Collections (WP-R5)
+      operationId: listCollections
+      parameters:
+      - name: dateFrom
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: dateTo
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: headId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 200
+      responses:
+        '200':
+          description: OK — limit-offset page (replaces legacy ROWNUM pagination :1361-1366)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PageRmrsCollection'
+  /api/v1/collections/{id}:
+    get:
+      tags:
+      - Collections (WP-R5)
+      operationId: getCollection
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Full collection with its accounting entries (DR + CR)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RmrsCollection'
+        '404':
+          description: Unknown collection id (RMRS_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/collections/summary/service-wise:
+    get:
+      tags:
+      - Collections (WP-R5)
+      operationId: summaryServiceWise
+      parameters:
+      - name: dateFrom
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: dateTo
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: s_servicewisecollection analog — SUM(amount) + COUNT grouped by treasury head, largest total first
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceWiseSummaryRow'
+  /api/v1/collections/summary/user-wise:
+    get:
+      tags:
+      - Collections (WP-R5)
+      operationId: summaryUserWise
+      parameters:
+      - name: dateFrom
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: dateTo
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: s_userwisecollection analog — SUM(amount) + COUNT grouped by collectedBy, largest total first
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserWiseSummaryRow'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    CreateHeadRequest:
+      required:
+      - headCode
+      - headName
+      type: object
+      properties:
+        headCode:
+          type: string
+          maxLength: 20
+        headName:
+          type: string
+          maxLength: 100
+    HeadMaster:
+      type: object
+      properties:
+        headId:
+          type: integer
+          format: int64
+        headCode:
+          type: string
+        headName:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+    CreateAuthorityRequest:
+      required:
+      - authorityCode
+      - authorityName
+      type: object
+      properties:
+        authorityCode:
+          type: string
+          maxLength: 20
+        authorityName:
+          type: string
+          maxLength: 120
+        headId:
+          type: integer
+          format: int64
+          nullable: true
+          description: optional FK to t_head_master (must exist when supplied)
+    AuthorityMaster:
+      type: object
+      properties:
+        authorityId:
+          type: integer
+          format: int64
+        authorityCode:
+          type: string
+        authorityName:
+          type: string
+          nullable: true
+        headId:
+          type: integer
+          format: int64
+          nullable: true
+    CreateLedgerRequest:
+      required:
+      - ledgerCode
+      - ledgerName
+      - headId
+      type: object
+      properties:
+        ledgerCode:
+          type: string
+          maxLength: 20
+        ledgerName:
+          type: string
+          maxLength: 120
+        headId:
+          type: integer
+          format: int64
+          description: FK NOT NULL — ledger must belong to an existing head
+    LedgerMaster:
+      type: object
+      properties:
+        ledgerId:
+          type: integer
+          format: int64
+        ledgerCode:
+          type: string
+        ledgerName:
+          type: string
+          nullable: true
+        headId:
+          type: integer
+          format: int64
+    CreateCollectionRequest:
+      required:
+      - receiptNo
+      - collectionDate
+      - amount
+      - headCode
+      - ledgerCode
+      type: object
+      properties:
+        receiptNo:
+          type: string
+          maxLength: 24
+          description: UNIQUE (409 RMRS_DUPLICATE_RECEIPT on duplicate)
+        collectionDate:
+          type: string
+          format: date
+        patientId:
+          type: integer
+          format: int64
+          nullable: true
+        amount:
+          type: number
+          description: NUMERIC(19,2), > 0
+        headCode:
+          type: string
+        ledgerCode:
+          type: string
+          description: must resolve to a ledger belonging to headCode (head-ledger consistency, 400 BEXA003)
+        authorityCode:
+          type: string
+          nullable: true
+        paymentRef:
+          type: string
+          maxLength: 40
+          nullable: true
+          description: E-08 paymentId linkage (string, cross-service id; Wave-5b read-model ready)
+        collectedBy:
+          type: string
+          maxLength: 80
+          nullable: true
+    AccountingEntry:
+      type: object
+      properties:
+        entryId:
+          type: integer
+          format: int64
+        collectionId:
+          type: integer
+          format: int64
+        ledgerId:
+          type: integer
+          format: int64
+        debit:
+          type: number
+          description: NUMERIC(19,2); exactly one of debit/credit > 0, other = 0
+        credit:
+          type: number
+          description: NUMERIC(19,2); exactly one of debit/credit > 0, other = 0
+        entryDate:
+          type: string
+          format: date
+    RmrsCollection:
+      type: object
+      properties:
+        collectionId:
+          type: integer
+          format: int64
+        receiptNo:
+          type: string
+        collectionDate:
+          type: string
+          format: date
+        patientId:
+          type: integer
+          format: int64
+          nullable: true
+        amount:
+          type: number
+        headId:
+          type: integer
+          format: int64
+        ledgerId:
+          type: integer
+          format: int64
+        authorityId:
+          type: integer
+          format: int64
+          nullable: true
+        paymentRef:
+          type: string
+          nullable: true
+        counter:
+          type: string
+          nullable: true
+          description: legacy column kept per register; not part of the WP-R5 request contract
+        collectedBy:
+          type: string
+          nullable: true
+        entries:
+          type: array
+          description: balanced postings — SUM(debit)=SUM(credit) per collection
+          items:
+            $ref: '#/components/schemas/AccountingEntry'
+    PageRmrsCollection:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/RmrsCollection'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        number:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+    ServiceWiseSummaryRow:
+      type: object
+      properties:
+        headId:
+          type: integer
+          format: int64
+        headCode:
+          type: string
+        headName:
+          type: string
+          nullable: true
+        totalAmount:
+          type: number
+        collectionCount:
+          type: integer
+          format: int64
+    UserWiseSummaryRow:
+      type: object
+      properties:
+        collectedBy:
+          type: string
+          nullable: true
+        totalAmount:
+          type: number
+        collectionCount:
+          type: integer
+          format: int64

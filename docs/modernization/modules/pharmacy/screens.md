@@ -1,0 +1,10 @@
+# M07 — Screens & Routes
+
+## Screens (schemas, 39-key config)
+addPrescriptionSchema · addMedicationSchema · addMedicationFromNurseSchema · dispensingtype · pharmacyCounterSaleSchema · itemSaleListSchema · itemSaleReturnListSchema · opIpPharmacyBillSchema · ipPharmacyBillingSchema · prescriptionListSchema · prescriptionUploadSchema · addItemGroup · addPatientPrescMedSchema · addPatientProblems · addPrescVisit · commonVisitCreationAndMedicineDis · getEntirePrescriptionMaster · getItemAndItemBatchListByStoreId · getItemGroup · getPrescriptionDetailsSchema · itemCategoryByStoreIdSchema · itemCategorySchema · itemSaleDetail/List(+ReturnDetails/List)Schema · opPharmacyAddPatient · patientOrderListSchema · pharmacyInterventionReport · pharmacyItemSaleRetrunBIllReciptSchema · pharmacyPaymentDetailSchema · pharmacyPaymentForCounterSchema · pharmacyPaymentReturnSchema · showNursingPrescripListSchema · showPharmacyPatientCoversheetSchema · updateItemGroupSchema · updateItemMaster.
+
+## Routes (27, 03 §2.5)
+`pharmacy:pharmacyBilling` · `opIpPharmacyBilling` · `ipPharmacyBilling` · `pharmacyCountersale` · `pharmacyItemList` · `PresciptionList` · `prescriptionList` · `NursePrescriptionList/:tab` · `pharmacyOrderVerify` · `pharmacyOrderDispense(D)` · `cartFillFlow/:ward_id/:patient_dfn` · `pharmacyOp` · `opPharmacyFlow` · `addPrescription` · `medicationOrder` · `itemSaleList` · `itemSaleReturnList` · `ipReturnFlow`/`iPReturnFlow`/`ipReturnPharmFlow` · `ivPharm` · `prepareCompound` · `pharmacyDrugMapping` · `prescriptionUpload` · `nurseOrdrDispensed` · `phCartFillOrderDispense` · `pharmInterventionreport` · `opPatientDetails/:patientId/:opdIpdId/:opdIpd/:pctflow/:patQId/:isPrescriptionOnly`.
+
+## Key endpoints (03 §2.5)
+- `pharmacy/*` (98: getMedications, getItemCurrentStock, printPatientDispenseDetails, printCompoundLabel, addItemPriceNew, item sale/save/return), `medication/addItemPriceNew`, `master/filterPharmDiagnosis`, `serviceOrder/*` (pharmacy item charge for IP: addPharmacyItemtoChargeForIP).

@@ -18,7 +18,7 @@ function sectionHasActivePath(sectionId: string, pathname: string): boolean {
   );
 }
 
-const SIDEBAR_BG = "#0c1116";
+const SIDEBAR_BG = "surface.sidebar";
 
 /**
  * Enterprise left sidebar: grouped, collapsible sections with
@@ -60,11 +60,11 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
       {mobileOpen && (
         <Box
           position="fixed"
-          top="62px"
+          top="64px"
           left={0}
           right={0}
           bottom={0}
-          bg="blackAlpha.600"
+          bg="blackAlpha.700"
           zIndex={40}
           onClick={onCloseMobile}
           aria-hidden="true"
@@ -76,19 +76,23 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         aria-label="Primary"
         data-collapsed={collapsed || undefined}
         position={{ base: "fixed", lg: "sticky" }}
-        top="62px"
+        top="64px"
         left={0}
-        h="calc(100vh - 62px)"
+        h="calc(100vh - 64px)"
         w={{ base: "min(266px, 84vw)", lg: collapsed ? "72px" : "266px" }}
         transform={{ base: mobileOpen ? "none" : "translateX(-105%)", lg: "none" }}
         transition="width 200ms ease, transform 200ms ease"
         bg={SIDEBAR_BG}
         borderRight="1px solid"
-        borderColor="gray.800"
+        borderColor="whiteAlpha.100"
         zIndex={50}
         display="flex"
         flexDirection="column"
         overflowY="auto"
+        css={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(255, 255, 255, 0.15) transparent",
+        }}
       >
         <VStack as="nav" p={2.5} gap={1} flex={1} align="stretch">
           {NAV_SECTIONS.map((section) => {
@@ -181,34 +185,24 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                           {({ isActive }) => (
                             <Flex
                               align="center"
-                              gap={2.5}
-                              ml="17px"
+                              gap={2}
+                              ml="16px"
                               pl="14px"
                               pr={2.5}
-                              py={2}
-                              borderLeft="1px solid"
-                              borderColor="whiteAlpha.200"
-                              borderRadius="0 8px 8px 0"
+                              py={1.5}
+                              borderLeft="2px solid"
+                              borderColor={isActive ? "brand.500" : "whiteAlpha.200"}
+                              borderRadius="0 6px 6px 0"
                               position="relative"
-                              fontSize="sm"
-                              fontWeight={isActive ? "bold" : "medium"}
+                              fontSize="13px"
+                              fontWeight={isActive ? "600" : "400"}
                               color={isActive ? "white" : "gray.300"}
                               bg={isActive ? "rgba(134, 188, 37, 0.15)" : "transparent"}
                               _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                              transition="all 0.15s ease"
                             >
-                              <Box
-                                position="absolute"
-                                left="-1px"
-                                top="8px"
-                                bottom="8px"
-                                w="2px"
-                                borderRadius="2px"
-                                bg={isActive ? "brand.500" : "transparent"}
-                                boxShadow={isActive ? "0 0 8px rgba(134,188,37,.8)" : undefined}
-                                aria-hidden="true"
-                              />
                               <Text truncate>{item.label}</Text>
-                            </Flex>
+                              </Flex>
                           )}
                         </NavLink>
                       </Box>

@@ -1,0 +1,383 @@
+openapi: 3.1.0
+info:
+  title: Nursing & Inpatient Care service (phase-1 slice)
+  description: |
+    GAP-REGISTER-2 WP-6 phase-1 slice of MICROSERVICE-CATALOG #12 (Nursing & Inpatient Care).
+    Vitals charting, nursing notes, and nursing task lifecycle.
+    Events: VitalsRecorded and NurseTaskCompleted are PROPOSED (KAFKA-EVENT-CATALOG §3 —
+    proposed, no consumers yet); both are written to the transactional outbox and relayed
+    to ihms.nursing.events.
+    Boundary: patientId / admissionId are accepted as OPAQUE IDS in phase 1 — cross-service
+    validation against adt-service is deferred to the inter-service phase.
+  version: 0.1.0-SNAPSHOT
+servers:
+- url: http://localhost:8093
+  description: Generated server url
+tags:
+- name: Nursing Care (WP-6)
+  description: 'Phase-1 slice of the nursing module: vitals charting, nursing notes, task lifecycle (1=PENDING 2=COMPLETED 3=CANCELLED). Emits PROPOSED events VitalsRecorded / NurseTaskCompleted via the outbox.'
+paths:
+  /api/v1/patients/{patientId}/vitals:
+    post:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: recordVital
+      description: Required vitalsType and numeric value; BEXA003-style 400 otherwise. Writes the PROPOSED event VitalsRecorded to the outbox in the same transaction.
+      parameters:
+      - name: patientId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VitalRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/PatientVitals'
+        '400':
+          description: Missing/non-numeric required fields (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: listVitals
+      parameters:
+      - name: patientId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: from
+        in: query
+        required: false
+        description: ISO date-time lower bound on recorded_at
+        schema:
+          type: string
+      - name: to
+        in: query
+        required: false
+        description: ISO date-time upper bound on recorded_at
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientVitals'
+  /api/v1/admissions/{admissionId}/notes:
+    post:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: addNote
+      description: Adds a free-text nursing note; admissionId is an opaque id in phase 1.
+      parameters:
+      - name: admissionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NurseNote'
+        '400':
+          description: note text missing (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: listNotes
+      parameters:
+      - name: admissionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NurseNote'
+  /api/v1/tasks:
+    post:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: createTask
+      description: Creates a task with status PENDING(1); admissionId is an opaque id in phase 1.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NurseTask'
+        '400':
+          description: Missing required fields (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: listTasks
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1=PENDING | 2=COMPLETED | 3=CANCELLED; other values rejected with BEXA003'
+        schema:
+          type: integer
+          format: int32
+      - name: admissionId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NurseTask'
+  /api/v1/tasks/{id}/complete:
+    post:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: completeTask
+      description: PENDING(1) -> COMPLETED(2) only; any other current status is a 400 NURSING_ILLEGAL_TRANSITION. Writes the PROPOSED event NurseTaskCompleted to the outbox in the same transaction.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+      responses:
+        '200':
+          description: Completed task
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NurseTask'
+        '400':
+          description: Illegal transition or task already completed/cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/tasks/{id}/cancel:
+    post:
+      tags:
+      - Nursing Care (WP-6)
+      operationId: cancelTask
+      description: PENDING(1) -> CANCELLED(3) only; illegal transition -> 400.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Cancelled task
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/NurseTask'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    VitalRequest:
+      type: object
+      required: [vitalsType, value]
+      properties:
+        admissionId:
+          type: integer
+          format: int64
+          description: Opaque id in phase 1
+        vitalsType:
+          type: string
+        value:
+          type: number
+          format: double
+        unit:
+          type: string
+        recordedAt:
+          type: string
+          description: ISO date-time; defaults to now
+        recordedBy:
+          type: integer
+          format: int64
+    PatientVitals:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        vitalsType:
+          type: string
+        value:
+          type: number
+          format: double
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        recordedAt:
+          type: string
+          format: date-time
+        recordedBy:
+          type: integer
+          format: int64
+          nullable: true
+    NoteRequest:
+      type: object
+      required: [note]
+      properties:
+        note:
+          type: string
+        nurseId:
+          type: integer
+          format: int64
+    NurseNote:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        note:
+          type: string
+        nurseId:
+          type: integer
+          format: int64
+          nullable: true
+        notedAt:
+          type: string
+          format: date-time
+    TaskCreateRequest:
+      type: object
+      required: [admissionId, taskDesc]
+      properties:
+        admissionId:
+          type: integer
+          format: int64
+          description: Opaque id in phase 1
+        taskDesc:
+          type: string
+        frequency:
+          type: string
+          description: e.g. OD/BD/TID/Q4H per business-rules §A
+        dueAt:
+          type: string
+          description: ISO date-time
+    CompleteRequest:
+      type: object
+      properties:
+        completedBy:
+          type: integer
+          format: int64
+    NurseTask:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        admissionId:
+          type: integer
+          format: int64
+        taskDesc:
+          type: string
+        frequency:
+          type: string
+          nullable: true
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: integer
+          description: 1=PENDING 2=COMPLETED 3=CANCELLED
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedBy:
+          type: integer
+          format: int64
+          nullable: true

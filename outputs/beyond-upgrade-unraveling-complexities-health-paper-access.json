@@ -1,0 +1,232 @@
+{
+  "identifier": "10.1007/s44250-025-00186-x",
+  "generatedAt": "2026-08-14T09:23:34.991Z",
+  "source": "openalex",
+  "sourceUrl": "https://api.openalex.org/works?filter=doi%3Ahttps%3A%2F%2Fdoi.org%2F10.1007%2Fs44250-025-00186-x&per-page=1&select=id%2Cdoi%2Ctitle%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Ccitation_normalized_percentile%2Creferenced_works%2Crelated_works%2Cauthorships%2Cprimary_location%2Clocations%2Cbest_oa_location%2Copen_access%2Cconcepts%2Ctopics%2Cabstract_inverted_index%2Cids%2Cis_retracted",
+  "paper": {
+    "paperId": "W4407268304",
+    "openAlexId": "https://openalex.org/W4407268304",
+    "doi": "https://doi.org/10.1007/s44250-025-00186-x",
+    "title": "Beyond the upgrade: unraveling the complexities of health information system migration",
+    "year": 2025,
+    "publicationDate": "2025-02-08",
+    "type": "article",
+    "authors": [
+      "Manal Kalkatawi"
+    ],
+    "venue": "Discover Health Systems",
+    "abstract": "The need for efficient health information systems (HIS) becomes more critical as the healthcare industry and information technology era evolve. Some hospitals opt for in-house HIS implementation, while others prefer the software-as-a-service (SaaS) model. Although one solution may be more cost-effective than others, all HIS operations share the need for numerous management efforts to maintain regulatory compliance and ensure integrity with data manipulation processes. This becomes more significant during HIS migration when a hospital undergoes an extensive data transition from one system to another. In other words, hospital IT and service providers must ensure the seamless flow of patient data and system users during the HIS migration. This paper presents a real-life case study, including a framework of the implementation method, on a complete switch from a two-decade-old legacy HIS system to a state-of-the-art web-based HIS system in a non-incremental approach. Even though the HIS migration project achieved its primary objectives and can be deemed successful, the implementation process encountered several hurdles requiring problem-solving, decision-making and adaptability skills. Examples of such challenges include data integrity issues, user resistance, and the complexities of integrating multiple hospital departments. This case study highlights in a detailed framework how careful planning, stakeholder engagement, thorough testing, and continuous support were essential to overcoming obstacles. The key outcomes of this research besides the migration framework include an improvement in data accuracy, better clinical decision support, and enhanced operational efficiency, which could offer lessons for healthcare organizations or similar sectors looking to transition from legacy systems to modern ones.",
+    "concepts": [
+      "Upgrade",
+      "Computer science",
+      "Data science"
+    ],
+    "topics": [
+      "Electronic Health Records Systems",
+      "Medical Coding and Health Information",
+      "Biomedical Text Mining and Ontologies"
+    ],
+    "urls": [
+      {
+        "type": "landing",
+        "url": "https://doi.org/10.1007/s44250-025-00186-x",
+        "isOpenAccess": true
+      },
+      {
+        "type": "pdf",
+        "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+        "isOpenAccess": true
+      },
+      {
+        "type": "open_access",
+        "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+        "isOpenAccess": true
+      },
+      {
+        "type": "doi",
+        "url": "https://doi.org/10.1007/s44250-025-00186-x"
+      }
+    ],
+    "citationCount": 2,
+    "normalizedCitationPercentile": 0.92485522,
+    "references": [
+      "https://openalex.org/W2003373711",
+      "https://openalex.org/W2032296034",
+      "https://openalex.org/W2058924226",
+      "https://openalex.org/W2118132234",
+      "https://openalex.org/W2144607742",
+      "https://openalex.org/W2166074549",
+      "https://openalex.org/W2614473659",
+      "https://openalex.org/W2616449461",
+      "https://openalex.org/W2753581120",
+      "https://openalex.org/W2885765269",
+      "https://openalex.org/W2888806592",
+      "https://openalex.org/W2888985857",
+      "https://openalex.org/W2894748727",
+      "https://openalex.org/W3029182195",
+      "https://openalex.org/W3033970320",
+      "https://openalex.org/W3037923113",
+      "https://openalex.org/W3092249329",
+      "https://openalex.org/W3092499280",
+      "https://openalex.org/W3101984434",
+      "https://openalex.org/W3181695441",
+      "https://openalex.org/W4210396101",
+      "https://openalex.org/W4213108923",
+      "https://openalex.org/W4223934638",
+      "https://openalex.org/W4300641138",
+      "https://openalex.org/W4391556788",
+      "https://openalex.org/W4391952681"
+    ],
+    "relatedWorks": [
+      "https://openalex.org/W4391375266",
+      "https://openalex.org/W2899084033",
+      "https://openalex.org/W2748952813",
+      "https://openalex.org/W2368672678",
+      "https://openalex.org/W2370626080",
+      "https://openalex.org/W2965111880",
+      "https://openalex.org/W2368576029",
+      "https://openalex.org/W2377210208",
+      "https://openalex.org/W116478885",
+      "https://openalex.org/W2391279445"
+    ],
+    "sourceRank": 1,
+    "graphRole": "seed",
+    "isOpenAccess": true,
+    "isRetracted": false,
+    "provenance": [
+      {
+        "source": "OpenAlex Works API",
+        "fields": [
+          "id",
+          "ids",
+          "display_name",
+          "publication_year",
+          "cited_by_count",
+          "citation_normalized_percentile",
+          "referenced_works",
+          "abstract_inverted_index",
+          "primary_location",
+          "locations",
+          "best_oa_location",
+          "open_access"
+        ]
+      }
+    ],
+    "fullTextAccess": {
+      "status": "candidates_found",
+      "generatedAt": "2026-08-14T09:23:34.991Z",
+      "candidates": [
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex landing page",
+          "url": "https://doi.org/10.1007/s44250-025-00186-x",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "Publisher or repository landing page from OpenAlex location metadata."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "pdf",
+          "label": "OpenAlex PDF URL",
+          "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "OpenAlex reported a direct PDF URL; the resolver records it as access evidence without PDF text extraction."
+        },
+        {
+          "source": "OpenAlex",
+          "kind": "landing_page",
+          "label": "OpenAlex open-access URL",
+          "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+          "isOpenAccess": true,
+          "canFetch": false,
+          "note": "OpenAlex open_access.oa_url candidate."
+        },
+        {
+          "source": "DOI",
+          "kind": "landing_page",
+          "label": "DOI resolver",
+          "identifier": "10.1007/s44250-025-00186-x",
+          "url": "https://doi.org/10.1007/s44250-025-00186-x",
+          "canFetch": false,
+          "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+        }
+      ],
+      "bestCandidate": {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1007/s44250-025-00186-x",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      "limits": [
+        "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+        "PDF URLs are recorded as access links unless a source-specific text API is available.",
+        "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+      ]
+    }
+  },
+  "access": {
+    "status": "candidates_found",
+    "generatedAt": "2026-08-14T09:23:34.991Z",
+    "candidates": [
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex landing page",
+        "url": "https://doi.org/10.1007/s44250-025-00186-x",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "Publisher or repository landing page from OpenAlex location metadata."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "pdf",
+        "label": "OpenAlex PDF URL",
+        "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "OpenAlex reported a direct PDF URL; the resolver records it as access evidence without PDF text extraction."
+      },
+      {
+        "source": "OpenAlex",
+        "kind": "landing_page",
+        "label": "OpenAlex open-access URL",
+        "url": "https://link.springer.com/content/pdf/10.1007/s44250-025-00186-x.pdf",
+        "isOpenAccess": true,
+        "canFetch": false,
+        "note": "OpenAlex open_access.oa_url candidate."
+      },
+      {
+        "source": "DOI",
+        "kind": "landing_page",
+        "label": "DOI resolver",
+        "identifier": "10.1007/s44250-025-00186-x",
+        "url": "https://doi.org/10.1007/s44250-025-00186-x",
+        "canFetch": false,
+        "note": "Canonical DOI landing page; access depends on publisher or repository availability."
+      }
+    ],
+    "bestCandidate": {
+      "source": "OpenAlex",
+      "kind": "landing_page",
+      "label": "OpenAlex landing page",
+      "url": "https://doi.org/10.1007/s44250-025-00186-x",
+      "isOpenAccess": true,
+      "canFetch": false,
+      "note": "Publisher or repository landing page from OpenAlex location metadata."
+    },
+    "limits": [
+      "This resolver records legal open-access and publisher/repository access candidates; it does not bypass paywalls.",
+      "PDF URLs are recorded as access links unless a source-specific text API is available.",
+      "Raw full-text bodies are not written to PaperRank or paper-access artifacts."
+    ]
+  },
+  "fullText": {
+    "requested": false,
+    "status": "not_requested"
+  }
+}

@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:billing;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    init:
+      mode: always
+      continue-on-error: true
+      schema-locations: classpath:schema.sql
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: ihms_billing
+        globally_quoted_identifiers: false
+        hbm2ddl:
+          create_namespaces: true
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: false
+  kafka:
+    bootstrap-servers: localhost:29092
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+app:
+  kafka:
+    topic:
+      billing-events: ihms.billing.events
+      dlq: dlt.ihms.billing.events
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: 0

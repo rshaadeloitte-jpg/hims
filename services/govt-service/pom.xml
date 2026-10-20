@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2000/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.3</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.hims</groupId>
+    <artifactId>govt-service</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>govt-service</name>
+    <description>iHMS Govt Programs service (S28) — Wave-6 tranche 6 (Catalog #28, GAP-REGISTER-6 WP-T4). Owns ihms_govt schema: Chiranjeevi beneficiary enrolment + TID linkage, Aasmaan case management (forward-only status 1 OPEN -&gt; 2 IN_PROGRESS -&gt; 3 CLOSED, closed-case note guard), EJS ASHA/supervisor/indicator entries and incentive compute with the recompute-replaces-COMPUTED-only rule plus the COMPUTED -&gt; APPROVED -&gt; PAID machine. Emits NOTHING: IncentiveComputed / CaseUpdated are deferred per KAFKA-EVENT-CATALOG (no outbox emission, asserted by tests); external PCTS / Chiranjeevi-Yojana pushes stay OUT OF SCOPE (comment-only).</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <springdoc.version>2.8.5</springdoc.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- NOTE: no spring-kafka — both candidate events (IncentiveComputed, CaseUpdated)
+             are DEFERRED per KAFKA-EVENT-CATALOG / register WP-T4 ("both deferred/proposed
+             per catalog"), so this service has ZERO emitters. The transactional outbox
+             TABLE still exists per schema convention (V1__init_ihms_govt.sql) and the
+             integration test asserts it stays EMPTY through EVERY flow (negative outbox
+             assertion — same contract as cssd-service WP-R3). -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- docker-java needs api.version pinned for this Docker Desktop;
+                         without it the /info probe gets HTTP 400 and Testcontainers disables.
+                         (Same pin as sibling ordering-service / cssd-service.) -->
+                    <argLine>-Dapi.version=1.44</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

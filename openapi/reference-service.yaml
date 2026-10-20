@@ -1,0 +1,310 @@
+# reference-service OpenAPI contract (Wave 1 / MIG-011 — clean target masters)
+#
+# Generated 2026-08-17, updated 2026-08-20 (MIG-011 follow-up). Registry now serves
+# 13 entities: unitmaster, departmentmaster, companymaster (legacy parity, V1-V3) +
+# doctor, doctor-type, specialization, facility-location (clean target, V5) +
+# subunit, geo-country, geo-state, geo-district, geo-city, geo-area (V5, D-6 global
+# scope, IMP-DEC-030). The generic /{entity} path serves all of them, so the OpenAPI
+# path surface is unchanged. Write contract per IMP-DEC-020..025.
+# Regenerate: curl -s http://localhost:8081/v3/api-docs -H "Accept: application/json"
+
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8081
+  description: Generated server url
+tags:
+- name: Master Write (MIG-010)
+  description: Master entity write endpoints (crudadd/crudupdate/crudremove parity + transactional outbox)
+- name: Master Read (S0)
+  description: Master entity read endpoints (crudget/crudgetAll/crudgetAllAll parity)
+paths:
+  /api/v1/masters/{entity}/{id}:
+    get:
+      tags:
+      - Master Read (S0)
+      summary: 'crudget parity: single record by id (unit-scoped; Unitmaster id-only)'
+      operationId: byId
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        description: Unit scope (legacy derives from session token; IAM supplies it from MIG-004 onward)
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MasterEntityBase'
+    put:
+      tags:
+      - Master Write (MIG-010)
+      summary: 'crudupdate parity: partial/full update with MBase.update field-copy semantics'
+      description: 'nonNull=true (default): null fields are left untouched; nonNull=false replicates legacy full-overwrite.
+        updFlds (comma-separated) restricts the copied fields. id/unitId are never overwritten.'
+      operationId: update
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: nonNull
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: true
+      - name: updFlds
+        in: query
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MasterEntityBase'
+    delete:
+      tags:
+      - Master Write (MIG-010)
+      summary: 'crudremove parity: delete a master record (emits MasterDataChanged op=remove)'
+      operationId: remove
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MasterEntityBase'
+  /api/v1/masters/{entity}:
+    get:
+      tags:
+      - Master Read (S0)
+      summary: 'crudgetAll parity: unit-scoped list with filters, search, pagination'
+      operationId: scoped
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        description: Unit scope (legacy derives from session token)
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: searchFld
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: count
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterEntityBase'
+    post:
+      tags:
+      - Master Write (MIG-010)
+      summary: 'crudadd parity: create a master record (id from per-table sequence unless supplied)'
+      operationId: create
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/MasterEntityBase'
+  /api/v1/masters:
+    get:
+      tags:
+      - Master Read (S0)
+      summary: Supported master entities (new contract, not part of legacy surface)
+      operationId: entities
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+                uniqueItems: true
+  /api/v1/masters/{entity}/all:
+    get:
+      tags:
+      - Master Read (S0)
+      summary: 'crudgetAllAll parity: unscoped list with filters, search, pagination'
+      description: Legacy GET {entity}/all (GenericServiceImpl.crudgetAllAll). JSON array of legacy-shaped objects (field
+        names 1:1, NON_NULL).
+      operationId: all
+      parameters:
+      - name: entity
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: searchFld
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      - name: count
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterEntityBase'
+components:
+  schemas:
+    JsonNode:
+      type: object
+    MasterEntityBase:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdunitid:
+          type: integer
+          format: int64
+        updatedunitid:
+          type: integer
+          format: int64
+        addedby:
+          type: integer
+          format: int64
+        addeddatetime:
+          type: string
+          format: date-time
+        updatedby:
+          type: integer
+          format: int64
+        updateddatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        complete:
+          type: boolean

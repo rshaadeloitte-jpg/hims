@@ -1,0 +1,70 @@
+spring:
+  application:
+    name: patient-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: patient-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_patient
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_patient
+    create-schemas: true           # history table needs ihms_grievance before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topic:
+      patient-registration: ${PATIENT_REGISTRATION_TOPIC:ihms.patient.registration}
+      dlq: ${PATIENT_DLQ_TOPIC:dlt.ihms.patient.registration}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: ${SERVER_PORT:8090}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: patient-service
+    description: iHMS Grievance & Feedback service (S20) - Wave 2 MIG-020, ticket lifecycle REST (no outbox - GrievanceRaised rejected phase 1)
+    version: 0.1.0
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

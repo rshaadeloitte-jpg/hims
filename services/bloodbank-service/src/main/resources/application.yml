@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: bloodbank-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: bloodbank-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_bloodbank
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_bloodbank
+    create-schemas: true           # history table needs ihms_bloodbank before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+app:
+  bloodbank:
+    # Legacy orderValidationPeriod(h) default used by BR-BLD-004 when a requisition
+    # has no snapshot; per-requisition order_validation_hours takes precedence.
+    order-validation-hours: 72
+
+server:
+  port: ${SERVER_PORT:8096}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: bloodbank-service
+    description: iHMS Blood Bank service (Catalog #13) - Wave-3 tranche 3; donor registry, requisition BR-BLD-001 status machine (1/2/3/10), bags/components, cross-match, issue, BR-BLD-002/003/004/005 job endpoints. NO events emitted - BloodRequisitionCreated DEFERRED (KAFKA-EVENT-CATALOG §3)
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

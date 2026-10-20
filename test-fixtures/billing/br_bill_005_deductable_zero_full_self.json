@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-005 Deductable 0 => 100% self",
+  "input": {
+    "rate": 500,
+    "qty": 1,
+    "taxPctA": 0,
+    "taxPctB": 0,
+    "taxPctC": 0,
+    "applyAfterConcession": false,
+    "coPayPct": 0,
+    "concessionPlanPct": 10,
+    "concessionBillPct": 10,
+    "doctorSharePct": 0,
+    "isOtProcedure": false,
+    "selfCompany": true
+  },
+  "expected": {
+    "lineTotal": 500.0,
+    "selfRate": 400.0,
+    "nonSelfRate": 0.0,
+    "concession": 100.0,
+    "taxA": 0.0,
+    "taxB": 0.0,
+    "taxC": 0.0,
+    "taxTotal": 0.0,
+    "selfAmount": 400.0,
+    "nonSelfAmount": 0.0,
+    "doctorShare": null,
+    "hospitalShare": null
+  }
+}

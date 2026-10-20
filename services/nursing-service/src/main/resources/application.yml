@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: nursing-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: nursing-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_nursing
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_nursing
+    create-schemas: true           # history table needs ihms_nursing before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topic:
+      # PROPOSED events VitalsRecorded / NurseTaskCompleted — topic name provisional
+      # until the events are ratified in KAFKA-EVENT-CATALOG.
+      nursing-events: ${NURSING_EVENTS_TOPIC:ihms.nursing.events}
+      dlq: ${NURSING_DLQ_TOPIC:dlt.ihms.nursing.events}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: ${SERVER_PORT:8093}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: nursing-service
+    description: iHMS Nursing & Inpatient Care service (S12) — phase-1 slice (GAP-REGISTER-2 WP-6); vitals record/list (t_patientvitals), nursing notes (t_nursenote), task lifecycle PENDING->COMPLETED with transition guard (t_nursetaskdetails); outbox PROPOSED events VitalsRecorded + NurseTaskCompleted; patientId/admissionId accepted as opaque ids pending adt-service integration.
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

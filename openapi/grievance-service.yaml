@@ -1,0 +1,923 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8083
+  description: Generated server url
+tags:
+- name: Grievance Tickets (MIG-020)
+  description: 'Ticket lifecycle: raise, comment, status, severity, assign, reopen, feedback, dashboard counts'
+- name: Grievance Masters (MIG-020)
+  description: Category / Sub-category / Severity master CRUD
+paths:
+  /api/v1/grievance-sub-categories/{id}:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: getSubCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSubCategory'
+    put:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: updateSubCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSubCategory'
+    delete:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: removeSubCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSubCategory'
+  /api/v1/grievance-severities/{id}:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: getSeverity
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSeverity'
+    put:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: updateSeverity
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSeverity'
+    delete:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: removeSeverity
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSeverity'
+  /api/v1/grievance-categories/{id}:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: getCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceCategory'
+    put:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: updateCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceCategory'
+    delete:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: removeCategory
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceCategory'
+  /api/v1/grievances:
+    get:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: List grievance tickets
+      description: 'Optional scope: mobileNo (citizen view) or unitId (hospital view); default all active tickets, newest
+        first.'
+      operationId: list
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: mobileNo
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrievanceTicket'
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Raise a grievance ticket
+      description: Server stamps issueDate + ticketNo (IHMS/G/yyyy/%05d) + hospitalTicket=IHMSSUPPORT; issueStatus starts
+        at 1=NEW. isCitizen=true marks citizen-raised tickets.
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: isCitizen
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievances/{id}/status:
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Change ticket status
+      description: 'issueStatus: 1=NEW 2=ASSIGNED 3=RESOLVED 4=ASSIGN_TO_CREATOR. RESOLVED sets ticketCloseStatus=2(COMPLETED)+resolvedDate;
+        assignToCreator=true sets ticketCloseStatus=3(CLOSED)+resolvedDate (legacy changeGrievanceTicketStatus).'
+      operationId: changeStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: issueStatus
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: assignToCreator
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievances/{id}/severity:
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Change ticket severity
+      operationId: changeSeverity
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: severityId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievances/{id}/reopen:
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Reopen a resolved ticket
+      description: isRaiseTicket=true -> issueStatus=2(ASSIGNED)+ticketCloseStatus=1(PENDING); false -> issueStatus=1(NEW).
+        Stamps reopenedBy/reopenedDatetime and appends the comment.
+      operationId: reopen
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: isRaiseTicket
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievances/{id}/feedback:
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Add satisfaction feedback and close the ticket
+      description: Saves 5-question feedback + free text; sets ticket feedbackId and ticketCloseStatus=3(CLOSED).
+      operationId: feedback
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceFeedback'
+  /api/v1/grievances/{id}/comments:
+    get:
+      tags:
+      - Grievance Tickets (MIG-020)
+      operationId: comments
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrievanceComment'
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Add a comment to a ticket
+      operationId: addComment
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceComment'
+  /api/v1/grievances/{id}/assign:
+    post:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Assign ticket to a user
+      description: Sets assignedUserId + expectedResolutionDate + issueType + hospitalTicket. Does NOT change issueStatus
+        (legacy keeps status change separate).
+      operationId: assign
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: employeeId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: expectedDate
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: issueType
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: hospitalTicket
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievance-sub-categories:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: listSubCategories
+      parameters:
+      - name: categoryId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrievanceSubCategory'
+    post:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: createSubCategory
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSubCategory'
+  /api/v1/grievance-severities:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: listSeverities
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrievanceSeverity'
+    post:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: createSeverity
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceSeverity'
+  /api/v1/grievance-categories:
+    get:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: listCategories
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GrievanceCategory'
+    post:
+      tags:
+      - Grievance Masters (MIG-020)
+      operationId: createCategory
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceCategory'
+  /api/v1/grievances/{id}:
+    get:
+      tags:
+      - Grievance Tickets (MIG-020)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/GrievanceTicket'
+  /api/v1/grievances/counts:
+    get:
+      tags:
+      - Grievance Tickets (MIG-020)
+      summary: Dashboard ticket counts
+      description: TOTAL / NEW / ASSIGNED / RESOLVED / RAISED-BY-CITIZEN / MY-LIST (issueStatus NOT IN 3,4 for employeeId)
+        / TODAYS-TICKET.
+      operationId: counts
+      parameters:
+      - name: employeeId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  format: int64
+components:
+  schemas:
+    JsonNode:
+      type: object
+    GrievanceSubCategory:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        categoryId:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+    GrievanceSeverity:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+    GrievanceCategory:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+        isCitizen:
+          type: boolean
+    GrievanceTicket:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        ticketNo:
+          type: string
+        issueDate:
+          type: string
+          format: date-time
+        mrno:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        mobileNo:
+          type: integer
+          format: int64
+        categoryId:
+          type: integer
+          format: int64
+        subCategoryIds:
+          type: string
+        issue:
+          type: string
+        issueStatus:
+          type: integer
+          format: int32
+        resolvedDate:
+          type: string
+          format: date-time
+        ticketCloseStatus:
+          type: integer
+          format: int32
+        feedbackId:
+          type: integer
+          format: int64
+        severityId:
+          type: integer
+          format: int64
+        assignedUserId:
+          type: integer
+          format: int64
+        attachedFileName:
+          type: string
+        expectedResolutionDate:
+          type: string
+          format: date-time
+        userSsoId:
+          type: string
+        issueType:
+          type: string
+        reopenedDatetime:
+          type: string
+          format: date-time
+        reopenedBy:
+          type: integer
+          format: int64
+        isCitizen:
+          type: boolean
+        hospitalTicket:
+          type: string
+        serviceRequestType:
+          type: string
+        attributesJson:
+          type: string
+    GrievanceFeedback:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        grievanceId:
+          type: integer
+          format: int64
+        question1:
+          type: integer
+          format: int32
+        question2:
+          type: integer
+          format: int32
+        question3:
+          type: integer
+          format: int32
+        question4:
+          type: integer
+          format: int32
+        question5:
+          type: integer
+          format: int32
+        freeTextFeedback:
+          type: string
+        email:
+          type: string
+    GrievanceComment:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        grievanceId:
+          type: integer
+          format: int64
+        comment:
+          type: string
+        userName:
+          type: string

@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-004 Tax after concession SELF: rate=1000, coPay=100, plan=10, bill=5, taxA=9, applyAfterConcession=true",
+  "input": {
+    "rate": 1000,
+    "qty": 1,
+    "taxPctA": 9,
+    "taxPctB": 0,
+    "taxPctC": 0,
+    "applyAfterConcession": true,
+    "coPayPct": 100,
+    "concessionPlanPct": 10,
+    "concessionBillPct": 5,
+    "doctorSharePct": 0,
+    "isOtProcedure": false,
+    "selfCompany": true
+  },
+  "expected": {
+    "lineTotal": 1000.0,
+    "selfRate": 850.0,
+    "nonSelfRate": 0.0,
+    "concession": 150.0,
+    "taxA": 76.5,
+    "taxB": 0.0,
+    "taxC": 0.0,
+    "taxTotal": 76.5,
+    "selfAmount": 926.5,
+    "nonSelfAmount": 0.0,
+    "doctorShare": null,
+    "hospitalShare": null
+  }
+}

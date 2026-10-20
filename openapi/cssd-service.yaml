@@ -1,0 +1,378 @@
+openapi: 3.1.0
+info:
+  title: CSSD Service (WP-R3)
+  version: v0
+  description: |
+    Catalog #15 Wave-5 tranche 5 slice. Owns ihms_cssd: t_kit + t_kit_item +
+    t_sterilization_cycle + t_kit_issue. Kit lifecycle pinned by guards:
+    ASSEMBLED -> (start cycle) STERILIZING -> complete PASS STERILE / FAIL REJECTED
+    (unusable) -> issue (STERILE only, single active issue) ISSUED.
+    EVENT POLICY: KitIssued / SterilizationCompleted are REJECTED phase 1 per
+    KAFKA-EVENT-CATALOG (no cross-service consumer evidence) — NO outbox emission;
+    asserted empty by tests. Consumes ProcedureScheduled / InventoryUpdated post-saga.
+servers:
+- url: http://localhost:8102
+  description: Generated server url
+tags:
+- name: CSSD Kits (WP-R3)
+  description: 'CSSD kits (Catalog #15): lifecycle 1=ASSEMBLED 2=STERILIZING 3=STERILE 4=ISSUED 5=REJECTED — cycle from ASSEMBLED/STERILE only; PASS->STERILE, FAIL->REJECTED; issue STERILE-only, single active issue. No events in phase 1.'
+paths:
+  /api/v1/kits:
+    post:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: createKit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKitRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (status ASSEMBLED); emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Kit'
+        '400':
+          description: 'Guards: kitCode required + unique, >=1 item, qty > 0, expiryDays > 0 (BEXA003 / CSSD_DUPLICATE_KIT_CODE)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: listKits
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..5 or name (ASSEMBLED, STERILIZING, STERILE, ISSUED, REJECTED)'
+        schema:
+          type: string
+      - name: procedureType
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kit'
+  /api/v1/kits/{id}:
+    get:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: getKit
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Kit'
+        '404':
+          description: Unknown kit id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/kits/{id}/cycles:
+    post:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: startCycle
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartCycleRequest'
+        required: true
+      responses:
+        '200':
+          description: Cycle started; kit moved to STERILIZING; emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SterilizationCycle'
+        '400':
+          description: 'Guard: only ASSEMBLED or STERILE (reprocess) can enter a cycle (CSSD_ILLEGAL_TRANSITION); method required (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown kit id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/cycles/{id}/complete:
+    put:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: completeCycle
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteCycleRequest'
+        required: true
+      responses:
+        '200':
+          description: 'PASS -> kit STERILE (+sterilized_at); FAIL -> kit REJECTED (unusable). Emits nothing.'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SterilizationCycle'
+        '400':
+          description: 'result must be PASS|FAIL (BEXA003); cycle already completed (CSSD_CYCLE_ALREADY_COMPLETED)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown cycle id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/kits/{id}/issues:
+    post:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: issueKit
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssueRequest'
+        required: true
+      responses:
+        '201':
+          description: Issued to the OT schedule/procedure ref; kit moved to ISSUED; emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/KitIssue'
+        '400':
+          description: 'Guard: STERILE only, REJECTED kits unusable (CSSD_ILLEGAL_TRANSITION); issuedToRef required (BEXA003); single active issue per kit'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown kit id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - CSSD Kits (WP-R3)
+      operationId: listKitIssues
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Issue history of the kit (newest first)
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KitIssue'
+        '404':
+          description: Unknown kit id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    ItemInput:
+      required:
+      - itemId
+      - qty
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: integer
+          format: int32
+          description: '> 0'
+    CreateKitRequest:
+      required:
+      - kitCode
+      - items
+      type: object
+      properties:
+        kitCode:
+          type: string
+          maxLength: 30
+        procedureType:
+          type: string
+          nullable: true
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ItemInput'
+        expiryDays:
+          type: integer
+          format: int32
+          nullable: true
+          description: '> 0 when supplied; defaults to 14'
+    StartCycleRequest:
+      required:
+      - method
+      type: object
+      properties:
+        method:
+          type: string
+          description: e.g. AUTOCLAVE
+    CompleteCycleRequest:
+      required:
+      - result
+      type: object
+      properties:
+        result:
+          type: string
+          enum:
+          - PASS
+          - FAIL
+    CreateIssueRequest:
+      required:
+      - issuedToRef
+      type: object
+      properties:
+        issuedToRef:
+          type: string
+          maxLength: 80
+          description: OT schedule / procedure reference
+    KitItem:
+      type: object
+      properties:
+        kitId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: integer
+          format: int32
+    Kit:
+      type: object
+      properties:
+        kitId:
+          type: integer
+          format: int64
+        kitCode:
+          type: string
+        procedureType:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          description: '1=ASSEMBLED 2=STERILIZING 3=STERILE 4=ISSUED 5=REJECTED'
+        sterilizedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiryDays:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KitItem'
+    SterilizationCycle:
+      type: object
+      properties:
+        cycleId:
+          type: integer
+          format: int64
+        kitId:
+          type: integer
+          format: int64
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        method:
+          type: string
+        result:
+          type: integer
+          format: int32
+          nullable: true
+          description: 'NULL while running; 1=PASS 2=FAIL'
+    KitIssue:
+      type: object
+      properties:
+        issueId:
+          type: integer
+          format: int64
+        kitId:
+          type: integer
+          format: int64
+        issuedToRef:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time

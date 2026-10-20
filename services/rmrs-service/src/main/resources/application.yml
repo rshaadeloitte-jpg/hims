@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: rmrs-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: rmrs-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_rmrs
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_rmrs
+    create-schemas: true           # history table needs ihms_rmrs before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: ${SERVER_PORT:8104}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: rmrs-service
+    description: iHMS RMRS & PMRD Treasury service (S24) - Wave-5 tranche 5 (GAP-REGISTER-5 WP-R5); treasury masters (heads/authorities/ledgers), cash collections with receipt uniqueness, BALANCED double-entry postings (SUM(debit)=SUM(credit) per collection, exactly-one-sided entries) in the SAME tx. CollectionPosted is PROPOSED (no consumers) -> NOTHING is written to the outbox; the outbox table exists solely for negative assertions. E-08 PaymentReceived auto-receipt = Wave-5b read-model concern (payment_ref ready).
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

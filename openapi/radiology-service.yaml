@@ -1,0 +1,350 @@
+openapi: 3.1.0
+info:
+  title: Radiology Service (WP-R1)
+  version: v0
+  description: |
+    Catalog #8 Wave-5 tranche 5 slice (GAP-REGISTER-5 WP-R1). Owns ihms_rad:
+    rad order booking header+lines (modality XRAY/CT/MRI/US, priority 1=routine
+    2=urgent, status 1=SCHEDULED 2=IN_PROGRESS 3=COMPLETED 4=CANCELLED) with
+    start / capture-image / report / cancel lifecycle guards.
+    RadOrderCreated is DEFERRED per KAFKA-EVENT-CATALOG § — this service emits
+    NO events (no outbox table in ihms_rad; bloodbank WP-9 pattern). The post-saga
+    OrderCreated event is out of scope for this tranche.
+servers:
+- url: http://localhost:8100
+  description: Generated server url
+tags:
+- name: Rad Orders (WP-R1)
+  description: 'Radiology booking (Catalog #8): header+lines, status machine SCHEDULED -> IN_PROGRESS -> COMPLETED / CANCELLED with start/capture-image/report/cancel guards; RadOrderCreated DEFERRED — no events emitted'
+paths:
+  /api/v1/rad-orders:
+    post:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: createRadOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRadOrderRequest'
+        required: true
+      responses:
+        '201':
+          description: 'Created (status SCHEDULED; emits nothing — RadOrderCreated DEFERRED)'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '400':
+          description: 'Guards: patientId/modality required, modality in XRAY/CT/MRI/US, priority 1|2, >=1 line required, encounterId XOR admissionId, qty > 0 per line (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: listRadOrders
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..4 or name (SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED)'
+        schema:
+          type: string
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: modality
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RadOrderBooking'
+  /api/v1/rad-orders/{id}:
+    get:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: getRadOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '404':
+          description: Unknown rad order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/rad-orders/{id}/start:
+    post:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: startRadOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Started (SCHEDULED 1 -> IN_PROGRESS 2); emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '400':
+          description: Guard violated — only SCHEDULED orders can be started (RAD_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown rad order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/rad-orders/{id}/capture-image:
+    post:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: captureRadOrderImage
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: is_image_captured set to true; emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '400':
+          description: Guard violated — order already COMPLETED (RAD_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown rad order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/rad-orders/{id}/report:
+    post:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: reportRadOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Reported (IN_PROGRESS 2 -> COMPLETED 3, reportText/reportedBy persisted); emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '400':
+          description: 'Guards: requires IN_PROGRESS (RAD_ILLEGAL_TRANSITION); reportText/reportedBy required (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown rad order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/rad-orders/{id}/cancel:
+    post:
+      tags:
+      - Rad Orders (WP-R1)
+      operationId: cancelRadOrder
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Cancelled (not-COMPLETED -> CANCELLED 4); emits nothing
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/RadOrderBooking'
+        '400':
+          description: Guard violated — completed orders cannot be cancelled (RAD_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown rad order id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    LineInput:
+      required:
+      - itemId
+      - qty
+      type: object
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: number
+          description: '> 0 (NUMERIC(12,2))'
+    CreateRadOrderRequest:
+      required:
+      - patientId
+      - modality
+      - lines
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+          description: mutually exclusive with encounterId (at most one)
+        modality:
+          type: string
+          enum: [XRAY, CT, MRI, US]
+        priority:
+          type: integer
+          format: int32
+          description: 1=routine (default) 2=urgent
+          nullable: true
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LineInput'
+    ReportRequest:
+      required:
+      - reportText
+      - reportedBy
+      type: object
+      properties:
+        reportText:
+          type: string
+        reportedBy:
+          type: string
+          maxLength: 100
+    RadOrderDetail:
+      type: object
+      properties:
+        radOrderId:
+          type: integer
+          format: int64
+        lineNo:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        qty:
+          type: number
+    RadOrderBooking:
+      type: object
+      properties:
+        radOrderId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        modality:
+          type: string
+          enum: [XRAY, CT, MRI, US]
+        priority:
+          type: integer
+          format: int32
+          description: 1=routine 2=urgent
+        status:
+          type: integer
+          format: int32
+          description: 1=SCHEDULED 2=IN_PROGRESS 3=COMPLETED 4=CANCELLED
+        imageCaptured:
+          type: boolean
+          description: is_image_captured flag
+        reportText:
+          type: string
+          nullable: true
+        reportedBy:
+          type: string
+          nullable: true
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/RadOrderDetail'

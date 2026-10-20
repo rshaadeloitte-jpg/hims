@@ -1,0 +1,8 @@
+# DEV-ONLY profile (same contract as reference-service IMP-DEC-019): HTTP Basic
+# for local tooling. REMOVED at MIG-004 (OIDC resource server).
+spring:
+  security:
+    user:
+      name: ${DEV_USERNAME:admin}
+      password: ${DEV_PASSWORD:admin}
+      roles: DEV

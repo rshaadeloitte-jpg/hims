@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: interop-service
+  datasource:
+    url: jdbc:h2:mem:ihms_interop;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_interop
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_interop
+    create-schemas: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+
+server:
+  port: 0

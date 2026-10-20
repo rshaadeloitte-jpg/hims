@@ -1,0 +1,840 @@
+openapi: 3.1.0
+info:
+  title: Interop & Notifications Service (WP-T1)
+  version: v0
+  description: |
+    Catalog #25 Wave-6 tranche 6 slice. Owns ihms_interop: t_outbound_his,
+    t_inbound_his, t_abdm_request_queue (correlation_id UNIQUE), t_whatsapp_message_queue
+    (+t_whatsapp_message_status) and t_ehr_job_details.
+    INTERNAL event-relay ingress (POST /api/v1/internal/events) models the future Kafka
+    consumer: routes InvoiceGenerated/PaymentReceived -> t_outbound_his(HL7),
+    LabResultFinalized -> EHR, patient/encounter/admission/discharge events -> HL7;
+    idempotent per (eventType, aggregateId). ABDM callbacks are idempotent (first wins);
+    WhatsApp status machine is forward-only (0=QUEUED -> 1=SENT -> 2=DELIVERED -> 3=READ;
+    FAILED=4 only from 0/1). Emits NOTHING (consumer/relay, not a producer).
+    OUT OF SCOPE (comment-only dispatchers): HL7 MLLP transport, ABDM gateway calls
+    (HIP/HIU/HFR/CM) + eSanchar, WhatsApp provider send/webhook jobs, EHR job creation,
+    in-flight queue continuity across the Kafka cutover.
+servers:
+- url: http://localhost:8105
+  description: Generated server url
+tags:
+- name: Internal event relay (WP-T1)
+  description: 'INTERNAL ingress modeling the future Kafka consumer; idempotent per (eventType, aggregateId)'
+- name: Outbound HIS queue (WP-T1)
+  description: 't_outbound_his read model: status 0=PENDING 1=SENT 2=FAILED 3=DEAD; targets HL7/EHR/PRINT'
+- name: Inbound HIS queue (WP-T1)
+  description: 'Raw inbound HL7 v2 messages; messageType validated against the allowed ADT/ORM set'
+- name: ABDM requests (MIG-055)
+  description: 'ABDM gateway request queue M0..M3 (ABHA, HIP, HIU, HFR, CM). correlationId UNIQUE (409); envelopeEventId UNIQUE for Kafka replay dedup; callbacks idempotent (first wins).'
+- name: SMS notifications (MIG-055)
+  description: 'eSanchar outbound SMS queue (07 §3.1 #15). Forward-only machine with EXPIRED terminal; provider send OUT OF SCOPE.'
+- name: Inbound HIS queue (MIG-055)
+  description: 'Raw inbound HL7 v2 messages; parser + FHIR R4 converter; Kafka consumer stub (in-flight continuity).'
+- name: WhatsApp messages (WP-T1)
+  description: 'WhatsApp notification queue; FORWARD-ONLY status machine with history rows'
+- name: EHR jobs (WP-T1)
+  description: 't_ehr_job_details read model (no phase-1 write path - dispatcher slice OUT OF SCOPE)'
+paths:
+  /api/v1/internal/events:
+    post:
+      tags:
+      - Internal event relay (WP-T1)
+      operationId: ingestEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestEventRequest'
+        required: true
+      responses:
+        '201':
+          description: Created - NEW outbound row written
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OutboundHis'
+        '200':
+          description: Duplicate ingress (same eventType+aggregateId) - EXISTING row returned, nothing written
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OutboundHis'
+        '400':
+          description: 'Guards: eventType required; aggregateId required (<= 40 chars); unknown eventType (INTEROP_UNKNOWN_EVENT_TYPE); payload required (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/outbound:
+    get:
+      tags:
+      - Outbound HIS queue (WP-T1)
+      operationId: listOutbound
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: 0..3 (PENDING/SENT/FAILED/DEAD)
+        schema:
+          type: integer
+          format: int32
+      - name: target
+        in: query
+        required: false
+        description: HL7 / EHR / PRINT (case-insensitive)
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OutboundHis'
+        '400':
+          description: status outside 0..3 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/inbound:
+    get:
+      tags:
+      - Inbound HIS queue (WP-T1)
+      operationId: listInbound
+      responses:
+        '200':
+          description: OK (newest first)
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InboundHis'
+  /api/v1/inbound/hl7:
+    post:
+      tags:
+      - Inbound HIS queue (WP-T1)
+      operationId: receiveHl7
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiveHl7Request'
+        required: true
+      responses:
+        '201':
+          description: Received (status 0=RECEIVED, processed_at NULL until the OUT-OF-SCOPE dispatcher runs)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InboundHis'
+        '400':
+          description: 'Guards: messageType not in allowed ADT/ORM set (INTEROP_INVALID_MESSAGE_TYPE); rawPayload required; sender <= 40 chars (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/abdm/requests:
+    post:
+      tags:
+      - ABDM requests (WP-T1)
+      operationId: createAbdmRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAbdmRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (status 0=ACCEPTED per NHCX range 06 A9)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbdmRequestQueue'
+        '400':
+          description: requestKind not in HIP|HIU|HFR|CM or correlationId missing/too long (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Duplicate correlationId (INTEROP_DUPLICATE_CORRELATION_ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/abdm/requests/{correlationId}/callback:
+    put:
+      tags:
+      - ABDM requests (WP-T1)
+      operationId: abdmCallback
+      description: Idempotent - first callback wins; repeats are no-ops returning stored state
+      parameters:
+      - name: correlationId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbdmCallbackRequest'
+        required: true
+      responses:
+        '200':
+          description: Callback applied (or idempotent repeat)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbdmRequestQueue'
+        '400':
+          description: callback status outside NHCX range 0..3 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown correlationId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/whatsapp/messages:
+    post:
+      tags:
+      - WhatsApp messages (WP-T1)
+      operationId: createWhatsappMessage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWhatsappMessageRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (status 0=QUEUED)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/WhatsappMessageQueue'
+        '400':
+          description: recipient required (<= 20 chars); template <= 60 chars (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - WhatsApp messages (WP-T1)
+      operationId: listWhatsappMessages
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: 0..4
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK (newest first)
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WhatsappMessageQueue'
+        '400':
+          description: status outside 0..4 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/whatsapp/messages/{id}/status:
+    put:
+      tags:
+      - WhatsApp messages (WP-T1)
+      operationId: applyWhatsappStatus
+      description: 'Forward-only machine: 0->1->2->3 one step at a time; FAILED (4) only from 0/1; else 400 INTEROP_ILLEGAL_TRANSITION. Appends a history row.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsappStatusUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Transition applied
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/WhatsappMessageQueue'
+        '400':
+          description: statusCode invalid or illegal transition (INTEROP_ILLEGAL_TRANSITION / BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown message id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/whatsapp/messages/{id}:
+    get:
+      tags:
+      - WhatsApp messages (WP-T1)
+      operationId: getWhatsappMessage
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK (message + status history)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/WhatsappMessageQueue'
+        '404':
+          description: Unknown message id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/health/jobs:
+    get:
+      tags:
+      - EHR jobs (WP-T1)
+      operationId: listHealthJobs
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: 0..3 (QUEUED/RUNNING/DONE/FAILED)
+        schema:
+          type: integer
+          format: int32
+      responses:
+        '200':
+          description: OK (empty until the OUT-OF-SCOPE dispatcher slice creates jobs)
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EhrJobDetails'
+        '400':
+          description: status outside 0..3 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/sms/messages:
+    post:
+      tags:
+      - SMS notifications (MIG-055)
+      operationId: createSms
+      description: |
+        Enqueue an SMS notification (eSanchar gateway). recipient required
+        (<= 20 chars); gateway defaults to "eSanchar". New rows QUEUED (0).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSmsRequest'
+        required: true
+      responses:
+        '201':
+          description: Queued
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SmsNotification'
+  /api/v1/sms/messages/{id}/status:
+    put:
+      tags:
+      - SMS notifications (MIG-055)
+      operationId: applySmsStatus
+      description: |
+        Apply a provider status update. statusCode in 1..4; only forward 0->1->2
+        and DELIVERY_FAILED (3) from 0/1; EXPIRED (4) from 0/1/2. Unknown id -> 404.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsStatusUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: New state of the SMS message
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SmsNotification'
+  /api/v1/sms/messages:
+    get:
+      tags:
+      - SMS notifications (MIG-055)
+      operationId: listSms
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: SMS list
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SmsNotification'
+  /api/v1/sms/messages/{id}:
+    get:
+      tags:
+      - SMS notifications (MIG-055)
+      operationId: getSms
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: One SMS message with history
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SmsNotification'
+  /api/v1/abdm/requests/kafka:
+    post:
+      tags:
+      - ABDM requests (MIG-055)
+      operationId: consumeAbdmKafka
+      description: |
+        [kafka stub] Ingest one ABDM gateway request envelope. Idempotent per
+        envelopeEventId (UNIQUE) and correlationId (UNIQUE). Replays of the same
+        envelope return the existing row (consumerGroup stamped at the row level
+        so ops can observe the HTTP-to-Kafka cutover at DB level).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbdmKafkaRequest'
+        required: true
+      responses:
+        '200':
+          description: Existing row (replay / dedup hit) or newly-created row
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbdmRequest'
+  /api/v1/abdm/requests/{id}:
+    get:
+      tags:
+      - ABDM requests (MIG-055)
+      operationId: getAbdmRequest
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: One ABDM request
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AbdmRequest'
+  /api/v1/inbound/hl7/parse:
+    post:
+      tags:
+      - Inbound HIS queue (MIG-055)
+      operationId: parseHl7
+      description: |
+        Pure-function HL7 v2 parser. Validates the message and returns parsed
+        segments as JSON. No DB write. Useful for testing; production persists
+        via /hl7 (HTTP) or /hl7/kafka (consumer stub).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseHl7Request'
+        required: true
+      responses:
+        '200':
+          description: Parsed segments
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/inbound/hl7/parse/fhir:
+    post:
+      tags:
+      - Inbound HIS queue (MIG-055)
+      operationId: parseHl7ToFhir
+      description: |
+        Parse an HL7 v2 ADT and convert to a FHIR R4 Bundle (Patient +
+        Encounter). Pure function — no DB write.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseHl7Request'
+        required: true
+      responses:
+        '200':
+          description: FHIR R4 Bundle (JSON-ready Map)
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/inbound/hl7/kafka:
+    post:
+      tags:
+      - Inbound HIS queue (MIG-055)
+      operationId: consumeInboundHl7Kafka
+      description: |
+        [kafka stub] Ingest one inbound HL7 envelope. Idempotent per
+        envelopeEventId (UNIQUE).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboundHl7KafkaRequest'
+        required: true
+      responses:
+        '200':
+          description: Existing row (replay) or newly-created row
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/InboundHis'
+
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    IngestEventRequest:
+      type: object
+      properties:
+        eventType:
+          type: string
+        aggregateId:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+    OutboundHis:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        eventType:
+          type: string
+        aggregateId:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        targetSystem:
+          type: string
+        status:
+          type: integer
+          format: int32
+        attempts:
+          type: integer
+          format: int32
+        lastError:
+          type: string
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+    SmsNotification:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        template: {type: string}
+        recipient: {type: string}
+        gateway: {type: string, description: eSanchar / Twilio / etc.}
+        payloadVars: {type: object}
+        status: {type: integer, description: '0=QUEUED 1=SENT 2=DELIVERED 3=DELIVERY_FAILED 4=EXPIRED'}
+        providerMessageId: {type: string, nullable: true}
+    CreateSmsRequest:
+      type: object
+      required: [recipient]
+      properties:
+        template: {type: string}
+        recipient: {type: string}
+        gateway: {type: string}
+        payloadVars: {type: object}
+    SmsStatusUpdateRequest:
+      type: object
+      required: [statusCode]
+      properties:
+        statusCode: {type: integer, description: '1=SENT 2=DELIVERED 3=DELIVERY_FAILED 4=EXPIRED'}
+        providerMessageId: {type: string}
+        detail: {type: string}
+    AbdmKafkaRequest:
+      type: object
+      required: [envelopeEventId, requestKind, correlationId]
+      properties:
+        envelopeEventId: {type: string, description: Outbox envelope UUID for dedup}
+        requestKind: {type: string}
+        correlationId: {type: string}
+        payload: {type: object}
+    ParseHl7Request:
+      type: object
+      required: [rawPayload]
+      properties:
+        rawPayload: {type: string, description: Raw HL7 v2 message text (CR-separated segments)}
+    InboundHl7KafkaRequest:
+      type: object
+      required: [envelopeEventId, messageType, rawPayload]
+      properties:
+        envelopeEventId: {type: string}
+        messageType: {type: string}
+        sender: {type: string}
+        rawPayload: {type: string}
+    InboundHis:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        messageType:
+          type: string
+        sender:
+          type: string
+        rawPayload:
+          type: string
+        status:
+          type: integer
+          format: int32
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+    ReceiveHl7Request:
+      type: object
+      properties:
+        messageType:
+          type: string
+          description: One of ADT^A01, ADT^A02, ADT^A03, ADT^A04, ADT^A08, ADT^A45, ORM^O01, ORU^R01
+        sender:
+          type: string
+        rawPayload:
+          type: string
+    AbdmRequestQueue:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        requestKind:
+          type: string
+          enum: [HIP, HIU, HFR, CM]
+        correlationId:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        status:
+          type: integer
+          format: int32
+          description: NHCX range 0..3 per 06 section A9
+        callbackPayload:
+          type: object
+          additionalProperties: true
+          nullable: true
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+    CreateAbdmRequest:
+      type: object
+      properties:
+        requestKind:
+          type: string
+          enum: [HIP, HIU, HFR, CM]
+        correlationId:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+    AbdmCallbackRequest:
+      type: object
+      properties:
+        payload:
+          type: object
+          additionalProperties: true
+        status:
+          type: integer
+          format: int32
+          description: NHCX range 0..3 per 06 section A9
+    WhatsappMessageQueue:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        template:
+          type: string
+        recipient:
+          type: string
+        payloadVars:
+          type: object
+          additionalProperties: true
+        status:
+          type: integer
+          format: int32
+        providerMessageId:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/WhatsappMessageStatus'
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+    WhatsappMessageStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        messageId:
+          type: integer
+          format: int64
+        statusCode:
+          type: integer
+          format: int32
+        ts:
+          type: string
+          format: date-time
+        detail:
+          type: string
+    CreateWhatsappMessageRequest:
+      type: object
+      properties:
+        template:
+          type: string
+        recipient:
+          type: string
+        payloadVars:
+          type: object
+          additionalProperties: true
+    WhatsappStatusUpdateRequest:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          format: int32
+          description: 1=SENT 2=DELIVERED 3=READ 4=FAILED
+        providerMessageId:
+          type: string
+        detail:
+          type: string
+    EhrJobDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        jobKind:
+          type: string
+        patientId:
+          type: integer
+          format: int64
+        status:
+          type: integer
+          format: int32
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time

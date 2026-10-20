@@ -1,0 +1,338 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8089
+  description: Generated server url
+tags:
+- name: Queue Tokens (MIG-022)
+  description: "Token issuance (daily reset), call-next with emergency priority, transfer,\
+    \ no-show, complete, dashboard"
+- name: Queue Counters & Dashboard (MIG-022)
+  description: "Counter master (counter-to-doctor mapping), call-next, dashboard projection"
+paths:
+  /api/v1/queue/tokens:
+    get:
+      tags:
+      - Queue Tokens (MIG-022)
+      summary: List today's tokens
+      description: Optional counterId filter; oldest first.
+      operationId: list
+      parameters:
+      - name: counterId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QueueToken"
+    post:
+      tags:
+      - Queue Tokens (MIG-022)
+      summary: Issue a queue token
+      description: "Server stamps queueDate + daily tokenNo (resets each day). priority:\
+        \ 1=NORMAL 2=EMERGENCY. Starts WAITING(1); counter assigned at call-next or\
+        \ transfer."
+      operationId: issue
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/QueueToken"
+  /api/v1/queue/tokens/{id}/transfer:
+    post:
+      tags:
+      - Queue Tokens (MIG-022)
+      summary: Transfer a token to another counter
+      description: Allowed from WAITING/CALLED; the token returns to WAITING at the
+        target counter and must be re-called. Terminal tokens cannot transfer.
+      operationId: transfer
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/QueueToken"
+  /api/v1/queue/tokens/{id}/no-show:
+    post:
+      tags:
+      - Queue Tokens (MIG-022)
+      summary: Mark a called token as no-show
+      operationId: noShow
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/QueueToken"
+  /api/v1/queue/tokens/{id}/complete:
+    post:
+      tags:
+      - Queue Tokens (MIG-022)
+      summary: Complete a called token (consultation done)
+      operationId: complete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/QueueToken"
+  /api/v1/queue/counters:
+    get:
+      tags:
+      - Queue Counters & Dashboard (MIG-022)
+      summary: List counters
+      description: activeOnly=true filters deactivated rows.
+      operationId: listCounters
+      parameters:
+      - name: activeOnly
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Counter"
+    post:
+      tags:
+      - Queue Counters & Dashboard (MIG-022)
+      summary: Create a counter
+      description: code + name required; departmentId + doctorId form the counter-to-doctor
+        mapping.
+      operationId: createCounter
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Counter"
+  /api/v1/queue/counters/{id}/call-next:
+    post:
+      tags:
+      - Queue Counters & Dashboard (MIG-022)
+      summary: Call the next waiting token for this counter
+      description: "Picks from the counter's department pool: EMERGENCY(2) tokens\
+        \ jump ahead of NORMAL(1), FIFO by daily token number. Stamps counterId +\
+        \ calledAt and moves the token to CALLED(2)."
+      operationId: callNext
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/QueueToken"
+  /api/v1/queue/dashboard:
+    get:
+      tags:
+      - Queue Counters & Dashboard (MIG-022)
+      summary: Kiosk/TV/nursing-desk display projection
+      description: "Counts per status, nowServing map (counterId -> tokenNo), and\
+        \ the ordered waiting list (max 20)."
+      operationId: dashboard
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+components:
+  schemas:
+    JsonNode:
+      type: object
+    QueueToken:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        queueDate:
+          type: string
+          format: date
+        tokenNo:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        visitRef:
+          type: string
+        departmentId:
+          type: integer
+          format: int64
+        counterId:
+          type: integer
+          format: int64
+        priority:
+          type: integer
+          format: int32
+        queueStatus:
+          type: integer
+          format: int32
+        calledAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+    Counter:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+        departmentId:
+          type: integer
+          format: int64
+        doctorId:
+          type: integer
+          format: int64

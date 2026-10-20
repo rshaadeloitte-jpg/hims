@@ -1,0 +1,432 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8090
+  description: Generated server url
+tags:
+- name: Patient Registration (MIG-030)
+  description: "Registration with BR-PAT-001 MRN generation + BR-PAT-002 duplicate\
+    \ matrix, demographics update, document linkage"
+paths:
+  /api/v1/patients/{id}:
+    get:
+      tags:
+      - Patient Registration (MIG-030)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientRegistration"
+    put:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Update demographics
+      description: NonNull fields only; id/mrno/unitId are server-owned and never
+        copied. Re-runs the duplicate matrix when identity fields change. Emits PatientUpdated.
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientRegistration"
+  /api/v1/patients/{id}/documents:
+    get:
+      tags:
+      - Patient Registration (MIG-030)
+      operationId: documents
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientDocument"
+    post:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Link a document to the patient (metadata; blob storage MIG-021)
+      operationId: linkDocument
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientDocument"
+  /api/v1/patients/{id}/sponsors:
+    get:
+      tags:
+      - Patient Registration (MIG-030)
+      operationId: sponsors
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientSponsor"
+    post:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Link a sponsor/scheme to the patient
+      description: "T_PATIENTSPONSOR clean target (RGHS/Chiranjeevi/insurer). sponsorType        \ is required."
+      operationId: linkSponsor
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientSponsor"
+  /api/v1/patients/merge:
+    post:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Merge a duplicate source patient into a target
+      description: Re-points document and sponsor rows to the target, marks the source
+        status=false, and emits PatientMerged via the transactional outbox (partition
+        key = target patientId). sourceId == targetId is rejected; an already-inactive
+        source is rejected with BEXA012.
+      operationId: merge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceId, targetId]
+              properties:
+                sourceId:
+                  type: integer
+                  format: int64
+                targetId:
+                  type: integer
+                  format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientMergeResult"
+        "400":
+          description: Bad request (BEXA003 / BEXA012)
+        "404":
+          description: Source or target patient not found
+  /api/v1/patients/register:
+    post:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Register a patient
+      description: "Server assigns patientId (patient_reg_seq) and derives the permanent\
+        \ MRN (ddMMYY + 9-digit id, BR-PAT-001) — mrno in the payload is rejected\
+        \ as server-owned. Duplicate matrix (BR-PAT-002): mobile+name+dob / Aadhaar/VID\
+        \ / Janaadhaar hit → BERA011; ABHA healthIdNumber → BEXA040 with existing\
+        \ MRN. Emits PatientRegistered."
+      operationId: register
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PatientRegistration"
+  /api/v1/patients/search:
+    get:
+      tags:
+      - Patient Registration (MIG-030)
+      summary: Search by identity
+      description: healthIdNumber (exact) or aadhaar (exact) or mobileNo.
+      operationId: search
+      parameters:
+      - name: mobile
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: aadhaar
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: healthIdNumber
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientRegistration"
+components:
+  schemas:
+    JsonNode:
+      type: object
+    PatientRegistration:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        mrno:
+          type: string
+        isTempMrno:
+          type: boolean
+        firstName:
+          type: string
+        middleName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+        dob:
+          type: string
+          format: date
+        bloodGroup:
+          type: string
+        mobileNo:
+          type: string
+        email:
+          type: string
+        aadhaarNo:
+          type: string
+        vid:
+          type: string
+        janaadhaarId:
+          type: string
+        healthId:
+          type: string
+        healthIdNumber:
+          type: string
+        addressLine1:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        emergencyContactName:
+          type: string
+        emergencyContactPhone:
+          type: string
+        placeOfBirth:
+          type: string
+    PatientDocument:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        docType:
+          type: string
+        docRef:
+          type: string
+        verified:
+          type: boolean
+    PatientSponsor:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        sponsorType:
+          type: string
+        schemeCode:
+          type: string
+        policyNo:
+          type: string
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    PatientMergeResult:
+      type: object
+      properties:
+        sourceId:
+          type: integer
+          format: int64
+        sourceMrno:
+          type: string
+        targetId:
+          type: integer
+          format: int64
+        targetMrno:
+          type: string
+        documentsRepointed:
+          type: integer
+          format: int32
+        sponsorsRepointed:
+          type: integer
+          format: int32

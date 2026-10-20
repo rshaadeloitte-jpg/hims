@@ -1,0 +1,27 @@
+# TEST profile — H2 in-memory for @DataJpaTest flow tests.
+# Schema auto-generated from entities (ddl-auto: create); Flyway disabled.
+# defer-datasource-initialization: true → schema.sql (sequences) runs BEFORE Hibernate DDL.
+spring:
+  datasource:
+    url: jdbc:h2:mem:ihms_patient;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        default_schema: ihms_patient
+        globally_quoted_identifiers: true
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always

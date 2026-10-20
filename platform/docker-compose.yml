@@ -1,0 +1,116 @@
+# iHMS Modernization — Local Development Platform (Wave 0, MIG-003/MIG-006)
+#
+# Stack: PostgreSQL 16 (schema-per-domain) · Redis 7 (cache only) · Kafka (KRaft, outbox relay) · Solr 9 (search, must remain)
+# Credentials are DEV-ONLY placeholders — override via environment (never commit real secrets, MIG-063).
+
+name: ihms-platform
+
+services:
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: ihms-pg
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ihms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      POSTGRES_DB: ihms
+      TZ: GMT
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ihms} -d ihms"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: ihms-redis
+    command: ["redis-server", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  kafka:
+    image: docker.io/apache/kafka:3.7.1
+    container_name: ihms-kafka
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # Dual listener: PLAINTEXT (in-compose services use kafka:9092) + PLAINTEXT_HOST
+      # (host tools use localhost:29092). Fixes advertised-listener routing found in
+      # S0 E2E 2026-08-17 (broker advertised localhost:9092, unreachable in-cluster).
+      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    ports:
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+
+  solr:
+    image: docker.io/library/solr:9.6
+    container_name: ihms-solr
+    command:
+      - solr
+      - start
+      - -f
+      - -c
+      - -p
+      - "8983"
+      - -z
+      - solr-zk:2181
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr-data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8983/solr/admin/info/system >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+    depends_on:
+      solr-zk:
+        condition: service_healthy
+    # NOTE: 6 legacy collections (patient, encounter, item, service, icd10cm, healthfactor)
+    # are created at W5 (MIG-058). Query semantics frozen from legacy config.
+
+  solr-zk:
+    image: docker.io/library/zookeeper:3.9
+    container_name: ihms-solr-zk
+    ports:
+      - "9983:2181"
+    volumes:
+      - solr-zk-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "zkServer.sh status >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  solr-data:
+  solr-zk-data:

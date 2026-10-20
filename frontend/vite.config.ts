@@ -24,6 +24,43 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("@chakra-ui") ||
+              id.includes("@emotion") ||
+              id.includes("@ark-ui") ||
+              id.includes("@zag-js")
+            ) {
+              return "vendor-chakra";
+            }
+            if (id.includes("@tanstack")) {
+              return "vendor-query";
+            }
+            if (
+              id.includes("react-hook-form") ||
+              id.includes("@hookform") ||
+              id.includes("zod")
+            ) {
+              return "vendor-forms";
+            }
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router") ||
+              id.includes("scheduler")
+            ) {
+              return "vendor-react";
+            }
+          }
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,

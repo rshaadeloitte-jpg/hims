@@ -1,0 +1,2079 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8088
+  description: Generated server url
+tags:
+- name: Equipment Documents (MIG-023)
+  description: "Document metadata per asset: upload registration, listing and soft\
+    \ delete"
+- name: Equipment Complaints (MIG-023)
+  description: "Raise complaints against assets, search them, walk the raise -> resolve\
+    \ -> close lifecycle and keep resolution records"
+- name: Equipment Usage (MIG-023)
+  description: "Usage tracking per asset: log sessions (machine-hours), history and\
+    \ date-range reports"
+- name: Equipment Preventive Maintenance (MIG-023)
+  description: "Recurring PM plans per asset, due listing, maintenance completion\
+    \ records and the preventive checklist templates"
+- name: Equipment Asset Register (MIG-023)
+  description: "Medical equipment asset register: register, search/filter, update,\
+    \ accession + item lookups, department transfers"
+- name: Equipment Master Data (MIG-023)
+  description: "Generic CRUD over the 13 V1 master dictionaries (checklists, complaint\
+    \ categories/types/statuses, compliance, maintenance types, working statuses,\
+    \ AMC/service/insurance agents)"
+- name: Equipment Opening Balance (MIG-023)
+  description: "Per-item opening balances (stock take at go-live): quantity + rate/amount\
+    \ per store, register listing and corrections"
+- name: Equipment Warranty & AMC (MIG-023)
+  description: Warranty / AMC cover records per asset with expiry alerting and count
+    summaries
+paths:
+  /api/v1/equipment/{id}:
+    get:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      operationId: get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Equipment"
+    put:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: Update equipment details
+      description: Null patch fields are ignored; id/unit/audit columns cannot be
+        changed. A changed accessionNo is re-validated for per-unit uniqueness; workingStatus
+        must be a valid dictionary id.
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Equipment"
+  /api/v1/equipment/warranties/{id}:
+    put:
+      tags:
+      - Equipment Warranty & AMC (MIG-023)
+      summary: Update a warranty / AMC cover
+      description: Null patch fields are ignored; id/equipmentId/unit/audit columns
+        are server-owned. A supplied warrantyType replaces the old one (trimmed).
+      operationId: update_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentWarranty"
+  /api/v1/equipment/opening-balance/{id}:
+    put:
+      tags:
+      - Equipment Opening Balance (MIG-023)
+      summary: Update an opening balance
+      description: "Null-safe patch: only present keys change. id, itemId (the row's\
+        \ pairing key), unit and audit columns are server-owned and never patchable."
+      operationId: update_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentOpeningBalance"
+  /api/v1/equipment/masters/{masterType}/{id}:
+    get:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: Get one master row by id
+      description: Unknown id or unknown masterType -> 404 / 400 BEXA003 respectively.
+      operationId: get_1
+      parameters:
+      - name: masterType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentBase"
+    put:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: Update a master row
+      description: "Null-safe patch: only present keys change. id, unitId and the\
+        \ audit block are server-owned and never patchable; status stays patchable\
+        \ so a row can be reactivated through PUT as well as re-created."
+      operationId: update_3
+      parameters:
+      - name: masterType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentBase"
+    delete:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: Delete a master row (soft)
+      description: "Dictionary rows are referenced by id across the domain (complaint_status,\
+        \ working_status, maintenance_type ids ARE API codes), so delete flips status=false\
+        \ + update stamps and returns the tombstoned row instead of removing it."
+      operationId: delete
+      parameters:
+      - name: masterType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentBase"
+  /api/v1/equipment/complaints/{id}/resolutions/{resId}:
+    put:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: Update a resolution
+      description: Null patch fields are ignored; id/complaintId/unit/audit columns
+        cannot be changed; resolvedStatus is intentionally not patchable — status
+        transitions belong to add-resolution. The resolution must belong to the given
+        complaint.
+      operationId: updateResolution
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: resId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentComplaintResolution"
+  /api/v1/equipment:
+    get:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: List / search the asset register
+      description: "Optional filters: unitId, workingStatus (1 WORKING, 2 NOT_WORKING,\
+        \ 3 UNDER_REPAIR, 4 CONDEMNED), search (free text over accessionNo, serialNo,\
+        \ model, make, location, custodianName). Active assets only, newest first."
+      operationId: list
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: workingStatus
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipment"
+    post:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: Register new equipment
+      description: "Body is the equipment record (itemId required). Server assigns\
+        \ id from equipment_seq, defaults workingStatus to WORKING(1), validates workingStatus\
+        \ against the dictionary and accessionNo uniqueness per unit (case-insensitive).\
+        \ unitId stamps the tenant/audit columns."
+      operationId: register
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Equipment"
+  /api/v1/equipment/{id}/transfer:
+    post:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: Transfer equipment to another department
+      description: "Body {toDepartmentId (required), reason?, transferDate? (ISO instant),\
+        \ toLocation?, toStoreId?}. Writes an equipment_transfer log row and moves\
+        \ department_id atomically. Rejected for inactive or CONDEMNED assets."
+      operationId: transfer
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentTransfer"
+  /api/v1/equipment/{equipmentId}/warranties:
+    get:
+      tags:
+      - Equipment Warranty & AMC (MIG-023)
+      summary: List warranties of an asset
+      description: "Active covers of one asset, newest first."
+      operationId: listByEquipment
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentWarranty"
+    post:
+      tags:
+      - Equipment Warranty & AMC (MIG-023)
+      summary: Add a warranty / AMC cover to an asset
+      description: "Body is the cover record: {warrantyType? (default WARRANTY; free\
+        \ dictionary e.g. WARRANTY, AMC, CMC), startDate?, endDate?, vendor?, terms?}.\
+        \ Server assigns id from equipment_warranty_seq and pairs equipmentId from\
+        \ the path. Rejected for unknown, inactive or CONDEMNED assets. Timestamp\
+        \ fields bind as ISO-8601."
+      operationId: add
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentWarranty"
+  /api/v1/equipment/{equipmentId}/usage:
+    get:
+      tags:
+      - Equipment Usage (MIG-023)
+      summary: Usage history of an asset
+      description: "Active usage entries of one asset, newest first."
+      operationId: history
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentUsageDetails"
+    post:
+      tags:
+      - Equipment Usage (MIG-023)
+      summary: Log a usage session for an asset
+      description: "Body is the usage record: {hoursUsed (required, > 0, fits NUMERIC(8,2)),\
+        \ usageDate? (ISO-8601 timestamp, defaults to now), operator?, remarks?}.\
+        \ Server assigns id from equipment_usage_details_seq and pairs equipmentId\
+        \ from the path. Rejected for unknown (404), inactive or CONDEMNED assets\
+        \ — a condemned machine no longer operates, so fresh usage rows would be data\
+        \ errors."
+      operationId: log
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentUsageDetails"
+  /api/v1/equipment/{equipmentId}/documents:
+    get:
+      tags:
+      - Equipment Documents (MIG-023)
+      summary: List documents of an asset
+      description: "Active document metadata rows of one asset, newest first."
+      operationId: listByEquipment_1
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentDetailDocs"
+    post:
+      tags:
+      - Equipment Documents (MIG-023)
+      summary: Upload document metadata for an asset
+      description: "Body is the document record: {fileName (required), docType? (free\
+        \ dictionary e.g. MANUAL, WARRANTY_CARD, CALIBRATION_CERT, CONDEMNATION_REPORT),\
+        \ filePath?, description?}. Metadata only — no file bytes; filePath names\
+        \ where the file lives. Server assigns id from equipment_detail_docs_seq and\
+        \ pairs equipmentId from the path. Rejected for unknown or inactive assets\
+        \ (condemned assets still accept documents — condemnation/disposal paperwork)."
+      operationId: upload
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentDetailDocs"
+  /api/v1/equipment/pm/checklists:
+    get:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: List PM checklist templates
+      description: "All active equipment_preventive_checklist templates (code + description),\
+        \ template order."
+      operationId: checklists
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentPreventiveChecklist"
+    post:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: Create a PM checklist template
+      description: "Body: {code (required, unique case-insensitively), description\
+        \ (required)}. Server assigns id from equipment_preventive_checklist_seq."
+      operationId: createChecklist
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentPreventiveChecklist"
+  /api/v1/equipment/pm-schedules:
+    get:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: List / search PM schedules
+      description: "Optional filters: unitId, equipmentId, pmType (1 PREVENTIVE, 2\
+        \ CORRECTIVE, 3 CALIBRATION), dueFrom/dueTo on next_due_date (ISO dates; dueTo\
+        \ is inclusive — everything already fallen due is dueTo <= today), search\
+        \ (free text over scheduleCode). Active schedules only, newest first."
+      operationId: list_1
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: equipmentId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: pmType
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: dueFrom
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: dueTo
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EqpPmSchedule"
+    post:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: Create a PM schedule
+      description: "Body is the schedule record (equipmentId required). Server assigns\
+        \ id from eqp_pm_schedule_seq, generates scheduleCode IHMS/EQ/PM/{yyyy}/{%05d}\
+        \ unless a unique code is supplied, defaults pmType to PREVENTIVE(1) (1 PREVENTIVE,\
+        \ 2 CORRECTIVE, 3 CALIBRATION), pmDate to now, nextDueDate to pmDate and flags\
+        \ the plan-start month when no jan..dec flag is set. frequency is months between\
+        \ services. Optional details[] array saves planned occurrence lines. Rejected\
+        \ for unknown, inactive or CONDEMNED assets. Timestamp fields bind as ISO-8601."
+      operationId: createSchedule
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EqpPmSchedule"
+  /api/v1/equipment/pm-schedules/{id}/complete:
+    post:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: Record a completed maintenance execution
+      description: "Body is the execution record. Server owns equipmentId/pmScheduleId\
+        \ from the schedule, assigns id from eqp_preventive_maintenance_seq, generates\
+        \ maintenanceNo PM-{yyyy}-{%05d} unless supplied, defaults pmStatus to COMPLETED(3)\
+        \ (1 SCHEDULED, 2 IN_PROGRESS, 3 COMPLETED, 4 CANCELLED) and maintenanceDate\
+        \ to now. Checklist results ride as TEXT columns (functionalCheckRemark, preventiveMaintenanceRemark,\
+        \ electricalSafetyRemark, calibration); amountIncurred is NUMERIC(19,2); optional\
+        \ pmScheduleDetailId must belong to the schedule. Atomically stamps lastCompletedDate\
+        \ and rolls nextDueDate forward by frequency months."
+      operationId: complete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EqpPreventiveMaintenance"
+  /api/v1/equipment/opening-balance:
+    get:
+      tags:
+      - Equipment Opening Balance (MIG-023)
+      summary: List opening balances
+      description: "Active register rows, optionally scoped by unitId and/or itemId,\
+        \ grouped per item (itemId ASC then insertion order). Both filters optional\
+        \ — omit both for the full register."
+      operationId: list_2
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: itemId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentOpeningBalance"
+    post:
+      tags:
+      - Equipment Opening Balance (MIG-023)
+      summary: Add an opening balance (object body) or bulk import (array body)
+      description: "Object body adds one row: {itemId (required, > 0), openingBalance?\
+        \ (>= 0, defaults to 0), rate?, amount? (NUMERIC(19,2), >= 0), accessionNo?,\
+        \ serialNo?, model?, storeId?, supplierId?, remarks?}. A JSON ARRAY body imports\
+        \ many rows atomically — one invalid row rolls back the whole file. Server\
+        \ assigns id from equipment_opening_balance_seq; unit comes from the unitId\
+        \ query parameter."
+      operationId: add_1
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
+  /api/v1/equipment/masters/{masterType}:
+    get:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: List a master dictionary
+      description: "Rows ordered by id (seed order). Optional filters: unitId scope,\
+        \ status (true = active only, false = deactivated only, omit = all) and a\
+        \ free-text search over the whitelisted code/description/name columns."
+      operationId: list_3
+      parameters:
+      - name: masterType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        description: Unit scope gate
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: status
+        in: query
+        description: "true = active rows only, false = deactivated rows only, omit\
+          \ = all"
+        required: false
+        schema:
+          type: boolean
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentBase"
+    post:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: Create a master row
+      description: "Payload binds straight onto the dictionary entity (e.g. {code,\
+        \ description} for category/status/type/compliance/checklist masters; {code,\
+        \ name, contactPerson?, ...} for agents). id is server-assigned from the table's\
+        \ own sequence — supplying one is rejected. status defaults to active when\
+        \ omitted; equipment_checklist.quantity defaults to the column default 1 when\
+        \ omitted. Required business fields are validated before any sequence burn."
+      operationId: create
+      parameters:
+      - name: masterType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        description: Owning unit stamped into unit_id/created_unit_id/updated_unit_id
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentBase"
+  /api/v1/equipment/complaints:
+    get:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: List / search complaints
+      description: "Optional filters: unitId, equipmentId, complaintStatus (1 OPEN,\
+        \ 2 IN_PROGRESS, 3 RESOLVED, 4 CLOSED), search (free text over complaintNo,\
+        \ description, accessionNo). Active complaints only, newest first."
+      operationId: list_4
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: equipmentId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: complaintStatus
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentComplaint"
+    post:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: Raise a complaint
+      description: "Body is the complaint record (equipmentId required). Server assigns\
+        \ id from equipment_complaint_seq, generates complaintNo IHMS/EQ/{yyyy}/{%05d},\
+        \ defaults complaintStatus to OPEN(1) (1 OPEN, 2 IN_PROGRESS, 3 RESOLVED,\
+        \ 4 CLOSED), stamps complaintDate/reportedDate to now unless given and snapshots\
+        \ accession/department/store from the asset. Rejected for unknown, inactive\
+        \ or CONDEMNED assets."
+      operationId: raise
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentComplaint"
+  /api/v1/equipment/complaints/{id}/resolutions:
+    get:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: List resolutions of a complaint
+      description: Chronological (oldest first).
+      operationId: resolutions
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentComplaintResolution"
+    post:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: Add a resolution
+      description: "Body is the resolution record; resolvedStatus defaults to RESOLVED(3)\
+        \ and must be a valid dictionary id (1..4); resolutionDate defaults to now.\
+        \ Optional details[] array saves replaced-part line items (batch/expiry traceability).\
+        \ The complaint moves to resolvedStatus and gets its resolvedDate atomically\
+        \ with the resolution row."
+      operationId: addResolution
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JsonNode"
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentComplaintResolution"
+  /api/v1/equipment/{id}/transfers:
+    get:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: Transfer history of an asset
+      description: Chronological (oldest first).
+      operationId: transfers
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentTransfer"
+  /api/v1/equipment/{equipmentId}/pm-schedules:
+    get:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: PM schedules of an asset
+      description: "Active schedules of one asset, newest first."
+      operationId: schedulesOf
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EqpPmSchedule"
+  /api/v1/equipment/{equipmentId}/complaints:
+    get:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: Complaint history of an asset
+      description: "Active complaints of one asset, newest first."
+      operationId: history_1
+      parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentComplaint"
+  /api/v1/equipment/warranties/expiring:
+    get:
+      tags:
+      - Equipment Warranty & AMC (MIG-023)
+      summary: List soon-to-expire warranties
+      description: "Active covers whose end_date falls within the next N days (days\
+        \ defaults to 30, must be positive; window starts today so a cover lapsing\
+        \ later today still alerts). Covers without an end_date never expire and are\
+        \ excluded. Optional unitId/equipmentId scoping. Ordered by end_date ascending\
+        \ — most urgent first."
+      operationId: expiring
+      parameters:
+      - name: days
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: equipmentId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentWarranty"
+  /api/v1/equipment/warranties/counts:
+    get:
+      tags:
+      - Equipment Warranty & AMC (MIG-023)
+      summary: AMC / warranty count summary
+      description: "Active-cover summary: totalActive, expired (end_date already lapsed),\
+        \ expiringIn30Days and byType breakdown per warrantyType dictionary value.\
+        \ Optional unitId scoping."
+      operationId: counts
+      parameters:
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/WarrantyCounts"
+  /api/v1/equipment/usage/report:
+    get:
+      tags:
+      - Equipment Usage (MIG-023)
+      summary: Usage report by date range
+      description: Aggregates active usage entries whose usage_date falls inside the
+        window. from/to are inclusive ISO dates (2026-08-01); each may be omitted
+        — missing 'from' falls back to today-29 and missing 'to' to today (trailing
+        30 days default). Optional unitId / equipmentId scope the report. Entries
+        are chronological (oldest first) with totalHours summed over exactly the returned
+        rows.
+      operationId: report
+      parameters:
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: equipmentId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsageReport"
+  /api/v1/equipment/pm-schedules/{id}/history:
+    get:
+      tags:
+      - Equipment Preventive Maintenance (MIG-023)
+      summary: PM execution history of a schedule
+      description: Chronological (oldest first).
+      operationId: history_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EqpPreventiveMaintenance"
+  /api/v1/equipment/masters:
+    get:
+      tags:
+      - Equipment Master Data (MIG-023)
+      summary: List the supported masterType path values
+      description: "Discovery endpoint returning the kebab-case dictionary names accepted\
+        \ by /masters/{masterType}."
+      operationId: supportedTypes
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+                uniqueItems: true
+  /api/v1/equipment/complaints/{id}:
+    get:
+      tags:
+      - Equipment Complaints (MIG-023)
+      summary: Complaint details
+      description: Header record plus its line items and its resolutions in chronological
+        order.
+      operationId: get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ComplaintDetailsResponse"
+  /api/v1/equipment/by-item/{itemId}:
+    get:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: List equipment for an item
+      description: "Active assets of one item, newest first."
+      operationId: byItem
+      parameters:
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipment"
+  /api/v1/equipment/by-accession/{accessionNo}:
+    get:
+      tags:
+      - Equipment Asset Register (MIG-023)
+      summary: Lookup equipment by accession number
+      description: Case-insensitive. Pass unitId to scope the lookup (accession numbers
+        are unique per unit); without it the newest matching asset wins.
+      operationId: byAccession
+      parameters:
+      - name: accessionNo
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: unitId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Equipment"
+  /api/v1/equipment/documents/{docId}:
+    delete:
+      tags:
+      - Equipment Documents (MIG-023)
+      summary: Delete a document
+      description: Soft delete (status=false + update stamps) so the audit trail survives;
+        the document disappears from listings and a repeat delete reads as absent.
+        Returns the tombstoned row.
+      operationId: delete_1
+      parameters:
+      - name: docId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EquipmentDetailDocs"
+components:
+  schemas:
+    JsonNode:
+      type: object
+    Equipment:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        accessionNo:
+          type: string
+        serialNo:
+          type: string
+        model:
+          type: string
+        make:
+          type: string
+        purchaseDate:
+          type: string
+          format: date-time
+        installationDate:
+          type: string
+          format: date-time
+        warrantyExpiry:
+          type: string
+          format: date-time
+        workingStatus:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+        location:
+          type: string
+        cost:
+          type: number
+        supplierId:
+          type: integer
+          format: int64
+        custodianName:
+          type: string
+        documents:
+          type: string
+    EquipmentWarranty:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        warrantyType:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        vendor:
+          type: string
+        terms:
+          type: string
+    EquipmentOpeningBalance:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        openingBalance:
+          type: integer
+          format: int64
+        rate:
+          type: number
+        amount:
+          type: number
+        accessionNo:
+          type: string
+        serialNo:
+          type: string
+        model:
+          type: string
+        storeId:
+          type: integer
+          format: int64
+        supplierId:
+          type: integer
+          format: int64
+        remarks:
+          type: string
+    EquipmentBase:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+          writeOnly: true
+    EquipmentComplaintResolution:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        complaintId:
+          type: integer
+          format: int64
+        resolveNo:
+          type: string
+        resolutionDate:
+          type: string
+          format: date-time
+        resolvedBy:
+          type: integer
+          format: int64
+        resolutionNotes:
+          type: string
+        partsReplaced:
+          type: string
+        serviceAgentId:
+          type: integer
+          format: int64
+        assignedTo:
+          type: integer
+          format: int64
+        assignedById:
+          type: integer
+          format: int64
+        resolvedStatus:
+          type: integer
+          format: int64
+    EquipmentTransfer:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        fromDepartmentId:
+          type: integer
+          format: int64
+        toDepartmentId:
+          type: integer
+          format: int64
+        transferDate:
+          type: string
+          format: date-time
+        reason:
+          type: string
+    EquipmentUsageDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        usageDate:
+          type: string
+          format: date-time
+        hoursUsed:
+          type: number
+        operator:
+          type: string
+        remarks:
+          type: string
+    EquipmentDetailDocs:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        docType:
+          type: string
+        fileName:
+          type: string
+        filePath:
+          type: string
+        description:
+          type: string
+    EquipmentPreventiveChecklist:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        description:
+          type: string
+    EqpPmSchedule:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        scheduleCode:
+          type: string
+        frequency:
+          type: integer
+          format: int64
+        pmDate:
+          type: string
+          format: date-time
+        jan:
+          type: boolean
+        feb:
+          type: boolean
+        mar:
+          type: boolean
+        apr:
+          type: boolean
+        may:
+          type: boolean
+        jun:
+          type: boolean
+        jul:
+          type: boolean
+        aug:
+          type: boolean
+        sep:
+          type: boolean
+        oct:
+          type: boolean
+        nov:
+          type: boolean
+        dec:
+          type: boolean
+        nextDueDate:
+          type: string
+          format: date-time
+        lastCompletedDate:
+          type: string
+          format: date-time
+        pmType:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+    EqpPreventiveMaintenance:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        pmScheduleId:
+          type: integer
+          format: int64
+        pmScheduleDetailId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        maintenanceNo:
+          type: string
+        maintenanceDate:
+          type: string
+          format: date-time
+        performedBy:
+          type: integer
+          format: int64
+        functionalCheckRemark:
+          type: string
+        preventiveMaintenanceRemark:
+          type: string
+        electricalSafetyRemark:
+          type: string
+        calibration:
+          type: string
+        furtherActions:
+          type: string
+        commentsOnUse:
+          type: string
+        remarks:
+          type: string
+        deptInCharge:
+          type: integer
+          format: int64
+        biomedicalEngineerId:
+          type: integer
+          format: int64
+        biomedicalInChargeId:
+          type: integer
+          format: int64
+        verifiedBy:
+          type: integer
+          format: int64
+        amountIncurred:
+          type: number
+        serviceAgentId:
+          type: integer
+          format: int64
+        pmStatus:
+          type: integer
+          format: int64
+    EquipmentComplaint:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        complaintNo:
+          type: string
+        categoryId:
+          type: integer
+          format: int64
+        complaintTypeId:
+          type: integer
+          format: int64
+        severityId:
+          type: integer
+          format: int64
+        description:
+          type: string
+        complaintDate:
+          type: string
+          format: date-time
+        reportedBy:
+          type: integer
+          format: int64
+        reportedDate:
+          type: string
+          format: date-time
+        complaintStatus:
+          type: integer
+          format: int64
+        departmentId:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+        accessionNo:
+          type: string
+        roomNo:
+          type: string
+        extensionNo:
+          type: string
+        assignedTo:
+          type: integer
+          format: int64
+        expectedResolutionDate:
+          type: string
+          format: date-time
+        resolvedDate:
+          type: string
+          format: date-time
+        visitDate:
+          type: string
+          format: date-time
+    TypeCount:
+      type: object
+      properties:
+        warrantyType:
+          type: string
+        count:
+          type: integer
+          format: int64
+    WarrantyCounts:
+      type: object
+      properties:
+        totalActive:
+          type: integer
+          format: int64
+        expired:
+          type: integer
+          format: int64
+        expiringIn30Days:
+          type: integer
+          format: int64
+        byType:
+          type: array
+          items:
+            $ref: "#/components/schemas/TypeCount"
+    UsageReport:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        equipmentId:
+          type: integer
+          format: int64
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        entryCount:
+          type: integer
+          format: int32
+        totalHours:
+          type: number
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquipmentUsageDetails"
+    ComplaintDetailsResponse:
+      type: object
+      properties:
+        complaint:
+          $ref: "#/components/schemas/EquipmentComplaint"
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquipmentComplaintDetails"
+        resolutions:
+          type: array
+          items:
+            $ref: "#/components/schemas/EquipmentComplaintResolution"
+    EquipmentComplaintDetails:
+      type: object
+      properties:
+        unitId:
+          type: integer
+          format: int64
+        status:
+          type: boolean
+        createdUnitId:
+          type: integer
+          format: int64
+        updatedUnitId:
+          type: integer
+          format: int64
+        addedBy:
+          type: integer
+          format: int64
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          format: int64
+        updatedDatetime:
+          type: string
+          format: date-time
+        synchronizedd:
+          type: boolean
+        id:
+          type: integer
+          format: int64
+        complaintId:
+          type: integer
+          format: int64
+        itemId:
+          type: integer
+          format: int64
+        serialNo:
+          type: string
+        modelNo:
+          type: string
+        problemDate:
+          type: string
+          format: date-time
+        problemTime:
+          type: string
+          format: date-time
+        reportedDate:
+          type: string
+          format: date-time
+        reportedTime:
+          type: string
+          format: date-time
+        reportedBy:
+          type: integer
+          format: int64
+        serviceAgentId:
+          type: integer
+          format: int64
+        priorityId:
+          type: integer
+          format: int64
+        expectedResolutionDate:
+          type: string
+          format: date-time
+        expectedResolutionTime:
+          type: string
+          format: date-time
+        eqpMachineStatus:
+          type: integer
+          format: int64
+        supplierId:
+          type: integer
+          format: int64
+        storeId:
+          type: integer
+          format: int64
+        warrantyTypeId:
+          type: integer
+          format: int64
+        description:
+          type: string

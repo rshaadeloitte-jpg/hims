@@ -1,0 +1,314 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8095
+  description: Generated server url
+tags:
+- name: OT Schedules (WP-8)
+  description: 'OT scheduling (t_otschedule + t_otscheduledetail) per Catalog #11. BR-OT-001 prerequisites (admissionId OR encounterId required, else 400 BEOT004; dependent-surgery discount_pct; rate defaults 0 — tariff lookup deferred to Reference). BR-OT-002 pre_billing flag persisted and echoed (actual charge creation deferred to Billing Wave 4). Lifecycle 1=PLANNED 2=IN_PROGRESS 3=DONE 4=CANCELLED with start/complete/cancel guards. Outbox events ProcedureScheduled / SurgeryCompleted are PROPOSED per KAFKA-EVENT-CATALOG §3 (topic ihms.ot.events, partition key patientId).'
+paths:
+  /api/v1/ot/schedules:
+    get:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: searchSchedules
+      summary: Search OT schedules
+      description: Worklist filter by calendar day of scheduledStart and/or lifecycle status. Both params optional.
+      parameters:
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: integer
+          description: '1=PLANNED 2=IN_PROGRESS 3=DONE 4=CANCELLED'
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OtSchedule'
+    post:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: createSchedule
+      summary: Schedule an OT
+      description: |
+        BR-OT-001: requires admissionId OR encounterId (400 code BEOT004 when neither is supplied);
+        dependent-surgery rows carry discountPct; procedure rate defaults 0 (tariff lookup deferred to Reference).
+        BR-OT-002: preBilling flag persisted and echoed (charge creation deferred to Billing Wave 4).
+        Writes PROPOSED ProcedureScheduled to the outbox (topic ihms.ot.events, partition key patientId).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtScheduleRequest'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtSchedule'
+        '400':
+          description: 'Validation or BR-OT-001 failure (code BEOT004 when neither admissionId nor encounterId)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ot/schedules/{id}:
+    get:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: getSchedule
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK (schedule incl. procedure details)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtSchedule'
+        '404':
+          description: Schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ot/schedules/{id}/start:
+    post:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: startSchedule
+      summary: Start surgery
+      description: 'Guard: only from status 1 PLANNED -> 2 IN_PROGRESS. Illegal transition -> 400.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtSchedule'
+        '400':
+          description: Illegal lifecycle transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ot/schedules/{id}/complete:
+    post:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: completeSchedule
+      summary: Complete surgery
+      description: 'Guard: only from status 2 IN_PROGRESS -> 3 DONE. Emits PROPOSED SurgeryCompleted (partition key patientId).'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtSchedule'
+        '400':
+          description: Illegal lifecycle transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ot/schedules/{id}/cancel:
+    post:
+      tags:
+      - OT Schedules (WP-8)
+      operationId: cancelSchedule
+      summary: Cancel schedule
+      description: 'Guard: from 1 PLANNED or 2 IN_PROGRESS -> 4 CANCELLED only; never from DONE. No event emitted.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/OtSchedule'
+        '400':
+          description: Illegal lifecycle transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    OtProcedureRequest:
+      type: object
+      properties:
+        procedureCode:
+          type: string
+        procedureName:
+          type: string
+        rate:
+          type: number
+          description: Defaults 0 when not supplied (tariff lookup deferred to Reference integration)
+        dependentOfIndex:
+          type: integer
+          description: Zero-based index of an EARLIER procedure in this request that this row depends on (BR-OT-001 dependent surgery)
+        discountPct:
+          type: number
+          description: Applied only for dependent rows (BR-OT-001); 0..100
+      required:
+      - procedureCode
+    OtScheduleRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        otTable:
+          type: string
+        scheduledStart:
+          type: string
+          format: date-time
+        scheduledEnd:
+          type: string
+          format: date-time
+          nullable: true
+        anesthetistId:
+          type: integer
+          format: int64
+          nullable: true
+        surgeonId:
+          type: integer
+          format: int64
+          nullable: true
+        preBilling:
+          type: boolean
+          description: BR-OT-002 flag; charge creation itself deferred to Billing (Wave 4)
+        procedures:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtProcedureRequest'
+      required:
+      - patientId
+      - otTable
+      - scheduledStart
+      - procedures
+    OtProcedure:
+      type: object
+      properties:
+        detailId:
+          type: integer
+          format: int64
+        scheduleId:
+          type: integer
+          format: int64
+        procedureCode:
+          type: string
+        procedureName:
+          type: string
+        rate:
+          type: number
+        dependentOf:
+          type: integer
+          format: int64
+          nullable: true
+        discountPct:
+          type: number
+        netRate:
+          type: number
+          description: rate after BR-OT-001 dependent discount
+    OtSchedule:
+      type: object
+      properties:
+        scheduleId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        otTable:
+          type: string
+        scheduledStart:
+          type: string
+          format: date-time
+        scheduledEnd:
+          type: string
+          format: date-time
+          nullable: true
+        anesthetistId:
+          type: integer
+          format: int64
+          nullable: true
+        surgeonId:
+          type: integer
+          format: int64
+          nullable: true
+        status:
+          type: integer
+          description: '1=PLANNED 2=IN_PROGRESS 3=DONE 4=CANCELLED'
+        preBilling:
+          type: boolean
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtProcedure'

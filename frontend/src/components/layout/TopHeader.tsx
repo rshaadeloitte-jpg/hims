@@ -62,10 +62,10 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
       position="sticky"
       top={0}
       zIndex="sticky"
-      h="62px"
-      bg="white"
-      borderBottom="1px solid"
-      borderColor="gray.200"
+      h="64px"
+      bg="surface.header"
+      borderBottom="2px solid"
+      borderColor="brand.500"
       boxShadow="sm"
     >
       <Flex align="center" gap={4} px={4} h="full">
@@ -75,6 +75,8 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={onToggleSidebar}
+            color="gray.700"
+            _hover={{ bg: "gray.100", color: "gray.900" }}
           >
             <LayoutIcon name="menu" size={20} />
           </IconButton>
@@ -87,7 +89,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
             <HStack gap={2.5}>
               <DeloitteLogo size={30} />
               <VStack gap={0} lineHeight={1.1} align="flex-start">
-                <Text fontSize="19px" fontWeight="black" color="black" m={0}>
+                <Text fontSize="19px" fontWeight="black" color="gray.900" m={0}>
                   Deloitte<Text as="span" color="brand.500">.</Text>
                 </Text>
                 <Text
@@ -132,9 +134,14 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
           maxW="440px"
         >
           <InputGroup
-            startElement={<LayoutIcon name="search" size={16} />}
+            w="full"
+            startElement={
+              <Box color="gray.400" display="flex" alignItems="center">
+                <LayoutIcon name="search" size={16} />
+              </Box>
+            }
             endElement={
-              <Kbd fontSize="xs" color="gray.500">
+              <Kbd fontSize="10px" px={1.5} py={0.5} bg="gray.100" color="gray.500" borderColor="gray.200">
                 /
               </Kbd>
             }
@@ -160,8 +167,13 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
               aria-label="Global search"
               h="38px"
               bg={searchFocus ? "white" : "gray.50"}
-              borderColor="gray.200"
+              border="1px solid"
+              borderColor={searchFocus ? "brand.500" : "gray.200"}
+              color="gray.800"
+              borderRadius="full"
               fontSize="sm"
+              boxShadow={searchFocus ? "0 0 0 3px rgba(134, 188, 37, 0.2)" : "none"}
+              transition="all 0.15s ease"
             />
           </InputGroup>
           {suggestions.length > 0 && (
@@ -218,20 +230,29 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
 
         <HStack gap={2.5} flex="1 1 auto" justify="flex-end">
           <Badge
-            colorPalette="brand"
             variant="subtle"
             size="sm"
             borderRadius="full"
             px={2.5}
+            py={0.5}
+            bg="green.50"
+            border="1px solid"
+            borderColor="green.200"
+            color="green.700"
             display={{ base: "none", md: "inline-flex" }}
           >
             <HStack gap={1.5}>
-              <Box w="7px" h="7px" borderRadius="full" bg="green.600" />
-              <span>LIVE</span>
+              <Box w="6px" h="6px" borderRadius="full" bg="green.600" />
+              <Text fontSize="11px" fontWeight="bold" letterSpacing="0.05em">LIVE</Text>
             </HStack>
           </Badge>
           <Box position="relative">
-            <IconButton variant="ghost" aria-label="Notifications">
+            <IconButton
+              variant="ghost"
+              aria-label="Notifications"
+              color="gray.700"
+              _hover={{ bg: "gray.100", color: "gray.900" }}
+            >
               <LayoutIcon name="bell" size={19} />
             </IconButton>
             <Box
@@ -249,6 +270,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
           <Separator
             orientation="vertical"
             height="7"
+            borderColor="gray.200"
             display={{ base: "none", sm: "block" }}
           />
           <UserMenu />

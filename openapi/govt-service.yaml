@@ -1,0 +1,729 @@
+openapi: 3.1.0
+info:
+  title: Govt Programs Service (WP-T4)
+  version: v0
+  description: |
+    Catalog #28 Wave-6 tranche 6 slice. Owns ihms_govt: Chiranjeevi beneficiary
+    enrolment + TID linkage, Aasmaan case management (forward-only status
+    1=OPEN -> 2=IN_PROGRESS -> 3=CLOSED, closed-case note guard), EJS ASHA /
+    indicator entries and incentives (compute = SUM(entry.value x rate-table);
+    recompute REPLACES prior COMPUTED rows only; machine 1=COMPUTED -> approve
+    -> 2=APPROVED -> pay -> 3=PAID).
+    Emits NOTHING: IncentiveComputed / CaseUpdated are DEFERRED per
+    KAFKA-EVENT-CATALOG; external PCTS / Chiranjeevi-Yojana pushes are OUT OF
+    SCOPE (comment-only). Aasmaan table names UNVERIFIED against legacy Oracle.
+servers:
+- url: http://localhost:8108
+  description: Generated server url
+tags:
+- name: Beneficiaries (WP-T4)
+  description: 'Chiranjeevi enrolment + TID linkage (Catalog #28): scheme pinned to CHIRANJEEVI; dup enrolmentNo/tid -> 409. No events — PCTS/Chiranjeevi-Yojana pushes OUT OF SCOPE.'
+- name: Aasmaan Cases (WP-T4)
+  description: 'Aasmaan case management (Catalog #28): forward-only status 1=OPEN -> 2=IN_PROGRESS -> 3=CLOSED (adjacent steps only); notes rejected on CLOSED cases (GOVT_CASE_CLOSED). CaseUpdated DEFERRED - no events.'
+- name: EJS (WP-T4)
+  description: 'EJS incentives (Catalog #28): indicator upsert on UNIQUE(ashaId,indicatorCode,periodYear,periodMonth); compute = SUM(value x rate-table); recompute REPLACES prior COMPUTED rows only; machine 1=COMPUTED -> approve -> 2=APPROVED -> pay -> 3=PAID. IncentiveComputed DEFERRED - no events.'
+paths:
+  /api/v1/beneficiaries/enrol:
+    post:
+      tags:
+      - Beneficiaries (WP-T4)
+      operationId: enrolBeneficiary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrolRequest'
+        required: true
+      responses:
+        '201':
+          description: Enrolled (scheme CHIRANJEEVI, active)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BeneficiaryEnrolment'
+        '400':
+          description: 'Guards: patientId/enrolmentNo/enrolledOn required, scheme must be CHIRANJEEVI (BEXA003)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Duplicate enrolmentNo (GOVT_DUPLICATE_ENROLMENT_NO)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/beneficiaries/{enrolmentNo}/tid:
+    put:
+      tags:
+      - Beneficiaries (WP-T4)
+      operationId: linkTid
+      parameters:
+      - name: enrolmentNo
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTidRequest'
+        required: true
+      responses:
+        '201':
+          description: TID linked to the enrolment
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ReferenceTid'
+        '400':
+          description: tid required (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown enrolmentNo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Duplicate tid (GOVT_DUPLICATE_TID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/aasmaan/cases:
+    post:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: createAasmaanCase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+        required: true
+      responses:
+        '201':
+          description: Case opened (status OPEN, opened_on = today)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AasmaanCase'
+        '400':
+          description: patientId / caseType required (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: listAasmaanCases
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..3 or name (OPEN, IN_PROGRESS, CLOSED)'
+        schema:
+          type: string
+      - name: patientId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AasmaanCase'
+  /api/v1/aasmaan/cases/{id}:
+    get:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: getAasmaanCase
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AasmaanCase'
+        '404':
+          description: Unknown case id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/aasmaan/cases/{id}/notes:
+    post:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: addAasmaanCaseNote
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddNoteRequest'
+        required: true
+      responses:
+        '201':
+          description: Note appended
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AasmaanCaseNote'
+        '400':
+          description: note required (BEXA003) or case CLOSED (GOVT_CASE_CLOSED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown case id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: listAasmaanCaseNotes
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AasmaanCaseNote'
+        '404':
+          description: Unknown case id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/aasmaan/cases/{id}/status:
+    put:
+      tags:
+      - Aasmaan Cases (WP-T4)
+      operationId: updateAasmaanCaseStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Forward-only move applied (closing stamps closed_on)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AasmaanCase'
+        '400':
+          description: Illegal move — repeat/backward/skip (GOVT_ILLEGAL_TRANSITION) or unknown status (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown case id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ejs/asha:
+    post:
+      tags:
+      - EJS (WP-T4)
+      operationId: createEjsAsha
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAshaRequest'
+        required: true
+      responses:
+        '201':
+          description: ASHA registered
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EjsAsha'
+        '400':
+          description: code/name required (BEXA003) or unknown supervisor (GOVT_UNKNOWN_SUPERVISOR)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Duplicate asha code (GOVT_DUPLICATE_ASHA_CODE)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ejs/indicators:
+    post:
+      tags:
+      - EJS (WP-T4)
+      operationId: upsertEjsIndicator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertIndicatorRequest'
+        required: true
+      responses:
+        '200':
+          description: Entry inserted or updated on the unique key
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EjsIndicatorEntry'
+        '400':
+          description: indicatorCode/periodYear/value required, periodMonth 1..12, value >= 0 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown ashaId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ejs/incentives:
+    get:
+      tags:
+      - EJS (WP-T4)
+      operationId: listEjsIncentives
+      parameters:
+      - name: status
+        in: query
+        required: false
+        description: '1..3 or name (COMPUTED, APPROVED, PAID)'
+        schema:
+          type: string
+      - name: ashaId
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EjsIncentive'
+  /api/v1/ejs/incentives/compute:
+    post:
+      tags:
+      - EJS (WP-T4)
+      operationId: computeEjsIncentive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComputeRequest'
+        required: true
+      responses:
+        '201':
+          description: Fresh COMPUTED incentive (recompute replaced prior COMPUTED rows only)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EjsIncentive'
+        '400':
+          description: periodYear required, periodMonth 1..12 (BEXA003)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown ashaId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ejs/incentives/{id}/approve:
+    put:
+      tags:
+      - EJS (WP-T4)
+      operationId: approveEjsIncentive
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Approved (1 COMPUTED -> 2 APPROVED)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EjsIncentive'
+        '400':
+          description: Guard violated — only COMPUTED can be approved (GOVT_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown incentive id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/ejs/incentives/{id}/pay:
+    put:
+      tags:
+      - EJS (WP-T4)
+      operationId: payEjsIncentive
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Paid (2 APPROVED -> 3 PAID)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/EjsIncentive'
+        '400':
+          description: Guard violated — only APPROVED can be paid (GOVT_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown incentive id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    EnrolRequest:
+      required:
+      - patientId
+      - scheme
+      - enrolmentNo
+      - enrolledOn
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        scheme:
+          type: string
+          description: must be CHIRANJEEVI
+        enrolmentNo:
+          type: string
+          maxLength: 40
+        enrolledOn:
+          type: string
+          format: date
+    BeneficiaryEnrolment:
+      type: object
+      properties:
+        enrolmentId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        scheme:
+          type: string
+        enrolmentNo:
+          type: string
+        enrolledOn:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+        addedBy:
+          type: integer
+          format: int64
+          nullable: true
+        addedDatetime:
+          type: string
+          format: date-time
+          nullable: true
+        updatedBy:
+          type: integer
+          format: int64
+          nullable: true
+        updatedDatetime:
+          type: string
+          format: date-time
+          nullable: true
+    LinkTidRequest:
+      required:
+      - tid
+      type: object
+      properties:
+        tid:
+          type: string
+    ReferenceTid:
+      type: object
+      properties:
+        tidId:
+          type: integer
+          format: int64
+        enrolmentId:
+          type: integer
+          format: int64
+        tid:
+          type: string
+    CreateCaseRequest:
+      required:
+      - patientId
+      - caseType
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        caseType:
+          type: string
+          maxLength: 40
+    AasmaanCase:
+      type: object
+      properties:
+        caseId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        caseType:
+          type: string
+        status:
+          type: integer
+          description: 'SMALLINT: 1=OPEN 2=IN_PROGRESS 3=CLOSED (forward-only)'
+          format: int32
+        openedOn:
+          type: string
+          format: date
+          nullable: true
+        closedOn:
+          type: string
+          format: date
+          nullable: true
+    AddNoteRequest:
+      required:
+      - note
+      type: object
+      properties:
+        note:
+          type: string
+        author:
+          type: string
+          nullable: true
+          maxLength: 80
+    AasmaanCaseNote:
+      type: object
+      properties:
+        noteId:
+          type: integer
+          format: int64
+        caseId:
+          type: integer
+          format: int64
+        note:
+          type: string
+        author:
+          type: string
+          nullable: true
+    UpdateStatusRequest:
+      required:
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          description: '1..3 or name (OPEN, IN_PROGRESS, CLOSED); adjacent forward step only'
+    CreateAshaRequest:
+      required:
+      - code
+      - name
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 120
+        supervisorId:
+          type: integer
+          format: int64
+          nullable: true
+          description: optional; must reference an existing t_ejs_supervisor row when supplied
+    EjsAsha:
+      type: object
+      properties:
+        ashaId:
+          type: integer
+          format: int64
+        ashaCode:
+          type: string
+        name:
+          type: string
+          nullable: true
+        supervisorId:
+          type: integer
+          format: int64
+          nullable: true
+    UpsertIndicatorRequest:
+      required:
+      - ashaId
+      - indicatorCode
+      - periodYear
+      - periodMonth
+      - value
+      type: object
+      properties:
+        ashaId:
+          type: integer
+          format: int64
+        indicatorCode:
+          type: string
+          maxLength: 20
+        periodYear:
+          type: integer
+          format: int32
+        periodMonth:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+        value:
+          type: integer
+          format: int32
+          minimum: 0
+    EjsIndicatorEntry:
+      type: object
+      properties:
+        entryId:
+          type: integer
+          format: int64
+        ashaId:
+          type: integer
+          format: int64
+        indicatorCode:
+          type: string
+        periodYear:
+          type: integer
+          format: int32
+          nullable: true
+        periodMonth:
+          type: integer
+          format: int32
+          nullable: true
+        value:
+          type: integer
+          format: int32
+    ComputeRequest:
+      required:
+      - ashaId
+      - periodYear
+      - periodMonth
+      type: object
+      properties:
+        ashaId:
+          type: integer
+          format: int64
+        periodYear:
+          type: integer
+          format: int32
+        periodMonth:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+    EjsIncentive:
+      type: object
+      properties:
+        incentiveId:
+          type: integer
+          format: int64
+        ashaId:
+          type: integer
+          format: int64
+        periodYear:
+          type: integer
+          format: int32
+          nullable: true
+        periodMonth:
+          type: integer
+          format: int32
+          nullable: true
+        amount:
+          type: number
+          description: NUMERIC(19,2), >= 0
+        status:
+          type: integer
+          description: 'SMALLINT: 1=COMPUTED 2=APPROVED 3=PAID'
+          format: int32
+        computedAt:
+          type: string
+          format: date-time
+          nullable: true

@@ -14,9 +14,9 @@ export function HimsCard({
 }) {
   return (
     <Card.Root
-      bg="white"
+      bg="surface.panel"
       border="1px solid"
-      borderColor="gray.200"
+      borderColor="border.DEFAULT"
       borderRadius="lg"
       boxShadow="sm"
       borderTop={accent ? "3px solid" : undefined}

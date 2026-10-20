@@ -1,0 +1,843 @@
+openapi: 3.1.0
+info:
+  title: Billing & Settlement Service (WP-11)
+  version: v0
+  description: |
+    Catalog #5 Wave-4 tranche 4. Owns ihms_billing: t_charge / t_bill / t_doctor_share.
+    Lifecycle: POST /charges creates TEMP rows; POST /bills attaches them to a header with
+    placeholder billNo 000000000000000 (BR-BILL-001); finalize applies BR-BILL-004 taxes,
+    BR-BILL-005 asymmetric co-pay/concession split (SELF: plan%+bill% ADDED on selfRate;
+    NON-SELF: bill% REPLACES on nonSelfRate) and BR-BILL-002 doctor share, fills the
+    *BeforeFinalization snapshots, assigns OPDBILL/IPDBILL-<seq> and emits E-07
+    InvoiceGenerated ONCE via the transactional outbox (topic ihms.billing.events,
+    schema invoice-generated.v1, partition key billId).
+    PUT /internal/bills/{id}/settlement is the synchronous payments->billing contract
+    (BR-BILL-006, settled <=> both balances <= 0, idempotent recomputation).
+    WP-S1 saga slice: POST /internal/events consumes E-13 OrderCreated
+    (order-created.v1, topic ihms.ordering.events) and creates the bill DRAFT
+    idempotently keyed on the envelope eventId; validation failure returns a
+    structured rejection the relay maps to ordering-service BILLING_FAILED.
+servers:
+- url: http://localhost:8098
+  description: Generated server url
+tags:
+- name: Billing (WP-11)
+  description: 'Catalog #5: charges -> bills -> finalize -> settlement; E-07 InvoiceGenerated on finalize'
+- name: internal
+  description: 'Service-to-service operations (payments-service synchronous settlement call; ordering-event relay ingress feeding bill drafts — transport stub for the future Kafka listener)'
+- name: Payments (MIG-041)
+  description: 'Catalog #6: advances (BR-BILL-007 FIFO) + receipts (BR-BILL-006) + refunds (BR-BILL-008); E-08 PaymentReceived on every receipt'
+paths:
+  /api/v1/charges:
+    post:
+      tags:
+      - Billing (WP-11)
+      operationId: createCharge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChargeRequest'
+        required: true
+      responses:
+        '201':
+          description: Created (TEMP charge, billId null until attached to a bill)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Charge'
+        '400':
+          description: serviceId/serviceName missing or rate<0 / qty<=0 (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills:
+    post:
+      tags:
+      - Billing (WP-11)
+      operationId: createBill
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBillRequest'
+        required: true
+      responses:
+        '201':
+          description: Created interim bill (billNo 000000000000000 per BR-BILL-001)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: patientId missing, no chargeIds, unknown/duplicate/cancelled charge (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}:
+    get:
+      tags:
+      - Billing (WP-11)
+      operationId: getBill
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Bill with attached charge lines
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '404':
+          description: Bill not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}/finalize:
+    post:
+      tags:
+      - Billing (WP-11)
+      operationId: finalizeBill
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Finalized (final billNo OPDBILL/IPDBILL-<seq>; E-07 InvoiceGenerated emitted once)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: already finalized / cancelled / no charges (BILL_ILLEGAL_TRANSITION | BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}/concession:
+    post:
+      tags:
+      - Billing (WP-11)
+      operationId: applyConcession
+      description: Pre-finalize only — 400 BILL_ALREADY_FINALIZED after finalize.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConcessionRequest'
+        required: true
+      responses:
+        '200':
+          description: Concession percentages applied to all charge lines
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: after finalize (BILL_ALREADY_FINALIZED) or negative pct (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/internal/bills/{id}/settlement:
+    put:
+      tags:
+      - internal
+      operationId: settleBill
+      description: |
+        Synchronous payments->billing settlement (catalog #5 note). paidSelf/paidNonSelf are
+        CUMULATIVE paid amounts; balances are RECOMPUTED (idempotent replay-safe);
+        is_settled <=> balance_self <= 0 AND balance_non_self <= 0 (BR-BILL-006).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettlementRequest'
+        required: true
+      responses:
+        '200':
+          description: New settlement state of the bill
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: negative amounts (BILL_REQ_INVALID) or cancelled bill (BILL_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}/cancel-settled:
+    post:
+      tags:
+      - Billing (WP-11)
+      operationId: cancelSettledBill
+      description: |
+        BR-BILL-008: Cancel a SETTLED bill — restores charges from *BeforeFinalization
+        snapshots, marks bill cancelled, unbills doctor shares. Called by payments-service
+        refund flow (transactionType=4).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelSettledBillRequest'
+        required: true
+      responses:
+        '200':
+          description: Cancelled bill with restored charge snapshots
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: not settled / already cancelled (BILL_ILLEGAL_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/internal/events:
+    post:
+      tags:
+      - internal
+      operationId: consumeInternalEvent
+      description: |
+        INTERNAL event-relay ingress (WP-S1; models the future Kafka consumer of
+        ihms.ordering.events). Consumes ONLY 'OrderCreated' (order-created.v1):
+        creates the interim bill DRAFT + one charge per payload line, idempotent per
+        eventId (first delivery 201 APPLIED; duplicate replay 200 DUPLICATE, no-op at
+        DB level; unknown eventType 400 BILL_UNKNOWN_EVENT_TYPE). Payload validation
+        failure -> 422 REJECTED with {status, errorCode, message} which the relay maps
+        to POST /api/v1/internal/orders/{id}/billing-failed on ordering-service.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumeEventRequest'
+        required: true
+      responses:
+        '201':
+          description: Draft created (APPLIED) — billId + sourceOrderId returned
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IngestResult'
+        '200':
+          description: Duplicate eventId replay (DUPLICATE) — existing draft referenced, nothing written
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IngestResult'
+        '400':
+          description: Unknown eventType (BILL_UNKNOWN_EVENT_TYPE) or missing envelope fields (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: Payload rejected (REJECTED) — recorded on t_consumed_event, no bill/charge rows
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/IngestResult'
+  /api/v1/patients/{id}/advances:
+    post:
+      tags:
+      - Payments (MIG-041)
+      operationId: applyAdvance
+      description: |
+        Apply a patient advance (RECEIPT entry on t_advance_ledger, balance +).
+        Returns the new running balance. Idempotency is the caller's
+        responsibility (replay the same receipt_no for retry safety).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyAdvanceRequest'
+        required: true
+      responses:
+        '201':
+          description: Advance credited; new running balance returned
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvanceBalanceResponse'
+        '400':
+          description: amount must be > 0 / modeCode required (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/patients/{id}/advances/balance:
+    get:
+      tags:
+      - Payments (MIG-041)
+      operationId: getAdvanceBalance
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Current running balance for the patient
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/AdvanceBalanceResponse'
+  /api/v1/bills/{id}/payments/advance-adjust:
+    post:
+      tags:
+      - Payments (MIG-041)
+      operationId: applyAdvanceAdjustment
+      description: |
+        BR-BILL-007 FIFO advance consumption: advances consumed against the
+        bill's balance_self in advance_id ASC order; partial splits allowed
+        when the source advance cannot cover the remainder on its own.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Total amount consumed from the patient's advance
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  billId: {type: integer, format: int64}
+                  advanceConsumed: {type: number}
+  /api/v1/bills/{id}/payments:
+    post:
+      tags:
+      - Payments (MIG-041)
+      operationId: recordPayment
+      description: |
+        Record a payment receipt (BR-BILL-006) and emit E-08 PaymentReceived.
+        selfAmount + nonSelfAmount are the amounts in THIS receipt. Settlement
+        is recomputed from the cumulative receipts (idempotent replay-safe).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentRequest'
+        required: true
+      responses:
+        '200':
+          description: New state of the bill (settled if both balances <= 0)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: negative amounts or non-cash without bankRef (BILL_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}/refunds:
+    post:
+      tags:
+      - Payments (MIG-041)
+      operationId: issueRefund
+      description: |
+        Issue a refund (BR-BILL-008). transactionType=3 advance refund
+        (debits patient balance; legacy BEXAR002 if balance <= 0);
+        transactionType=4 bill-cancel refund (delegates to BillingService
+        cancelSettledBill to restore *BeforeFinalization snapshots).
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+        required: true
+      responses:
+        '200':
+          description: Refund applied; bill state returned
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Bill'
+        '400':
+          description: amount must be > 0 / invalid transactionType / BEXAR002 zero balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/bills/{id}/receipts:
+    get:
+      tags:
+      - Payments (MIG-041)
+      operationId: getReceipts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Receipt history for the bill
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Receipt'
+  /api/v1/bills/{id}/refunds:
+    get:
+      tags:
+      - Payments (MIG-041)
+      operationId: getRefunds
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Refund history for the bill
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Refund'
+
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+        errorCode:
+          type: string
+        message:
+          type: string
+    CreateChargeRequest:
+      type: object
+      properties:
+        serviceId:
+          type: integer
+          format: int64
+        serviceName:
+          type: string
+        rate:
+          type: number
+        qty:
+          type: integer
+          default: 1
+        taxPctA:
+          type: number
+        taxPctB:
+          type: number
+        taxPctC:
+          type: number
+        applyAfterConcession:
+          type: boolean
+          default: false
+        coPayPct:
+          type: number
+          description: 0 => treated as 100% self (deductable rule)
+        concessionPlanPct:
+          type: number
+        concessionBillPct:
+          type: number
+        doctorSharePct:
+          type: number
+        specialization:
+          type: integer
+          description: '1=patho 2=rad — post-saga order-creation marker ONLY (not implemented here)'
+        isOtProcedure:
+          type: boolean
+          default: false
+      required:
+      - serviceId
+      - serviceName
+      - rate
+    CreateBillRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        encounterId:
+          type: integer
+          format: int64
+          nullable: true
+        admissionId:
+          type: integer
+          format: int64
+          nullable: true
+        cashCounterId:
+          type: integer
+          format: int64
+          default: 1
+        prescriberDoctorId:
+          type: integer
+          format: int64
+          nullable: true
+        isSelfCompany:
+          type: boolean
+          default: true
+          description: BR-BILL-005 split discriminator (SELF vs NON-SELF company path)
+        chargeIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required:
+      - patientId
+      - chargeIds
+    ConcessionRequest:
+      type: object
+      properties:
+        concessionPlanPct:
+          type: number
+        concessionBillPct:
+          type: number
+    SettlementRequest:
+      type: object
+      properties:
+        paidSelf:
+          type: number
+          description: cumulative paid against self balance
+        paidNonSelf:
+          type: number
+          description: cumulative paid against non-self balance
+    ChargeCalculation:
+      type: object
+      properties:
+        lineTotal: {type: number}
+        selfRate: {type: number}
+        nonSelfRate: {type: number}
+        concession: {type: number}
+        taxA: {type: number}
+        taxB: {type: number}
+        taxC: {type: number}
+        taxTotal: {type: number}
+        selfAmount: {type: number}
+        nonSelfAmount: {type: number}
+        doctorShare: {type: number, nullable: true}
+        hospitalShare: {type: number, nullable: true}
+    Charge:
+      type: object
+      properties:
+        chargeId: {type: integer, format: int64}
+        billId: {type: integer, format: int64, nullable: true}
+        serviceId: {type: integer, format: int64}
+        serviceName: {type: string}
+        rate: {type: number}
+        qty: {type: integer}
+        taxPctA: {type: number}
+        taxPctB: {type: number}
+        taxPctC: {type: number}
+        applyAfterConcession: {type: boolean}
+        coPayPct: {type: number}
+        concessionPlanPct: {type: number}
+        concessionBillPct: {type: number}
+        doctorSharePct: {type: number}
+        specialization: {type: integer, nullable: true}
+        isOtProcedure: {type: boolean}
+        totalBeforeFinalization: {type: number, nullable: true}
+        selfBeforeFinalization: {type: number, nullable: true}
+        nonselfBeforeFinalization: {type: number, nullable: true}
+        isCancelled: {type: boolean}
+    DoctorShare:
+      type: object
+      properties:
+        shareId: {type: integer, format: int64}
+        billId: {type: integer, format: int64}
+        chargeId: {type: integer, format: int64}
+        doctorId: {type: integer, format: int64}
+        shareAmount: {type: number}
+        hospitalAmount: {type: number}
+        isBilled: {type: boolean}
+    Bill:
+      type: object
+      properties:
+        billId: {type: integer, format: int64}
+        patientId: {type: integer, format: int64}
+        encounterId: {type: integer, format: int64, nullable: true}
+        admissionId: {type: integer, format: int64, nullable: true}
+        cashCounterId: {type: integer, format: int64}
+        prescriberDoctorId: {type: integer, format: int64, nullable: true}
+        isSelfCompany: {type: boolean}
+        billNo:
+          type: string
+          description: 000000000000000 placeholder at creation (BR-BILL-001); OPDBILL/IPDBILL-<seq> at finalize
+        isInterim: {type: boolean}
+        isSettled: {type: boolean}
+        isCancelled: {type: boolean}
+        totalAmount: {type: number}
+        taxAmount: {type: number}
+        concessionAmount: {type: number}
+        selfAmount: {type: number}
+        nonSelfAmount: {type: number}
+        balanceSelf: {type: number}
+        balanceNonSelf: {type: number}
+        changeAmount: {type: number}
+        finalizedAt: {type: string, format: date-time, nullable: true}
+        charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Charge'
+    ConsumeEventRequest:
+      required:
+      - eventId
+      - eventType
+      - payload
+      type: object
+      properties:
+        eventId:
+          type: string
+          maxLength: 64
+          description: outbox envelope UUID (idempotency key)
+        eventType:
+          type: string
+          description: only 'OrderCreated' is consumed by this service
+        payload:
+          type: object
+          description: E-13 payload {orderId, patientId, encounterId|null, admissionId|null, lines[{itemId,serviceName,rate,qty}], prescriberId, wardId}
+    IngestResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - APPLIED
+          - DUPLICATE
+          - REJECTED
+        eventId:
+          type: string
+        eventType:
+          type: string
+        billId:
+          type: integer
+          format: int64
+          nullable: true
+          description: set when APPLIED or DUPLICATE (existing draft)
+        sourceOrderId:
+          type: integer
+          format: int64
+          nullable: true
+        chargeCount:
+          type: integer
+          nullable: true
+          description: number of charges created (APPLIED only)
+        errorCode:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+    CancelSettledBillRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: Cancellation reason (audit trail)
+      required:
+      - reason
+    BillSettledPayload:
+      type: object
+      description: E-07 companion event emitted when bill transitions to settled (both balances <= 0)
+      properties:
+        billId:
+          type: string
+        billNo:
+          type: string
+        patientId:
+          type: string
+        encounterId:
+          type: string
+          nullable: true
+        admissionId:
+          type: string
+          nullable: true
+        settledAt:
+          type: string
+          format: date-time
+        paidSelf:
+          type: number
+        paidNonSelf:
+          type: number
+        balanceSelf:
+          type: number
+        balanceNonSelf:
+          type: number
+        changeAmount:
+          type: number
+    ConcessionApprovedPayload:
+    Receipt:
+      type: object
+      description: Payment receipt (BR-BILL-006, transactionType=2)
+      properties:
+        receiptId: {type: integer, format: int64}
+        billId: {type: integer, format: int64}
+        patientId: {type: integer, format: int64}
+        receiptNo: {type: string}
+        amount: {type: number, description: self portion of the payment}
+        nonSelfAmount: {type: number}
+        modeCode: {type: string, description: CASH / CARD / CHEQUE / ONLINE / COMPANY / ADVANCE}
+        bankId: {type: integer, format: int64, nullable: true}
+        bankRefNo: {type: string, nullable: true}
+        transactionType: {type: integer, description: '2 = receipt (legacy)'}
+        cashCounterId: {type: integer, format: int64}
+        changeAmount: {type: number}
+        paymentDatetime: {type: string, format: date-time}
+    Refund:
+      type: object
+      description: Refund / cancellation ledger (BR-BILL-008)
+      properties:
+        refundId: {type: integer, format: int64}
+        billId: {type: integer, format: int64}
+        patientId: {type: integer, format: int64}
+        receiptId: {type: integer, format: int64, nullable: true}
+        transactionType: {type: integer, description: '3 = advance refund, 4 = bill cancel'}
+        amount: {type: number}
+        modeCode: {type: string}
+        reason: {type: string, nullable: true}
+        refundDatetime: {type: string, format: date-time}
+    AdvanceLedger:
+      type: object
+      description: Patient advance balance + FIFO consumption (BR-BILL-007)
+      properties:
+        advanceId: {type: integer, format: int64}
+        patientId: {type: integer, format: int64}
+        billId: {type: integer, format: int64, nullable: true}
+        entryType: {type: string, description: RECEIPT or CONSUMPTION}
+        amount: {type: number, description: "signed; + credit, - debit"}
+        balanceAfter: {type: number}
+        receiptNo: {type: string, nullable: true}
+        consumedAdvanceId: {type: integer, format: int64, nullable: true}
+        modeCode: {type: string, nullable: true}
+        remarks: {type: string, nullable: true}
+    ApplyAdvanceRequest:
+      type: object
+      required: [amount, modeCode]
+      properties:
+        amount: {type: number}
+        modeCode: {type: string}
+        receiptNo: {type: string}
+        remarks: {type: string}
+    AdvanceBalanceResponse:
+      type: object
+      properties:
+        patientId: {type: integer, format: int64}
+        balance: {type: number}
+    RecordPaymentRequest:
+      type: object
+      required: [selfAmount, nonSelfAmount, modeCode]
+      properties:
+        selfAmount: {type: number}
+        nonSelfAmount: {type: number}
+        modeCode: {type: string, description: 'CASH / CARD / CHEQUE / ONLINE / COMPANY / ADVANCE'}
+        bankId: {type: integer, format: int64, nullable: true}
+        bankRefNo: {type: string, nullable: true}
+        applyAdvance: {type: boolean, default: false, description: 'Apply BR-BILL-007 FIFO advance consumption before settlement'}
+    RefundRequest:
+      type: object
+      required: [amount, modeCode, transactionType]
+      properties:
+        amount: {type: number}
+        modeCode: {type: string}
+        reason: {type: string}
+        transactionType: {type: integer, description: '3 = advance refund, 4 = bill cancel'}
+    PaymentReceivedPayload:
+      type: object
+      description: E-08 PaymentReceived (KAFKA-EVENT-CATALOG)
+      properties:
+        paymentId: {type: string}
+        receiptNo: {type: string}
+        billId: {type: string}
+        billNo: {type: string}
+        patientId: {type: string}
+        amount: {type: number}
+        nonSelfAmount: {type: number}
+        advanceApplied: {type: number}
+        modeCode: {type: string}
+        transactionType: {type: integer}
+        paymentDatetime: {type: string, format: date-time}
+        balanceSelf: {type: number}
+        balanceNonSelf: {type: number}
+        settled: {type: boolean}
+      type: object
+      description: Event emitted when concession percentages are applied to an interim bill
+      properties:
+        billId:
+          type: string
+        billNo:
+          type: string
+        patientId:
+          type: string
+        concessionPlanPct:
+          type: number
+        concessionBillPct:
+          type: number
+        appliedAt:
+          type: string
+          format: date-time

@@ -1,0 +1,373 @@
+openapi: 3.1.0
+info:
+  title: Payments & Refunds Service (WP-13)
+  version: v0
+  description: |
+    Catalog #6 Wave-4 tranche 4 slice. Owns ihms_payment: t_advance (balance is
+    GENERATED ALWAYS AS (amount - used) STORED), t_payment + t_payment_mode_detail
+    (mode 7 = ADVANCE reserved), BR-BILL-007 advance FIFO consumption ledger
+    (t_advance_consumption) and refunds TransactionType 3/4 per 06 §A6.
+    Synchronous REST settlement to billing-service (BR-BILL-006): PUT
+    /api/v1/internal/bills/{id}/settlement with cumulative paid amounts computed
+    from the payment's self-first allocation between outstanding balances.
+    Transactional outbox -> topic ihms.payment.events:
+      E-08 PaymentReceived  schema payment-received.v1  partition key billId
+        (appended in the SAME tx AFTER a successful settlement REST call —
+         documented deviation: the settlement saga step is request-scoped,
+         not eventually-retried)
+      E-12 RefundIssued     schema refund-issued.v1     partition key billId
+        (PRELIMINARY per KAFKA-EVENT-CATALOG; restoredCharges stays [] until
+         billing-side restore-of-charges compensation lands — BR-BILL-008)
+servers:
+- url: http://localhost:8099
+  description: Generated server url
+tags:
+- name: Advances
+  description: 'Patient advances with DB-generated balance column (amount - used); FIFO order = advance_id ASC (BR-BILL-007)'
+- name: Payments
+  description: 'Payment capture with mode details; modes-sum guard; BR-BILL-007 advance FIFO against the self balance; synchronous billing settlement (BR-BILL-006); E-08 PaymentReceived'
+- name: Refunds
+  description: 'TransactionType 3 = advance refund (guard BEXAR002), 4 = bill refund; E-12 RefundIssued PRELIMINARY'
+paths:
+  /api/v1/advances:
+    post:
+      tags:
+      - Advances
+      operationId: createAdvance
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdvanceRequest'
+        required: true
+      responses:
+        '201':
+          description: Created — balance read back from the generated column
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Advance'
+        '400':
+          description: 'Guards: patientId required, amount > 0 (PAY_REQ_INVALID)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Advances
+      operationId: listAdvances
+      parameters:
+      - name: patientId
+        in: query
+        required: true
+        description: Patient whose advances are listed, advance_id ascending
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Advance'
+        '400':
+          description: Missing patientId parameter (PAY_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/payments:
+    post:
+      tags:
+      - Payments
+      operationId: createPayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+        required: true
+      responses:
+        '201':
+          description: |
+            Recorded. Flow: modes-sum validation -> GET outstanding balances on
+            billing -> BR-BILL-007 advance FIFO (advanceUse) -> synchronous PUT
+            /api/v1/internal/bills/{id}/settlement -> E-08 PaymentReceived outboxed
+            in the same tx only after a successful settlement.
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: 'Sum of modes must equal amount (PAY_MODE_MISMATCH) unless advanceUse fills the gap; billId/patientId required; amount > 0 (PAY_REQ_INVALID)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: 'Synchronous billing settlement failed — nothing recorded, NO E-08 emitted (documented request-scoped saga deviation)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Payments
+      operationId: listPayments
+      parameters:
+      - name: billId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK — each payment carries its mode rows and advance-consumption rows
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+        '400':
+          description: Missing billId parameter (PAY_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /api/v1/refunds:
+    post:
+      tags:
+      - Refunds
+      operationId: createRefund
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRefundRequest'
+        required: true
+      responses:
+        '201':
+          description: 'Recorded; E-12 RefundIssued (PRELIMINARY) emitted via outbox. Type 3 reduces the advance balance; type 4 records the refund row only (restore-of-charges compensation stays billing-side later — documented deferral).'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Refund'
+        '400':
+          description: 'transactionType must be 3 or 4; type 3 requires advanceId and balance > 0 else legacy code BEXAR002; type 4 requires billId; reason required (PAY_REQ_INVALID)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Unknown advance id for a type-3 refund
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      tags:
+      - Refunds
+      operationId: listRefunds
+      parameters:
+      - name: billId
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Refund'
+        '400':
+          description: Missing billId parameter (PAY_REQ_INVALID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ERROR
+        errorCode:
+          type: string
+        message:
+          type: string
+    CreateAdvanceRequest:
+      type: object
+      properties:
+        patientId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          description: '> 0'
+    Advance:
+      type: object
+      properties:
+        advanceId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        used:
+          type: number
+          description: Incremented chunk-by-chunk by BR-BILL-007 consumption
+        balance:
+          type: number
+          description: 'GENERATED ALWAYS AS (amount - used) STORED — read-only'
+        status:
+          type: boolean
+        addedDatetime:
+          type: string
+          format: date-time
+        updatedDatetime:
+          type: string
+          format: date-time
+    CreatePaymentRequest:
+      type: object
+      properties:
+        billId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          description: '> 0'
+        advanceUse:
+          type: boolean
+          description: 'When true, any shortfall below amount is consumed from the patient''s advances (BR-BILL-007 FIFO, self balance first)'
+        modes:
+          type: array
+          description: 'Tendered mode lines; sum must equal amount unless advanceUse fills the gap'
+          items:
+            $ref: '#/components/schemas/ModeLineInput'
+    ModeLineInput:
+      type: object
+      properties:
+        mode:
+          type: integer
+          description: Legacy tendered-mode id; 7 = ADVANCE reserved
+        amount:
+          type: number
+    PaymentModeDetail:
+      type: object
+      properties:
+        modeDetailId:
+          type: integer
+          format: int64
+        paymentId:
+          type: integer
+          format: int64
+        mode:
+          type: integer
+        amount:
+          type: number
+    AdvanceConsumption:
+      type: object
+      description: One FIFO chunk consumed from an advance for this payment
+      properties:
+        consumptionId:
+          type: integer
+          format: int64
+        advanceId:
+          type: integer
+          format: int64
+        paymentId:
+          type: integer
+          format: int64
+        consumedAmount:
+          type: number
+    Payment:
+      type: object
+      properties:
+        paymentId:
+          type: integer
+          format: int64
+        billId:
+          type: integer
+          format: int64
+        patientId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        transactionType:
+          type: integer
+          description: Per 06 §A6 CHECK IN (2,3,4); payments are recorded as 2 here
+        changeAmount:
+          type: number
+          description: Change/cash-return captured from the billing settlement response
+        modes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentModeDetail'
+        advanceConsumptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdvanceConsumption'
+    CreateRefundRequest:
+      type: object
+      properties:
+        transactionType:
+          type: integer
+          enum: [3, 4]
+          description: '3 = advance refund (BEXAR002 when no refundable balance), 4 = bill refund'
+        patientId:
+          type: integer
+          format: int64
+        billId:
+          type: integer
+          format: int64
+          description: Required for transactionType 4
+        advanceId:
+          type: integer
+          format: int64
+          description: Required for transactionType 3
+        amount:
+          type: number
+        reason:
+          type: string
+    Refund:
+      type: object
+      properties:
+        refundId:
+          type: integer
+          format: int64
+        transactionType:
+          type: integer
+        billId:
+          type: integer
+          format: int64
+          nullable: true
+        advanceId:
+          type: integer
+          format: int64
+          nullable: true
+        patientId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        reason:
+          type: string

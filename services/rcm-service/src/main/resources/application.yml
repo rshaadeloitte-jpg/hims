@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: rcm-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: rcm-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_rcm
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_rcm
+    create-schemas: true           # history table needs ihms_rcm before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+app:
+  kafka:
+    topic:
+      # Reserved for the post-saga ClaimSubmitted event (KAFKA-EVENT-CATALOG §3 DEFERRED).
+      # Nothing publishes to these topics this tranche — the relay finds an empty outbox.
+      rcm-events: ${RCM_EVENTS_TOPIC:ihms.rcm.events}
+      dlq: ${RCM_DLQ_TOPIC:dlt.ihms.rcm.events}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+
+server:
+  port: ${SERVER_PORT:8103}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: rcm-service
+    description: iHMS RCM & Claims service (S23) - Wave-5 tranche 5 (Catalog #23); NHCX eligibility/pre-auth/claim requests with correlation-id callbacks (simulated locally), admission TID registry (unique, 409); ClaimSubmitted DEFERRED - no outbox writes
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"

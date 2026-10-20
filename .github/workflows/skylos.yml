@@ -1,0 +1,33 @@
+name: "Skylos — SAST, Dead Code, Secrets, Quality, AI-Defects"
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  skylos:
+    name: "Skylos Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skylos — Dead Code + Security + Quality + AI-Defects + Secrets
+        id: skylos
+        uses: duriantaco/skylos@v1
+        with:
+          path: "."
+          mode: "scan"
+          analysis: "dead-code security quality ai-defects secrets"
+          confidence: "60"
+
+      - name: Upload Skylos Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skylos-report
+          path: skylos-report.json
+          retention-days: 30

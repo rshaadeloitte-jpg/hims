@@ -1,0 +1,45 @@
+package com.hims.item.domain.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+/**
+ * Read-only projection over {@code ihms_item.item_supplier} ->
+ * {@code ihms_item.supplier}. The M13 item-enquiry suppliers list is a pure
+ * projection (no entity, no writes), so this repo carries a single native
+ * query that returns the join columns as {@code Object[]} and lets the service
+ * map into the {@link com.hims.item.application.ItemEnquiryView.SupplierLink}
+ * record. Spring Data's {@code JpaRepository<Object, Long>} is the no-entity
+ * placeholder convention for read-only projections.
+ */
+public interface ItemSupplierRepository extends JpaRepository<Object, Long> {
+
+    /**
+     * Legacy parity: T_ITEMSUPPLIER join M_SUPPLIER. Returns one row per
+     * supplier link for the given item, ordered by supplier code ascending.
+     * Columns:
+     * <ol>
+     *   <li>item_supplier.id</li>
+     *   <li>supplier.id</li>
+     *   <li>supplier.code</li>
+     *   <li>supplier.description</li>
+     *   <li>supplier.is_manufacturer</li>
+     *   <li>supplier.is_inhouse_supplier</li>
+     *   <li>supplier.is_empanelled</li>
+     *   <li>item_supplier.item_category_id</li>
+     * </ol>
+     */
+    @Query(value = """
+            SELECT isp.id, s.id, s.code, s.description,
+                   s.is_manufacturer, s.is_inhouse_supplier, s.is_empanelled,
+                   isp.item_category_id
+            FROM ihms_item.item_supplier isp
+            JOIN ihms_item.supplier s ON s.id = isp.supplier_id
+            WHERE isp.item_id = :itemId
+            ORDER BY s.code ASC
+            """, nativeQuery = true)
+    List<Object[]> findSuppliersForItemRaw(@Param("itemId") Long itemId);
+}

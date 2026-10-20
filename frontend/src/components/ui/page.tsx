@@ -38,21 +38,21 @@ export function PageHeader({
 }) {
   return (
     <Box
-      pb={3}
-      mb={4}
+      pb={4}
+      mb={6}
       borderBottom="1px solid"
-      borderColor="gray.200"
+      borderColor="border.DEFAULT"
     >
       <HStack justify="space-between" align="flex-start" gap={4} wrap="wrap">
-        <VStack align="flex-start" gap={1}>
+        <VStack align="flex-start" gap={1.5}>
           <HStack gap={2} align="center">
-            <Heading as="h1" size="lg" color="black" m={0}>
+            <Heading as="h1" size="lg" color="text.primary" m={0} fontWeight="700">
               {title}
             </Heading>
             {badge}
           </HStack>
           {description && (
-            <Text fontSize="sm" color="gray.600" m={0}>
+            <Text fontSize="sm" color="text.secondary" m={0}>
               {description}
             </Text>
           )}

@@ -101,12 +101,12 @@ export function AppShell({ children }: AppShellProps) {
           <Flex
             as="footer"
             borderTop="1px solid"
-            borderColor="gray.200"
-            bg="#0c1116"
-            color="gray.400"
+            borderColor="border.DEFAULT"
+            bg="surface.muted"
+            color="text.muted"
             fontSize="xs"
             textAlign="center"
-            p={3.5}
+            p={3}
             align="center"
             justify="center"
             gap={2}

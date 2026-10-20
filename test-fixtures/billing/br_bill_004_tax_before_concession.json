@@ -1,0 +1,31 @@
+{
+  "description": "BR-BILL-004 Tax before concession: rate=1000, coPay=100, taxA=9, taxB=9",
+  "input": {
+    "rate": 1000,
+    "qty": 1,
+    "taxPctA": 9,
+    "taxPctB": 9,
+    "taxPctC": 0,
+    "applyAfterConcession": false,
+    "coPayPct": 100,
+    "concessionPlanPct": 0,
+    "concessionBillPct": 0,
+    "doctorSharePct": 0,
+    "isOtProcedure": false,
+    "selfCompany": true
+  },
+  "expected": {
+    "lineTotal": 1000.0,
+    "selfRate": 1000.0,
+    "nonSelfRate": 0.0,
+    "concession": 0.0,
+    "taxA": 90.0,
+    "taxB": 90.0,
+    "taxC": 0.0,
+    "taxTotal": 180.0,
+    "selfAmount": 1180.0,
+    "nonSelfAmount": 0.0,
+    "doctorShare": null,
+    "hospitalShare": null
+  }
+}

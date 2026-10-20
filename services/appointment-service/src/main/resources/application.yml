@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: appointment-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
+    username: ${DB_USERNAME:ihms}
+    password: ${DB_PASSWORD:ihms-dev-only}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: appointment-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: ihms_appointment
+        globally_quoted_identifiers: true
+  flyway:
+    default-schema: ihms_appointment
+    create-schemas: true           # history table needs ihms_appointment before V1 executes
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+
+  # Bearer token authentication (MIG-031): OIDC resource server; the IAM realm
+  # endpoint is wired at MIG-004 — until then this default keeps startup local.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/ihms/protocol/openid-connect/certs}
+
+app:
+  kafka:
+    topic:
+      # MIG-031: single appointment/encounter event stream, patientId-keyed
+      # (encounterId for EncounterClosed) per the ordering rule of KAFKA-EVENT-CATALOG §6.
+      appointment-encounter: ${APPOINTMENT_ENCOUNTER_TOPIC:ihms.appointment.encounter}
+      dlq: ${APPOINTMENT_DLQ_TOPIC:dlt.ihms.appointment.encounter}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 5
+  jobs:
+    encounter-close:
+      enabled: ${ENCOUNTER_CLOSE_ENABLED:true}
+      cron: "${ENCOUNTER_CLOSE_CRON:0 30 1 * * *}"
+
+server:
+  port: ${SERVER_PORT:8091}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: appointment-service
+    description: iHMS Appointment & Encounter service (S02) - first Wave-3 service (Catalog #2); doctor schedules, slot search, booking with unique-slot constraint (BR-OPD-002), lifecycle book/checkin/complete/cancel/noshow; outbox AppointmentBooked + E-02 EncounterCreated (encounter-created.v1)
+    version: 0.1.0-SNAPSHOT
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
