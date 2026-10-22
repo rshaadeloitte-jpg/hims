@@ -7,4 +7,6 @@ import java.util.List;
 @Repository
 public interface JsyFormDataRepository extends JpaRepository<JsyFormData, Long> {
     List<JsyFormData> findByPatientIdAndFormType(Long patientId, String formType);
+    List<JsyFormData> findByFormType(String formType);
+    List<JsyFormData> findByPatientId(Long patientId);
 }

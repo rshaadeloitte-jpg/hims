@@ -98,7 +98,7 @@ export function PaymentForm({
         <h3 className="payment-form__title">Record Payment</h3>
         <div className="payment-form__balance">
           <span className="payment-form__balance-label">Balance Due</span>
-          <span className="payment-form__balance-amount">₹ {balanceAmount.toFixed(2)}</span>
+          <span className="payment-form__balance-amount" aria-live="polite">₹ {balanceAmount.toFixed(2)}</span>
         </div>
       </div>
 
@@ -345,12 +345,12 @@ export function PaymentForm({
         </div>
 
         {recordPayment.isError && (
-          <div className="alert alert--error" role="alert">
+          <div className="alert alert--error" role="alert" aria-live="assertive">
             Payment failed: {(recordPayment.error as Error)?.message ?? "Unknown error"}
           </div>
         )}
         {applyAdvance.isError && (
-          <div className="alert alert--error" role="alert">
+          <div className="alert alert--error" role="alert" aria-live="assertive">
             Advance application failed: {(applyAdvance.error as Error)?.message ?? "Unknown error"}
           </div>
         )}

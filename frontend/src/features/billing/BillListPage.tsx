@@ -64,10 +64,19 @@ export function BillListPage() {
         <Button type="submit" variant="primary">Search</Button>
       </form>
 
-      {isLoading && <p>Loading…</p>}
-      {isError && <p className="error">{(error as Error).message}</p>}
+      {isLoading && <p role="status" className="muted">Loading bills…</p>}
+      {isError && <p role="alert" className="error">{(error as Error).message}</p>}
 
-      <Table.Root size="sm" variant="line">
+      {!isLoading && !isError && bills.length === 0 && (
+        <div className="empty-state">
+          <h3>No bills found</h3>
+          <p className="muted">Adjust the filters above or create a new bill.</p>
+          <Link to="/billing/new" className="btn btn--primary" style={{ marginTop: 12 }}>+ New Bill</Link>
+        </div>
+      )}
+
+      {bills.length > 0 && (
+      <Table.Root size="sm" variant="line" aria-label="Bills list">
         <Table.Header>
           <Table.Row>
             <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Bill No</Table.ColumnHeader>
@@ -89,11 +98,9 @@ export function BillListPage() {
               <Table.Cell>{b.finalizedAt?.slice(0, 10) ?? "—"}</Table.Cell>
             </Table.Row>
           ))}
-          {bills.length === 0 && !isLoading && (
-            <Table.Row><Table.Cell colSpan={6} className="muted">No bills found.</Table.Cell></Table.Row>
-          )}
         </Table.Body>
       </Table.Root>
+      )}
     </section>
   );
 }

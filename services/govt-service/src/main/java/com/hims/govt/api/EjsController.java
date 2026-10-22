@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * EJS API (GAP-REGISTER-6 WP-T4, Catalog #28): ASHA registration, monthly
@@ -32,9 +33,11 @@ import java.util.List;
 public class EjsController {
 
     private final EjsService service;
+    private final com.hims.govt.application.EjsTrackingService trackingService;
 
-    public EjsController(EjsService service) {
+    public EjsController(EjsService service, com.hims.govt.application.EjsTrackingService trackingService) {
         this.service = service;
+        this.trackingService = trackingService;
     }
 
     @PostMapping("/asha")
@@ -83,6 +86,63 @@ public class EjsController {
     public List<EjsIncentive> listIncentives(@RequestParam(required = false) String status,
                                              @RequestParam(required = false) Long ashaId) {
         return service.listIncentives(status == null ? null : EjsService.parseStatus(status), ashaId);
+    }
+
+    // ---- AshaWork (ANC/PNC/child tracking) ----
+
+    @GetMapping("/asha-work")
+    public List<com.hims.govt.domain.model.AshaWork> listAshaWork(
+            @RequestParam(required = false) String trackingType,
+            @RequestParam(required = false) Long ashaId) {
+        return trackingService.listAshaWork(trackingType, ashaId);
+    }
+
+    @GetMapping("/asha-work/{id}")
+    public ResponseEntity<com.hims.govt.domain.model.AshaWork> getAshaWork(@PathVariable Long id) {
+        return trackingService.getAshaWork(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/asha-work")
+    public ResponseEntity<com.hims.govt.domain.model.AshaWork> createAshaWork(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(trackingService.createAshaWork(body));
+    }
+
+    @PutMapping("/asha-work/{id}")
+    public com.hims.govt.domain.model.AshaWork updateAshaWork(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return trackingService.updateAshaWork(id, body);
+    }
+
+    // ---- Geography (population registers) ----
+
+    @GetMapping("/geography")
+    public List<com.hims.govt.domain.model.Geography> listGeography(@RequestParam(required = false) Long ashaId) {
+        return trackingService.listGeography(ashaId);
+    }
+
+    @GetMapping("/geography/{id}")
+    public ResponseEntity<com.hims.govt.domain.model.Geography> getGeography(@PathVariable Long id) {
+        return trackingService.getGeography(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/geography")
+    public ResponseEntity<com.hims.govt.domain.model.Geography> createGeography(@RequestBody Map<String, Object> body) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(trackingService.createGeography(body));
+    }
+
+    @PutMapping("/geography/{id}")
+    public com.hims.govt.domain.model.Geography updateGeography(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return trackingService.updateGeography(id, body);
+    }
+
+    // ---- ASHA workers (dropdown) ----
+
+    @GetMapping("/asha-workers")
+    public List<Map<String, Object>> ashaWorkers() {
+        return trackingService.listAshaWorkers();
     }
 
     public record CreateAshaRequest(String code, String name, Long supervisorId) {}

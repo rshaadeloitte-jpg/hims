@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useDoctorShareCalculator, useCreateDoctorShare } from "./queries";
+import { useDoctorShareCalculator } from "./queries";
 import { doctorShareFormSchema, type DoctorShareFormValues } from "./zodSchema";
 
 interface ShareCalculatorProps {
@@ -23,11 +23,7 @@ export function ShareCalculator({
   initialBaseAmount = 0,
   onCalculated,
 }: ShareCalculatorProps) {
-  const [doctorId, setDoctorId] = useState(initialDoctorId);
-  const [service, setService] = useState(initialService);
   const [baseAmount, setBaseAmount] = useState(initialBaseAmount);
-
-  const { mutate: createShare, isPending: isCreating } = useCreateDoctorShare();
 
   const {
     register,
@@ -46,25 +42,25 @@ export function ShareCalculator({
     },
   });
 
+  const sharePercent = watch("sharePercent");
+  const baseAmountWatched = watch("baseAmount");
   const { data: calcResult, isLoading: isCalculating } = useDoctorShareCalculator({
-    doctorId,
-    service,
-    baseAmount,
+    totalAmount: baseAmountWatched || baseAmount,
+    sharePercentage: sharePercent || 0,
+    fixedAmount: 0,
   });
 
-  const onSubmit = (values: DoctorShareFormValues) => {
-    createShare(values, {
-      onSuccess: (data) => {
-        onCalculated?.({
-          baseAmount: data.baseAmount ?? values.baseAmount,
-          sharePercent: data.sharePercent ?? values.sharePercent,
-          shareAmount: (data.baseAmount ?? values.baseAmount) * (data.sharePercent ?? values.sharePercent) / 100,
-          gstAmount: 0,
-          netAmount: (data.baseAmount ?? values.baseAmount) * (data.sharePercent ?? values.sharePercent) / 100,
-        });
-        reset();
-      },
-    });
+  const onSubmit = (_values: DoctorShareFormValues) => {
+    if (calcResult) {
+      onCalculated?.({
+        baseAmount: calcResult.totalAmount,
+        sharePercent: calcResult.sharePercentage,
+        shareAmount: calcResult.shareAmount,
+        gstAmount: 0,
+        netAmount: calcResult.shareAmount,
+      });
+    }
+    reset();
   };
 
   const handleAdd = () => {
@@ -106,7 +102,6 @@ export function ShareCalculator({
               id="doctorId"
               type="number"
               {...register("doctorId")}
-              onChange={(e) => setDoctorId(Number(e.target.value))}
               className="input"
               min={1}
             />
@@ -119,7 +114,6 @@ export function ShareCalculator({
               id="service"
               type="text"
               {...register("service")}
-              onChange={(e) => setService(e.target.value)}
               className="input"
               placeholder="Enter service name"
             />
@@ -146,7 +140,6 @@ export function ShareCalculator({
               id="sharePercent"
               type="number"
               {...register("sharePercent")}
-              onChange={(e) => setDoctorId(Number(e.target.value))}
               className="input"
               min={1}
               max={100}
@@ -172,8 +165,8 @@ export function ShareCalculator({
             <button type="button" onClick={handleDeduct} className="btn btn-secondary">
               Deduct
             </button>
-            <button type="submit" className="btn btn-accent" disabled={isCreating}>
-              {isCreating ? "Saving..." : "Save"}
+            <button type="submit" className="btn btn-accent" disabled={isCalculating}>
+              {isCalculating ? "Calculating..." : "Apply"}
             </button>
           </div>
         </form>
@@ -184,11 +177,11 @@ export function ShareCalculator({
           <h2>Calculation Result</h2>
           <table className="table">
             <tbody>
-              <tr><td className="muted">Base Amount</td><td>₹{calcResult.baseAmount.toLocaleString()}</td></tr>
-              <tr><td className="muted">Share %</td><td>{calcResult.sharePercent}%</td></tr>
+              <tr><td className="muted">Base Amount</td><td>₹{calcResult.totalAmount.toLocaleString()}</td></tr>
+              <tr><td className="muted">Share %</td><td>{calcResult.sharePercentage}%</td></tr>
               <tr><td className="muted">Share Amount</td><td>₹{calcResult.shareAmount.toLocaleString()}</td></tr>
-              <tr><td className="muted">GST (5%)</td><td>₹{calcResult.gstAmount.toLocaleString()}</td></tr>
-              <tr><td className="muted font-semibold">Net Amount</td><td>₹{calcResult.netAmount.toLocaleString()}</td></tr>
+              <tr><td className="muted">Hospital Amount</td><td>₹{calcResult.hospitalAmount.toLocaleString()}</td></tr>
+              <tr><td className="muted font-semibold">Type</td><td>{calcResult.calculationType}</td></tr>
             </tbody>
           </table>
         </div>

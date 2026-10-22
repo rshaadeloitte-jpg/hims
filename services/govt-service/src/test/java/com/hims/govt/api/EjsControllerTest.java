@@ -42,6 +42,9 @@ class EjsControllerTest {
     @MockitoBean
     private EjsService ejsService;
 
+    @MockitoBean
+    private com.hims.govt.application.EjsTrackingService trackingService;
+
     private static EjsIncentive incentive(long id, short status) {
         EjsIncentive i = new EjsIncentive();
         i.setIncentiveId(id);

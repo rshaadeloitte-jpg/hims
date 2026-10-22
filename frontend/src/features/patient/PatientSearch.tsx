@@ -78,14 +78,13 @@ export function PatientSearch({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => autoFocus}
           placeholder="Search by name, MRN, mobile, ABHA, or Aadhaar..."
           aria-label="Search patients"
+          autoFocus={autoFocus}
           aria-expanded={hits.length > 0}
           aria-controls="patient-search-results"
           aria-activedescendant={activeIndex >= 0 ? `patient-hit-${activeIndex}` : undefined}
           role="combobox"
-          autoFocus={autoFocus}
         />
         {isFetching && (
           <span className="patient-search__spinner" aria-hidden="true">
@@ -106,7 +105,7 @@ export function PatientSearch({
       </div>
 
       {debouncedQuery.length >= 2 && (
-        <div id="patient-search-results" className="patient-search__results" role="listbox">
+        <div id="patient-search-results" className="patient-search__results" role="listbox" aria-live="polite" aria-busy={isFetching}>
           {isLoading ? (
             <div className="patient-search__hint" role="status">
               <span className="spinner spinner--sm" aria-hidden="true" /> Searching...

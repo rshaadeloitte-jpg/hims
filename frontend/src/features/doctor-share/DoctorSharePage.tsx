@@ -1,19 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { ApiError } from "../../api/client";
-const BASE = import.meta.env.VITE_DOCTOR_SHARE_API_BASE ?? "/api";
-async function j<T>(u: string): Promise<T> { const r = await fetch(u, { headers: { "X-Request-ID": crypto.randomUUID() } }); if (!r.ok) throw new ApiError(r.status, "ERR", "Failed"); return r.json(); }
+import { useDoctorShares } from "./queries";
 
 export function DoctorSharePage() {
-  const { data: shares = [] } = useQuery({ queryKey: ["doctor-shares"], queryFn: () => j<any[]>(`${BASE}/v1/doctor-shares`) });
+  const { data } = useDoctorShares(0, 50);
+  const shares = data?.content ?? [];
   return (
     <section className="page">
       <header className="page-header"><h1>Doctor Share</h1></header>
       <div className="card">
         <table className="table">
-          <thead><tr><th>Doctor</th><th>Service</th><th>Share %</th><th>Amount</th><th>Period</th></tr></thead>
+          <thead><tr><th>Share ID</th><th>Doctor ID</th><th>Bill ID</th><th>Share Amount</th><th>Hospital Amount</th><th>Billed</th></tr></thead>
           <tbody>
-            {shares.map((s: any) => <tr key={s.id}><td>{s.doctorName}</td><td>{s.service}</td><td>{s.sharePercent}</td><td>{s.amount}</td><td>{s.period}</td></tr>)}
-            {shares.length === 0 && <tr><td colSpan={5} className="muted">No doctor shares.</td></tr>}
+            {shares.map((s: any) => <tr key={s.id}><td>{s.id}</td><td>{s.doctorId}</td><td>{s.billId}</td><td>{s.shareAmount}</td><td>{s.hospitalAmount}</td><td>{s.isBilled ? "Yes" : "No"}</td></tr>)}
+            {shares.length === 0 && <tr><td colSpan={6} className="muted">No doctor shares.</td></tr>}
           </tbody>
         </table>
       </div>

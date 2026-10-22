@@ -52,22 +52,22 @@ export function PatientRegistrationForm({ onCreated }: { onCreated?: (id: number
 
         <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3}>
           <FormField label="First name" required error={errors.firstName?.message}>
-            <TextInput {...register("firstName")} />
+            <TextInput autoComplete="given-name" aria-required="true" {...register("firstName")} />
           </FormField>
           <FormField label="Middle name" error={errors.middleName?.message}>
-            <TextInput {...register("middleName")} />
+            <TextInput autoComplete="additional-name" {...register("middleName")} />
           </FormField>
-          <FormField label="Last name" error={errors.lastName?.message}>
-            <TextInput {...register("lastName")} />
+          <FormField label="Last name" required error={errors.lastName?.message}>
+            <TextInput autoComplete="family-name" aria-required="true" {...register("lastName")} />
           </FormField>
         </SimpleGrid>
 
         <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
           <FormField label="Mobile" required error={errors.mobileNo?.message}>
-            <TextInput inputMode="numeric" {...register("mobileNo")} />
+            <TextInput inputMode="tel" autoComplete="tel" aria-required="true" {...register("mobileNo")} />
           </FormField>
           <FormField label="ABHA address" error={errors.abhaAddress?.message}>
-            <TextInput {...register("abhaAddress")} />
+            <TextInput autoComplete="username" {...register("abhaAddress")} />
           </FormField>
         </SimpleGrid>
 
@@ -91,12 +91,12 @@ export function PatientRegistrationForm({ onCreated }: { onCreated?: (id: number
         </SimpleGrid>
 
         <FormField label="Address" error={errors.address?.message}>
-          <Textarea bg="white" borderColor="gray.300" rows={2} {...register("address")} />
+          <Textarea bg="white" borderColor="gray.300" rows={2} autoComplete="street-address" {...register("address")} />
         </FormField>
 
         <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
           <FormField label="Email" error={errors.email?.message}>
-            <TextInput type="email" {...register("email")} />
+            <TextInput type="email" autoComplete="email" {...register("email")} />
           </FormField>
           <FormField label="Emergency contact" error={errors.emergencyContact?.message}>
             <TextInput inputMode="numeric" {...register("emergencyContact")} />
