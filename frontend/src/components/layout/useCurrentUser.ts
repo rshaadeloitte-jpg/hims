@@ -37,7 +37,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 export function useCurrentUser(): CurrentUser {
   return useMemo(() => {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem("access_token") ?? sessionStorage.getItem("access_token") ?? (document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)?.[1] ? decodeURIComponent(document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/)![1]) : null);
       if (token) {
         const claims = decodeJwtPayload(token);
         if (claims) {
@@ -94,6 +94,9 @@ export function signOut(navigate: (path: string) => void) {
   try {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("refresh_token");
+    document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   } catch {
     /* ignore */
   }

@@ -95,14 +95,23 @@ function basicAuthHeader(): string | undefined {
   return `Basic ${btoa(`${DEV_USERNAME}:${DEV_PASSWORD}`)}`;
 }
 
-function bearerAuthHeader(): string | undefined {
+function readToken(): string | null {
   try {
-    const token =
-      localStorage.getItem("access_token") ?? localStorage.getItem("auth_token");
-    if (token) return `Bearer ${token}`;
+    const fromLocal = localStorage.getItem("access_token") ?? localStorage.getItem("auth_token");
+    if (fromLocal) return fromLocal;
+    const fromSession = sessionStorage.getItem("access_token") ?? sessionStorage.getItem("auth_token");
+    if (fromSession) return fromSession;
+    const m = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]);
   } catch {
-    /* localStorage unavailable (SSR/tests) */
+    /* storage unavailable (SSR/tests) */
   }
+  return null;
+}
+
+function bearerAuthHeader(): string | undefined {
+  const token = readToken();
+  if (token) return `Bearer ${token}`;
   return undefined;
 }
 

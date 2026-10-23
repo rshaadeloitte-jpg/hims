@@ -19,6 +19,13 @@ import type { LoginValues, OtpVerifyValues } from './zodSchema';
 
 type AuthMode = 'credentials' | 'otp';
 
+
+function persistToken(token: string) {
+  try { localStorage.setItem('access_token', token); } catch { /* ignore */ }
+  try { sessionStorage.setItem('access_token', token); } catch { /* ignore */ }
+  try { document.cookie = `access_token=${encodeURIComponent(token)}; path=/; SameSite=Lax`; } catch { /* ignore */ }
+}
+
 export function LoginPage() {
   const [mode, setMode] = useState<AuthMode>('credentials');
   const [otpMobile, setOtpMobile] = useState('');
@@ -39,7 +46,7 @@ export function LoginPage() {
   const onCredentialLogin = async (data: LoginValues) => {
     try {
       const tokens = await login.mutateAsync(data);
-      localStorage.setItem('access_token', tokens.accessToken);
+      persistToken(tokens.accessToken);
       window.location.href = '/';
     } catch (e) { /* error displayed below */ }
   };
@@ -52,7 +59,7 @@ export function LoginPage() {
   const onVerifyOtpSubmit = async (data: OtpVerifyValues) => {
     try {
       const tokens = await verifyOtp.mutateAsync(data);
-      localStorage.setItem('access_token', tokens.accessToken);
+      persistToken(tokens.accessToken);
       window.location.href = '/';
     } catch (e) { /* error displayed below */ }
   };
