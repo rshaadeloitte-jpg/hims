@@ -40,6 +40,7 @@ public class DevSecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/error").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(c -> c.realmName("ihms-dev"))
                 .formLogin(AbstractHttpConfigurer::disable);

@@ -17,4 +17,4 @@ spring:
     init:
       mode: embedded
 server:
-  port: 8087
+  port: ${SERVER_PORT:8112}

@@ -1,0 +1,874 @@
+name: ihms
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ihms-pg
+    command: ["postgres","-c","max_connections=500"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ihms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      POSTGRES_DB: ihms
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ihms} -d ihms"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ihms-redis
+    command: ["redis-server","--appendonly","no","--maxmemory","256mb","--maxmemory-policy","allkeys-lru"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:3.7.1
+    container_name: ihms-kafka
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+    ports: ["9092:9092"]
+    healthcheck:
+      test: ["CMD-SHELL","/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    restart: unless-stopped
+
+
+  aasmaan-service:
+    image: ihms-aasmaan-service:latest
+    container_name: ihms-aasmaan-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8112
+    ports:
+      - "8112:8112"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  abha-service:
+    image: ihms-abha-service:latest
+    container_name: ihms-abha-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8111
+    ports:
+      - "8111:8111"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  adt-service:
+    image: ihms-adt-service:latest
+    container_name: ihms-adt-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8092
+    ports:
+      - "8092:8092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  appointment-service:
+    image: ihms-appointment-service:latest
+    container_name: ihms-appointment-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8091
+    ports:
+      - "8091:8091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  bcma-service:
+    image: ihms-bcma-service:latest
+    container_name: ihms-bcma-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8117
+    ports:
+      - "8117:8117"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  billing-service:
+    image: ihms-billing-service:latest
+    container_name: ihms-billing-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8098
+    ports:
+      - "8098:8098"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  bloodbank-service:
+    image: ihms-bloodbank-service:latest
+    container_name: ihms-bloodbank-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8096
+    ports:
+      - "8096:8096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  chemotherapy-service:
+    image: ihms-chemotherapy-service:latest
+    container_name: ihms-chemotherapy-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8110
+    ports:
+      - "8110:8110"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  cssd-service:
+    image: ihms-cssd-service:latest
+    container_name: ihms-cssd-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8102
+    ports:
+      - "8102:8102"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  diet-service:
+    image: ihms-diet-service:latest
+    container_name: ihms-diet-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8087
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  equipment-service:
+    image: ihms-equipment-service:latest
+    container_name: ihms-equipment-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8088
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  file-service:
+    image: ihms-file-service:latest
+    container_name: ihms-file-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8095
+    ports:
+      - "8095:8095"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  forms-service:
+    image: ihms-forms-service:latest
+    container_name: ihms-forms-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8109
+    ports:
+      - "8109:8109"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  govt-service:
+    image: ihms-govt-service:latest
+    container_name: ihms-govt-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8108
+    ports:
+      - "8108:8108"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  grievance-service:
+    image: ihms-grievance-service:latest
+    container_name: ihms-grievance-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  iam:
+    image: ihms-iam:latest
+    container_name: ihms-iam
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  interop-service:
+    image: ihms-interop-service:latest
+    container_name: ihms-interop-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8105
+    ports:
+      - "8105:8105"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  item-service:
+    image: ihms-item-service:latest
+    container_name: ihms-item-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kiosk-service:
+    image: ihms-kiosk-service:latest
+    container_name: ihms-kiosk-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8113
+    ports:
+      - "8113:8113"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  lab-service:
+    image: ihms-lab-service:latest
+    container_name: ihms-lab-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8094
+    ports:
+      - "8094:8094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  linen-service:
+    image: ihms-linen-service:latest
+    container_name: ihms-linen-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8085
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mortuary-service:
+    image: ihms-mortuary-service:latest
+    container_name: ihms-mortuary-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8100
+    ports:
+      - "8100:8100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nursing-service:
+    image: ihms-nursing-service:latest
+    container_name: ihms-nursing-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8093
+    ports:
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ordering-service:
+    image: ihms-ordering-service:latest
+    container_name: ihms-ordering-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8097
+    ports:
+      - "8097:8097"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ot-service:
+    image: ihms-ot-service:latest
+    container_name: ihms-ot-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8115
+    ports:
+      - "8115:8115"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  patient-service:
+    image: ihms-patient-service:latest
+    container_name: ihms-patient-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8090
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  payments-service:
+    image: ihms-payments-service:latest
+    container_name: ihms-payments-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8099
+    ports:
+      - "8099:8099"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pharmacy-service:
+    image: ihms-pharmacy-service:latest
+    container_name: ihms-pharmacy-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8101
+    ports:
+      - "8101:8101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pmrd-service:
+    image: ihms-pmrd-service:latest
+    container_name: ihms-pmrd-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8114
+    ports:
+      - "8114:8114"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  queue-service:
+    image: ihms-queue-service:latest
+    container_name: ihms-queue-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8089
+    ports:
+      - "8089:8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  radiology-service:
+    image: ihms-radiology-service:latest
+    container_name: ihms-radiology-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8116
+    ports:
+      - "8116:8116"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rcm-service:
+    image: ihms-rcm-service:latest
+    container_name: ihms-rcm-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8103
+    ports:
+      - "8103:8103"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  reference-service:
+    image: ihms-reference-service:latest
+    container_name: ihms-reference-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  reporting-service:
+    image: ihms-reporting-service:latest
+    container_name: ihms-reporting-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8106
+    ports:
+      - "8106:8106"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  rmrs-service:
+    image: ihms-rmrs-service:latest
+    container_name: ihms-rmrs-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8104
+    ports:
+      - "8104:8104"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  search-service:
+    image: ihms-search-service:latest
+    container_name: ihms-search-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8107
+    ports:
+      - "8107:8107"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  transport-service:
+    image: ihms-transport-service:latest
+    container_name: ihms-transport-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8086
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  waste-service:
+    image: ihms-waste-service:latest
+    container_name: ihms-waste-service
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ihms
+      DB_USERNAME: ${POSTGRES_USER:-ihms}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ihms-dev-only}
+      SPRING_PROFILES_ACTIVE: dev
+      KAFKA_BOOTSTRAP: kafka:9092
+      SERVER_PORT: 8084
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./platform/gateway
+    image: ihms-api-gateway:latest
+    container_name: ihms-api-gateway
+    ports: ["9000:80"]
+    restart: unless-stopped
+
+  frontend:
+    image: ihms-frontend:latest
+    container_name: ihms-frontend
+    ports: ["3000:80"]
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  pg-data:

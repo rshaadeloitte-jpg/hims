@@ -27,7 +27,7 @@ public class BcmaController {
         return ResponseEntity.ok(service.scanMedication(patientId, drugIen, drugName, scannedBy, wardId));
     }
 
-    @PostMapping("/ivp")
+    @PostMapping("/ivp-event")
     public ResponseEntity<IVPEvent> recordIVP(@RequestParam Long patientId,
                                               @RequestParam String drugName,
                                               @RequestParam(required = false) String dose,
@@ -39,7 +39,7 @@ public class BcmaController {
         return ResponseEntity.ok(service.recordIVP(patientId, drugName, dose, rate, startTime, endTime, nurseId, wardId));
     }
 
-    @PostMapping("/exception")
+    @PostMapping("/log-exception")
     public ResponseEntity<BCMAException> logException(@RequestParam Long patientId,
                                                       @RequestParam String drugIen,
                                                       @RequestParam BCMAException.ExceptionType exceptionType,

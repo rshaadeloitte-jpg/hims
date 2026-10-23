@@ -163,7 +163,7 @@ VALUES
         "samplesCollected": {"type": "array", "title": "Samples Collected", "items": {"type": "string", "enum": ["Vaginal swab", "Anal swab", "Oral swab", "Blood", "Urine", "Hair", "Clothing", "Other"]}},
         "injuriesFound": {"type": "string", "title": "Injuries Found"},
         "prophylaxisGiven": {"type": "string", "title": "Prophylaxis Given"},
-        "opinion": {"type": "string", "title": "Doctor's Opinion"},
+        "opinion": {"type": "string", "title": "Doctor''s Opinion"},
         "examiningDoctor": {"type": "string", "title": "Examining Doctor"}
       },
       "required": ["mlcNumber", "consentForExamination", "samplesCollected"]
@@ -188,7 +188,7 @@ VALUES
         "clinicalSigns": {"type": "array", "title": "Clinical Signs", "items": {"type": "string", "enum": ["Slurred speech", "Ataxia", "Disorientation", "Aggression", "Drowsiness", "Pinpoint pupils", "Track marks", "Other"]}},
         "gcsScore": {"type": "integer", "title": "GCS", "minimum": 3, "maximum": 15},
         "samplesCollected": {"type": "array", "title": "Samples", "items": {"type": "string"}},
-        "opinion": {"type": "string", "title": "Doctor's Opinion"},
+        "opinion": {"type": "string", "title": "Doctor''s Opinion"},
         "examiningDoctor": {"type": "string", "title": "Examining Doctor"}
       },
       "required": ["mlcNumber", "substance", "clinicalSigns"]

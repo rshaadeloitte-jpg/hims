@@ -45,7 +45,7 @@ app:
     max-attempts: 5
 
 server:
-  port: ${SERVER_PORT:8095}
+  port: ${SERVER_PORT:8115}
   shutdown: graceful
 
 management:
