@@ -168,6 +168,7 @@ export function AddAppointmentPage() {
           slots={(slots.data ?? []) as SlotRow[]}
           selected={selectedSlot}
           onSelect={setSelectedSlot}
+          doctorId={doctorId}
         />
 
         <div className="form-row form-row--two-col">
@@ -236,11 +237,13 @@ function SlotPicker({
   slots,
   selected,
   onSelect,
+  doctorId,
 }: {
   loading: boolean;
   slots: SlotRow[];
   selected: SlotRow | null;
   onSelect: (s: SlotRow) => void;
+  doctorId?: number | null;
 }) {
   // Group slots by hour-of-day into morning / afternoon / evening columns.
   const grouped = useMemo(() => groupByDayPart(slots), [slots]);
@@ -249,6 +252,14 @@ function SlotPicker({
     return (
       <div className="slot-picker" role="status" aria-busy="true">
         <p className="muted">Loading slots…</p>
+      </div>
+    );
+  }
+
+  if (!doctorId) {
+    return (
+      <div className="slot-picker" role="status">
+        <p className="muted">Select a department and doctor to view available slots.</p>
       </div>
     );
   }

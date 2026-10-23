@@ -73,6 +73,8 @@ export function AbhaInput({
       <FormField label="ABHA / Aadhaar" error={showError || undefined}>
         <HStack align="flex-start">
           <TextInput
+            flex={1}
+            w="full"
             type="text"
             value={value}
             onChange={handleChange}

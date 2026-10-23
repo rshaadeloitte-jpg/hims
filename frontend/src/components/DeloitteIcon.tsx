@@ -8,7 +8,7 @@ export function DeloitteLogo({ size = 24, className = "" }: { size?: number; cla
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="Deloitte Brand Icon"
+      aria-hidden="true"
     >
       <rect width="32" height="32" rx="6" fill="#000000" />
       <text

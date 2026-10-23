@@ -8,9 +8,20 @@ import { ApiError } from "../../api/client";
 
 const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "/api";
 
+export function generateSafeUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 async function billingJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", "X-Request-ID": crypto.randomUUID() },
+    headers: { "Content-Type": "application/json", "X-Request-ID": generateSafeUUID() },
     ...options,
   });
   if (!res.ok) {

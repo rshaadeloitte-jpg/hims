@@ -39,7 +39,7 @@ export function QueueDashboardPage() {
 
       <div className="row">
         <input placeholder="Counter name" value={counterName} onChange={(e) => setCounterName(e.target.value)} />
-        <button className="btn" onClick={addCounter} disabled={createCounter.isPending}>+ Counter</button>
+        <button className="btn btn-primary" onClick={addCounter} disabled={createCounter.isPending}>+ Counter</button>
       </div>
 
       <h2>Issue Token</h2>
@@ -50,7 +50,7 @@ export function QueueDashboardPage() {
           <option value="NORMAL">Normal</option>
           <option value="EMERGENCY">Emergency</option>
         </select>
-        <button type="submit" className="btn" disabled={issueToken.isPending}>Issue</button>
+        <button type="submit" className="btn btn-primary" disabled={issueToken.isPending}>Issue</button>
       </form>
 
       <h2>Counters</h2>
@@ -65,7 +65,7 @@ export function QueueDashboardPage() {
                 <td>{c.counterName}</td>
                 <td>{waiting} waiting</td>
                 <td>
-                  <button className="btn btn--small" onClick={() => { setSelectedCounter(c.counterId); }}>Manage</button>
+                  <button className="btn btn-secondary btn--small" onClick={() => { setSelectedCounter(c.counterId); }}>Manage</button>
                 </td>
               </tr>
             );
@@ -77,7 +77,7 @@ export function QueueDashboardPage() {
       {selectedCounter > 0 && (
         <>
           <h2>Counter #{selectedCounter} — Tokens</h2>
-          <button className="btn" onClick={() => callNext.mutate()} disabled={callNext.isPending}>Call Next</button>
+          <button className="btn btn-primary" onClick={() => callNext.mutate()} disabled={callNext.isPending}>Call Next</button>
           <table className="table">
             <thead><tr><th>Token</th><th>Patient</th><th>Priority</th><th>Status</th><th></th></tr></thead>
             <tbody>
@@ -88,8 +88,8 @@ export function QueueDashboardPage() {
                   <td>{t.priority}</td>
                   <td>{statusLabel(t.status)}</td>
                   <td>
-                    {t.status === 2 && <button className="btn btn--small" onClick={() => noShow.mutate(t.tokenId)}>No-show</button>}
-                    {t.status === 2 && <button className="btn btn--small" onClick={() => complete.mutate(t.tokenId)}>Complete</button>}
+                    {t.status === 2 && <button className="btn btn-secondary btn--small" onClick={() => noShow.mutate(t.tokenId)}>No-show</button>}
+                    {t.status === 2 && <button className="btn btn-secondary btn--small" onClick={() => complete.mutate(t.tokenId)}>Complete</button>}
                   </td>
                 </tr>
               ))}

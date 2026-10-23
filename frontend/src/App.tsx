@@ -90,10 +90,9 @@ import { HospitalSetupPage } from "./features/commons/HospitalSetup";
  *   /patients/register     M02 Patient Registration form
  *   /patients/:id/documents  M02 Document Uploader
  */
-export default function App() {
+function AuthenticatedRoutes() {
   return (
-    <AppShell>
-      <Routes>
+    <Routes>
           <Route path="/" element={<MasterListPage />} />
           <Route path="/masters" element={<MasterListPage />} />
           <Route path="/masters/:entity" element={<MasterListPage />} />
@@ -167,7 +166,31 @@ export default function App() {
           <Route path="/commons/hospital" element={<HospitalSetupPage />} />
           <Route path="*" element={<MasterListPage />} />
       </Routes>
-    </AppShell>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Public Auth */}
+      <Route path="/auth/login" element={<LoginPage />} />
+
+      {/* Public Touchscreen Kiosk */}
+      <Route path="/kiosk" element={<KioskPage />} />
+      <Route path="/kiosk/self-register" element={<KioskSelfReg />} />
+      <Route path="/kiosk/appointment" element={<KioskAppointment />} />
+      <Route path="/kiosk/lab-result" element={<LabResultUpload />} />
+
+      {/* Authenticated Admin & Clinical Modules */}
+      <Route
+        path="/*"
+        element={
+          <AppShell>
+            <AuthenticatedRoutes />
+          </AppShell>
+        }
+      />
+    </Routes>
   );
 }
 

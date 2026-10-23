@@ -291,17 +291,19 @@ export function AppointmentListPage() {
           loading={list.isLoading}
           ariaLabel="Appointments"
           emptyState={
-            <div className="empty-state">
-              <p>No appointments match this filter.</p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setFilterAndPage("all", 0)}
-              >
-                Clear filter
-              </Button>
-            </div>
+            !list.isError && !list.isLoading && visible.length === 0 ? (
+              <div className="empty-state">
+                <p>No appointments match this filter.</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setFilterAndPage("all", 0)}
+                >
+                  Clear filter
+                </Button>
+              </div>
+            ) : undefined
           }
         />
 

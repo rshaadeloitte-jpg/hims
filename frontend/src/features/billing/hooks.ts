@@ -14,6 +14,7 @@ import {
   type DebitNote,
   type BillFilter,
   billingQueryKeys,
+  generateSafeUUID,
 } from "./queries";
 
 // Re-export everything from queries
@@ -33,7 +34,7 @@ const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "/api";
 
 async function billingJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", "X-Request-ID": crypto.randomUUID() },
+    headers: { "Content-Type": "application/json", "X-Request-ID": generateSafeUUID() },
     ...options,
   });
   if (!res.ok) {

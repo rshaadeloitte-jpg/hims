@@ -78,7 +78,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         position={{ base: "fixed", lg: "sticky" }}
         top="64px"
         left={0}
-        h="calc(100vh - 64px)"
+        minH="calc(100vh - 64px)"
         w={{ base: "min(266px, 84vw)", lg: collapsed ? "72px" : "266px" }}
         transform={{ base: mobileOpen ? "none" : "translateX(-105%)", lg: "none" }}
         transition="width 200ms ease, transform 200ms ease"
@@ -111,7 +111,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                       justify="center"
                       p={1.5}
                       borderRadius="md"
-                      color={active ? "brand.400" : "gray.400"}
+                      color={active ? "brand.400" : "gray.300"}
                       _hover={{ bg: "whiteAlpha.100", color: "white" }}
                     >
                       <Flex
@@ -136,7 +136,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     px={2.5}
                     py={2}
                     h="auto"
-                    color={active ? "brand.400" : "gray.400"}
+                    color={active ? "brand.400" : "gray.300"}
                     fontSize="11px"
                     fontWeight="extrabold"
                     letterSpacing="0.09em"
@@ -226,7 +226,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
               <Text fontSize="xs" fontWeight="bold" color="white">
                 HIMS Modernization
               </Text>
-              <Text fontSize="11px" color="gray.400" lineHeight={1.4}>
+              <Text fontSize="11px" color="gray.300" lineHeight={1.4}>
                 All modules verified · Deloitte Digital
               </Text>
             </Box>

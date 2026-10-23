@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@chakra-ui/react";
 import { TextInput } from "../../components/ui";
 import { usePatientSearch, type PatientSearchHit } from "./queries";
@@ -16,6 +17,7 @@ export function PatientSearch({
   searchType?: "ALL" | "NAME" | "MRN" | "MOBILE" | "ABHA" | "AADHAAR";
   autoFocus?: boolean;
 }) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -117,7 +119,7 @@ export function PatientSearch({
                 type="button"
                 variant="primary"
                 size="sm"
-                onClick={() => onSelect({ patientId: 0, mrNo: "", firstName: "", mobileNo: "" })}
+                onClick={() => navigate("/patients/register")}
               >
                 + Register New Patient
               </Button>

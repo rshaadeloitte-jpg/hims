@@ -4,7 +4,7 @@ import { userSchema, roleSchema, permissionSchema, notifTemplateSchema, type Use
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { HimsSelect, TextInput } from "../../components/ui";
-import { Button, Table, Textarea } from "@chakra-ui/react";
+import { Button, Card, Table, Textarea } from "@chakra-ui/react";
 
 export function AuthAdminPage() {
   const [tab, setTab] = useState<"users" | "roles" | "permissions" | "templates">("users");
@@ -51,14 +51,18 @@ function UserTab() {
   return (
     <>
       <h2>Users</h2>
-      <form className="inline-form" onSubmit={form.handleSubmit(submit)}>
-        <TextInput placeholder="Username" {...form.register("username")} />
-        <TextInput type="password" placeholder="Password (min 8)" {...form.register("password")} />
-        <TextInput placeholder="Full name" {...form.register("fullName")} />
-        <TextInput placeholder="Email" {...form.register("email")} />
-        <TextInput type="number" placeholder="Employee ID" {...form.register("employeeId")} />
-        <Button variant="primary" loading={createUser.isPending} type="submit" disabled={createUser.isPending}>+ Create</Button>
-      </form>
+      <Card.Root mb={4} bg="white" boxShadow="sm">
+        <Card.Body>
+          <form className="inline-form" onSubmit={form.handleSubmit(submit)}>
+            <TextInput placeholder="Username" {...form.register("username")} />
+            <TextInput type="password" placeholder="Password (min 8)" {...form.register("password")} />
+            <TextInput placeholder="Full name" {...form.register("fullName")} />
+            <TextInput placeholder="Email" {...form.register("email")} />
+            <TextInput type="number" placeholder="Employee ID" {...form.register("employeeId")} />
+            <Button variant="primary" loading={createUser.isPending} type="submit" disabled={createUser.isPending}>+ Create</Button>
+          </form>
+        </Card.Body>
+      </Card.Root>
       {err && <p className="error">{err}</p>}
       {isLoading ? <p>Loading…</p> : (
         <Table.Root size="sm" variant="line">

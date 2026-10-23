@@ -95,6 +95,17 @@ function basicAuthHeader(): string | undefined {
   return `Basic ${btoa(`${DEV_USERNAME}:${DEV_PASSWORD}`)}`;
 }
 
+function bearerAuthHeader(): string | undefined {
+  try {
+    const token =
+      localStorage.getItem("access_token") ?? localStorage.getItem("auth_token");
+    if (token) return `Bearer ${token}`;
+  } catch {
+    /* localStorage unavailable (SSR/tests) */
+  }
+  return undefined;
+}
+
 function buildUrl(path: string, query?: object): string {
   const base = API_BASE.endsWith("/") ? API_BASE.slice(0, -1) : API_BASE;
   const url = new URL(`${base}${path}`, window.location.origin);
@@ -119,7 +130,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   let res: Response;
   try {
-    const authHeader = basicAuthHeader();
+    const authHeader = bearerAuthHeader() ?? basicAuthHeader();
     res = await fetch(buildUrl(path, query), {
       method,
       headers: {
