@@ -5,5 +5,7 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 @Repository
 public interface ChemoRegimenRepository extends JpaRepository<ChemoRegimen, Long> {
-    List<ChemoRegimen> findByPlanId(Long planId);
+    List<ChemoRegimen> findByPatientId(Long patientId);
+    List<ChemoRegimen> findByStatus(String status);
+    List<ChemoRegimen> findByPatientIdAndStatus(Long patientId, String status);
 }

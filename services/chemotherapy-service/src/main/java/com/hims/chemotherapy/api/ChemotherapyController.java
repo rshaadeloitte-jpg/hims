@@ -19,7 +19,13 @@ public class ChemotherapyController {
     public ResponseEntity<ChemoPlan> postPlan(@RequestBody ChemoPlan plan) { return ResponseEntity.ok(service.savePlan(plan)); }
 
     @GetMapping("/regimen/{planId}")
-    public ResponseEntity<List<ChemoRegimen>> getRegimen(@PathVariable Long planId) { return ResponseEntity.ok(service.getRegimen(planId)); }
+    public ResponseEntity<List<ChemoRegimenDetail>> getRegimen(@PathVariable Long planId) { return ResponseEntity.ok(service.getRegimenLines(planId)); }
+
+    @PostMapping("/regimen-line")
+    public ResponseEntity<ChemoRegimenDetail> postRegimenLine(@RequestBody ChemoRegimenDetail line) { return ResponseEntity.ok(service.saveRegimenLine(line)); }
+
+    @GetMapping("/regimens/patient/{patientId}")
+    public ResponseEntity<List<ChemoRegimen>> getRegimensByPatient(@PathVariable Long patientId) { return ResponseEntity.ok(service.getRegimenByPatient(patientId)); }
 
     @GetMapping("/cycle/{planId}")
     public ResponseEntity<List<ChemoCycle>> getCycle(@PathVariable Long planId) { return ResponseEntity.ok(service.getCycle(planId)); }

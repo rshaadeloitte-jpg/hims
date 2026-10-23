@@ -5,6 +5,7 @@ import com.hims.mortuary.application.exceptions.MortuaryConflictException;
 import com.hims.mortuary.application.exceptions.MortuaryEntityNotFoundException;
 import com.hims.mortuary.domain.model.AutopsyRequest;
 import com.hims.mortuary.domain.model.DeadBody;
+import com.hims.mortuary.domain.model.MortuaryBase;
 import com.hims.mortuary.domain.model.ReleaseCertificate;
 import com.hims.mortuary.domain.repository.AutopsyRequestRepository;
 import com.hims.mortuary.domain.repository.DeadBodyRepository;
