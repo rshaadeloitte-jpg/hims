@@ -987,3 +987,44 @@ table tbody tr:hover,
   margin-bottom: 4px;
   color: var(--color-text, #111827);
 }
+
+/* ── UI/UX accessibility (Penpot skill) ────────────────────── */
+button,
+[role="button"],
+a {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+/* Ensure interactive elements have visible focus ring */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-border-focus, #527A19);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-deloitte-green-glow, rgba(134, 188, 37, 0.25));
+}
+
+/* Form field labels */
+label {
+  font-weight: var(--font-weight-medium, 500);
+  color: var(--text-primary, #111827);
+  margin-bottom: var(--space-1, 4px);
+  display: block;
+}
+
+/* Error text styling */
+.text-error,
+.error-message {
+  color: var(--color-danger, #DC2626);
+  font-size: var(--font-size-sm, 13px);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: var(--space-6, 32px);
+  color: var(--text-muted, #6B7280);
+}
