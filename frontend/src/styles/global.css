@@ -1028,3 +1028,43 @@ label {
   padding: var(--space-6, 32px);
   color: var(--text-muted, #6B7280);
 }
+
+/* ── UI/UX Pro Max: forms & feedback ──────────────────────── */
+[role="alert"] {
+  padding: var(--space-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-danger-soft, #FEE2E2);
+  color: var(--color-danger, #DC2626);
+  font-weight: var(--font-weight-medium, 500);
+}
+
+[aria-live="polite"],
+[aria-live="assertive"] {
+  min-height: 1em;
+}
+
+/* Loading spinner utility */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border, #E5E7EB);
+  border-top-color: var(--color-deloitte-green, #86BC25);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Touch targets */
+button, a, [role="button"], input[type="checkbox"], input[type="radio"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Responsive images / no overflow */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
