@@ -141,7 +141,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     px={2.5}
                     py={2}
                     h="auto"
-                    color={active ? "#FFFFFF" : "#D1D5DB"}
+                    color={open ? "#1F1F1F" : active ? "#FFFFFF" : "#D1D5DB"}
                     fontSize="11px"
                     fontWeight="extrabold"
                     letterSpacing="0.09em"
@@ -167,7 +167,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         bg={active ? "#86BC25" : "rgba(255, 255, 255, 0.08)"}
                         border="1px solid"
                         borderColor={active ? "#9CCD46" : "rgba(255, 255, 255, 0.12)"}
-                        color={active ? "#1F1F1F" : "#D1D5DB"}
+                        color={open ? "#1F1F1F" : (active ? "#1F1F1F" : "#D1D5DB")}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
