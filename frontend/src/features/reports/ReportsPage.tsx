@@ -87,7 +87,7 @@ export function ReportsPage() {
 
       {err && <p className="error">{err}</p>}
 
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <table className="table">
           <thead><tr><th>Code</th><th>Title</th><th>Kind</th><th>Active</th><th></th></tr></thead>
           <tbody>

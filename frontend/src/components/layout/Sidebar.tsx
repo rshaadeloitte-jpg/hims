@@ -89,6 +89,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         display="flex"
         flexDirection="column"
         overflowY="auto"
+        overflowX="hidden"
         css={{
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(255, 255, 255, 0.15) transparent",
@@ -111,7 +112,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                       justify="center"
                       p={1.5}
                       borderRadius="md"
-                      color={active ? "brand.400" : "gray.300"}
+                      color={active ? "white" : "gray.300"}
                       _hover={{ bg: "whiteAlpha.100", color: "white" }}
                     >
                       <Flex
@@ -120,9 +121,10 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         align="center"
                         justify="center"
                         borderRadius="md"
-                        bg={active ? "rgba(134, 188, 37, 0.16)" : "whiteAlpha.100"}
+                        bg={active ? "brand.500" : "whiteAlpha.100"}
                         border="1px solid"
-                        borderColor={active ? "brand.500" : "whiteAlpha.100"}
+                        borderColor={active ? "brand.400" : "whiteAlpha.100"}
+                        color={active ? "deloitte.black" : "gray.300"}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
@@ -136,7 +138,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     px={2.5}
                     py={2}
                     h="auto"
-                    color={active ? "brand.400" : "gray.300"}
+                    color={active ? "white" : "gray.300"}
                     fontSize="11px"
                     fontWeight="extrabold"
                     letterSpacing="0.09em"
@@ -153,9 +155,10 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         justify="center"
                         borderRadius="md"
                         flex="none"
-                        bg={active ? "rgba(134, 188, 37, 0.16)" : "whiteAlpha.100"}
+                        bg={active ? "brand.500" : "whiteAlpha.100"}
                         border="1px solid"
-                        borderColor={active ? "brand.500" : "whiteAlpha.100"}
+                        borderColor={active ? "brand.400" : "whiteAlpha.100"}
+                        color={active ? "deloitte.black" : "gray.300"}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
@@ -190,14 +193,14 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                               pl="14px"
                               pr={2.5}
                               py={1.5}
-                              borderLeft="2px solid"
+                              borderLeft="3px solid"
                               borderColor={isActive ? "brand.500" : "whiteAlpha.200"}
                               borderRadius="0 6px 6px 0"
                               position="relative"
                               fontSize="13px"
-                              fontWeight={isActive ? "600" : "400"}
+                              fontWeight={isActive ? "700" : "400"}
                               color={isActive ? "white" : "gray.300"}
-                              bg={isActive ? "rgba(134, 188, 37, 0.15)" : "transparent"}
+                              bg={isActive ? "rgba(134, 188, 37, 0.22)" : "transparent"}
                               _hover={{ bg: "whiteAlpha.100", color: "white" }}
                               transition="all 0.15s ease"
                             >

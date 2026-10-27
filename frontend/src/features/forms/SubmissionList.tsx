@@ -100,7 +100,7 @@ export function SubmissionList({ initialPatientId }: SubmissionListProps) {
         )}
 
         {activeId && isLoading && (
-          <p className="submission-list__loading">Loading…</p>
+          <p className="submission-list__loading" role="status">Loading…</p>
         )}
 
         {activeId && isError && (

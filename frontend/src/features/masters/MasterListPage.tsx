@@ -163,6 +163,14 @@ export function MasterListPage() {
             {error instanceof ApiError ? `${error.code} (HTTP ${error.status})` : "Error"}
           </strong>
           : {error instanceof ApiError ? error.message : String(error.message ?? error)}
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{ marginLeft: 8 }}
+            onClick={() => rowsQuery.refetch()}
+          >
+            Retry
+          </button>
         </div>
       ) : null}
 

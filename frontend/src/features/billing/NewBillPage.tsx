@@ -102,6 +102,7 @@ export function NewBillPage() {
             <TextInput type="number" {...billForm.register("prescriberDoctorId")} />
           </FormField>
           <Checkbox.Root
+            gap={2}
             checked={!!isSelfCompany}
             onCheckedChange={(e) => billForm.setValue("isSelfCompany", !!e.checked, { shouldValidate: true })}
           >

@@ -27,7 +27,7 @@ import "./styles/ejs.css";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 0,
       refetchOnWindowFocus: false,
       staleTime: 30_000,
     },

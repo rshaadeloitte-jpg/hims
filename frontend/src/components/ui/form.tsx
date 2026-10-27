@@ -59,6 +59,8 @@ export const TextInput = forwardRef<HTMLInputElement, InputProps>(
     return (
       <Input
         ref={ref}
+        w="full"
+        maxW={{ base: "full", md: "24rem" }}
         bg="surface.panel"
         border="1px solid"
         borderColor="border.DEFAULT"

@@ -64,7 +64,7 @@ function UserTab() {
         </Card.Body>
       </Card.Root>
       {err && <p className="error">{err}</p>}
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <Table.Root size="sm" variant="line">
           <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Username</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Email</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Roles</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>
@@ -109,7 +109,7 @@ function RoleTab() {
         <Button variant="primary" loading={createRole.isPending} type="submit" disabled={createRole.isPending}>+ Create</Button>
       </form>
       {err && <p className="error">{err}</p>}
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <Table.Root size="sm" variant="line">
           <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Role</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Description</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>
@@ -150,7 +150,7 @@ function PermissionTab() {
         <Button variant="primary" loading={createPerm.isPending} type="submit" disabled={createPerm.isPending}>+ Create</Button>
       </form>
       {err && <p className="error">{err}</p>}
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <Table.Root size="sm" variant="line">
           <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">ID</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Permission</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Module</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>
@@ -200,7 +200,7 @@ function TemplateTab() {
         </fieldset>
       </form>
       {err && <p className="error">{err}</p>}
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <Table.Root size="sm" variant="line">
           <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Name</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Event</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Channel</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Active</Table.ColumnHeader></Table.Row></Table.Header>
           <Table.Body>

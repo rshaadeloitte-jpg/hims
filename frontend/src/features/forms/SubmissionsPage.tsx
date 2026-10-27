@@ -21,7 +21,7 @@ function SubmissionViewer({ patientId, encounterId }: { patientId?: number; enco
       </header>
 
       {isLoading ? (
-        <p>Loading…</p>
+        <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>
       ) : submissions.length === 0 ? (
         <p className="muted">No submissions found.</p>
       ) : (

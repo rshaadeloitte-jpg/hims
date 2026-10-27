@@ -44,9 +44,35 @@ const DEV_PASSWORD: string = import.meta.env.DEV
   ? (import.meta.env.VITE_API_PASSWORD ?? "devops-dev-only")
   : "";
 
-function authHeader(): string | undefined {
+function readToken(): string | null {
+  try {
+    const fromLocal = localStorage.getItem("access_token") ?? localStorage.getItem("auth_token");
+    if (fromLocal) return fromLocal;
+    const fromSession = sessionStorage.getItem("access_token") ?? sessionStorage.getItem("auth_token");
+    if (fromSession) return fromSession;
+    const m = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch {
+    /* storage unavailable (SSR/tests) */
+  }
+  return null;
+}
+
+function bearerAuthHeader(): string | undefined {
+  const token = readToken();
+  if (token) return `Bearer ${token}`;
+  return undefined;
+}
+
+function basicAuthHeader(): string | undefined {
   if (!DEV_BASIC_ENABLED) return undefined;
   return `Basic ${btoa(`${DEV_USERNAME}:${DEV_PASSWORD}`)}`;
+}
+
+function authHeader(): string | undefined {
+  // Dev mode: prefer DEV-ONLY Basic credentials; in production the Basic helper
+  // is compiled out, so the bearer token is used.
+  return basicAuthHeader() ?? bearerAuthHeader();
 }
 
 function buildUrl(base: string, path: string, query?: Record<string, unknown>): string {

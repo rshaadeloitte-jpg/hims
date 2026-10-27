@@ -18,7 +18,7 @@ export function ReportDashboardPage() {
         </label>
       </div>
 
-      {isLoading ? <p>Loading…</p> : !counts ? <p className="muted">No data.</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : !counts ? <p className="muted">No data.</p> : (
         <div className="card-grid">
           <div className="card"><label>Patients Registered</label><strong>{counts.patients?.toLocaleString() ?? "—"}</strong></div>
           <div className="card"><label>Encounters</label><strong>{counts.encounters?.toLocaleString() ?? "—"}</strong></div>

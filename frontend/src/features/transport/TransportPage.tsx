@@ -5,34 +5,37 @@ import { MaintenanceTracker } from "./MaintenanceTracker";
 
 type ActiveTab = "vehicles" | "fuel" | "maintenance";
 
+const TABS: { key: ActiveTab; label: string }[] = [
+  { key: "vehicles", label: "Vehicle Tracker" },
+  { key: "fuel", label: "Fuel Station" },
+  { key: "maintenance", label: "Maintenance Tracker" },
+];
+
 export function TransportPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("vehicles");
 
   return (
     <section className="page">
       <header className="page-header">
-        <h1>Transport Management</h1>
+        <div>
+          <h1>Transport Management</h1>
+          <p className="muted">Vehicle tracking, fuel, and maintenance.</p>
+        </div>
       </header>
 
-      <nav className="tn-nav">
-        <button
-          className={`tn-nav__tab ${activeTab === "vehicles" ? "tn-nav__tab--active" : ""}`}
-          onClick={() => setActiveTab("vehicles")}
-        >
-          Vehicle Tracker
-        </button>
-        <button
-          className={`tn-nav__tab ${activeTab === "fuel" ? "tn-nav__tab--active" : ""}`}
-          onClick={() => setActiveTab("fuel")}
-        >
-          Fuel Station
-        </button>
-        <button
-          className={`tn-nav__tab ${activeTab === "maintenance" ? "tn-nav__tab--active" : ""}`}
-          onClick={() => setActiveTab("maintenance")}
-        >
-          Maintenance Tracker
-        </button>
+      <nav className="tab-group" role="tablist" aria-label="Transport sections">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.key}
+            className={`tab ${activeTab === t.key ? "tab--active" : ""}`}
+            onClick={() => setActiveTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
       </nav>
 
       {activeTab === "vehicles" && <VehicleTracker />}

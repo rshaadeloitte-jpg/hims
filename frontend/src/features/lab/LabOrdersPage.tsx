@@ -38,7 +38,7 @@ export function LabOrdersPage() {
     setResultValues((prev) => ({ ...prev, [detailId]: "" }));
   };
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
 
   return (
     <section className="page">

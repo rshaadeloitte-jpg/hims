@@ -4,7 +4,7 @@ import { Text } from "@chakra-ui/react";
 export function BillingDashboard() {
   const { data: bills = [], isLoading } = useBills({ page: 0, size: 100 });
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
 
   const totalBills = bills.length;
   const settled = bills.filter((b) => b.isSettled).length;

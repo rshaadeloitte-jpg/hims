@@ -3,7 +3,7 @@ import { CaseTracker } from "./CaseTracker";
 import { DeviceMonitor } from "./DeviceMonitor";
 import { ETicketForm } from "./ETicketForm";
 import { useFieldRecords } from "./queries";
-import { Button, Table } from "@chakra-ui/react";
+import { Table } from "@chakra-ui/react";
 
 type AasmaanTab = "cases" | "devices" | "tickets";
 
@@ -27,9 +27,10 @@ export function AasmaanPage() {
           <h3 className="text-sm font-medium text-gray-900">Field Sync Records</h3>
         </div>
         {isLoading ? (
-          <div className="p-4 text-center text-gray-500">Loading field records…</div>
+          <div className="p-4 text-center text-gray-500" role="status">Loading field records…</div>
         ) : (
-          <Table.Root size="sm" variant="line">
+          <div className="table-wrap">
+            <Table.Root size="sm" variant="line">
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Worker</Table.ColumnHeader>
@@ -56,35 +57,40 @@ export function AasmaanPage() {
               )}
             </Table.Body>
           </Table.Root>
+          </div>
         )}
       </div>
 
       {/* Tab navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="flex gap-4" aria-label="Aasmaan Sections">
-          <Button
-            variant={activeTab === "cases" ? "solid" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("cases")}
-          >
-            Field Cases
-          </Button>
-          <Button
-            variant={activeTab === "devices" ? "solid" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("devices")}
-          >
-            IoT Monitor
-          </Button>
-          <Button
-            variant={activeTab === "tickets" ? "solid" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("tickets")}
-          >
-            E-Tickets
-          </Button>
-        </nav>
-      </div>
+      <nav className="tab-group mb-6" role="tablist" aria-label="Aasmaan Sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "cases"}
+          className={`tab ${activeTab === "cases" ? "tab--active" : ""}`}
+          onClick={() => setActiveTab("cases")}
+        >
+          Field Cases
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "devices"}
+          className={`tab ${activeTab === "devices" ? "tab--active" : ""}`}
+          onClick={() => setActiveTab("devices")}
+        >
+          IoT Monitor
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "tickets"}
+          className={`tab ${activeTab === "tickets" ? "tab--active" : ""}`}
+          onClick={() => setActiveTab("tickets")}
+        >
+          E-Tickets
+        </button>
+      </nav>
 
       {/* Tab content */}
       {activeTab === "cases" && (

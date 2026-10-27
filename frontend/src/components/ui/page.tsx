@@ -1,4 +1,4 @@
-import { Badge, Box, Heading, HStack, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Flex, Heading, HStack, Text, VStack } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 export type StatusTone = "success" | "warning" | "danger" | "info" | "neutral";
@@ -42,27 +42,35 @@ export function PageHeader({
       mb={6}
       borderBottom="1px solid"
       borderColor="border.DEFAULT"
+      minW={0}
     >
-      <HStack justify="space-between" align="flex-start" gap={4} wrap="wrap">
-        <VStack align="flex-start" gap={1.5}>
-          <HStack gap={2} align="center">
-            <Heading as="h1" size="lg" color="text.primary" m={0} fontWeight="700">
+      <Flex
+        direction={{ base: "column", md: "row" }}
+        justify="space-between"
+        align={{ base: "stretch", md: "flex-start" }}
+        gap={{ base: 3, md: 4 }}
+        wrap="wrap"
+        minW={0}
+      >
+        <VStack align="flex-start" gap={1.5} minW={0} flex={{ base: "1 1 auto", md: "1 1 0" }}>
+          <HStack gap={2} align="center" wrap="wrap" minW={0}>
+            <Heading as="h1" size="lg" color="text.primary" m={0} fontWeight="700" wordBreak="break-word">
               {title}
             </Heading>
             {badge}
           </HStack>
           {description && (
-            <Text fontSize="sm" color="text.secondary" m={0}>
+            <Text fontSize="sm" color="text.secondary" m={0} wordBreak="break-word">
               {description}
             </Text>
           )}
         </VStack>
         {actions && (
-          <HStack gap={2} wrap="wrap">
+          <HStack gap={2} wrap="wrap" w={{ base: "full", md: "auto" }} justify={{ base: "flex-start", md: "flex-end" }} flexShrink={0}>
             {actions}
           </HStack>
         )}
-      </HStack>
+      </Flex>
     </Box>
   );
 }

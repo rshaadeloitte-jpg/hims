@@ -31,18 +31,20 @@ export function ConsultationDesk({ appointmentId }: { appointmentId: number }) {
   return (
     <div className="p-4 border rounded space-y-4" aria-label="consultation-desk">
       <h2 className="text-xl font-semibold">Consultation Desk — Appt #{appointmentId}</h2>
-      <HStack gap={2}>
+      <nav className="tab-group" role="tablist" aria-label="Consultation sections">
         {(["questionnaire", "telemedicine", "opdcard", "followup"] as const).map((t) => (
-          <Button
+          <button
             key={t}
-            variant="ghost"
-            size="sm"
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            className={`tab ${tab === t ? "tab--active" : ""}`}
             onClick={() => setTab(t)}
           >
             {t}
-          </Button>
+          </button>
         ))}
-      </HStack>
+      </nav>
 
       {tab === "questionnaire" && <QuestionnaireTab appointmentId={appointmentId} />}
       {tab === "telemedicine" && <TelemedicineTab appointmentId={appointmentId} />}

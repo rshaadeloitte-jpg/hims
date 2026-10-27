@@ -47,7 +47,7 @@ export function BillDetailPage() {
   const debitForm = useForm<DebitNoteValues>({ resolver: zodResolver(debitNoteSchema) });
   const concessionForm = useForm<ConcessionValues>({ resolver: zodResolver(concessionSchema) });
 
-  if (billLoading) return <p>Loading…</p>;
+  if (billLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
   if (!bill) return <p>Bill not found.</p>;
 
   const handlePayment = async (values: PaymentValues) => {

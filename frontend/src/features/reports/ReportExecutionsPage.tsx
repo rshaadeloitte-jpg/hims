@@ -17,7 +17,7 @@ export function ReportExecutionsPage() {
         <h1>Report Executions{reportCode ? ` — ${reportCode}` : ""}</h1>
       </header>
 
-      {isLoading ? <p>Loading…</p> : (
+      {isLoading ? <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div> : (
         <table className="table">
           <thead><tr><th>Execution</th><th>Status</th><th>Rows</th><th>Executed At</th></tr></thead>
           <tbody>

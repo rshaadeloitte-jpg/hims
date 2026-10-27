@@ -139,7 +139,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   let res: Response;
   try {
-    const authHeader = bearerAuthHeader() ?? basicAuthHeader();
+    // Dev mode: backend services authenticate with the DEV-ONLY Basic credentials
+    // (IMP-DEC-019). A logged-in super admin's bearer token must never override
+    // that, otherwise every request 401s. In production the Basic helper is
+    // compiled out, so the bearer token is used instead.
+    const authHeader = basicAuthHeader() ?? bearerAuthHeader();
     res = await fetch(buildUrl(path, query), {
       method,
       headers: {

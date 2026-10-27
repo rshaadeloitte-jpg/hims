@@ -80,7 +80,7 @@ export function CrossFormSubmissionsPage() {
         </div>
       </div>
 
-      {isLoading && <p className="submission-list__loading">Loading…</p>}
+      {isLoading && <p className="submission-list__loading" role="status">Loading…</p>}
 
       {submittedId && !isLoading && submissions.length === 0 && (
         <p className="submission-list__empty">No submissions found for {mode} ID {submittedId}.</p>

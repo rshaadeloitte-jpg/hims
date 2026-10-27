@@ -14,11 +14,20 @@
 
 .registration-form__header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border);
+}
+
+@media (min-width: 768px) {
+  .registration-form__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
 }
 
 .registration-form__header h1 {
@@ -50,10 +59,20 @@
 /* Section nav */
 .registration-form__nav {
   display: flex;
+  flex-wrap: nowrap;
   gap: var(--space-1);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--color-border);
+  max-width: 100%;
+  box-shadow: inset -12px 0 8px -12px rgba(0, 0, 0, 0.18);
+}
+
+.registration-form__nav button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .registration-form__nav-item {

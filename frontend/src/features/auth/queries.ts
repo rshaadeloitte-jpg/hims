@@ -3,8 +3,44 @@ import type { User, Role, Permission, NotificationTemplate, AuthTokens } from '.
 
 const API = '/api/v1';
 
+const DEV_BASIC_ENABLED: boolean =
+  import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_BASIC !== "false";
+const DEV_USERNAME: string = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_USERNAME ?? "devops")
+  : "";
+const DEV_PASSWORD: string = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_PASSWORD ?? "devops-dev-only")
+  : "";
+
+function readToken(): string | null {
+  try {
+    const fromLocal = localStorage.getItem("access_token") ?? localStorage.getItem("auth_token");
+    if (fromLocal) return fromLocal;
+    const fromSession = sessionStorage.getItem("access_token") ?? sessionStorage.getItem("auth_token");
+    if (fromSession) return fromSession;
+    const m = document.cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch {
+    /* storage unavailable */
+  }
+  return null;
+}
+
+function authHeader(): string | undefined {
+  if (DEV_BASIC_ENABLED) {
+    return `Basic ${btoa(`${DEV_USERNAME}:${DEV_PASSWORD}`)}`;
+  }
+  const token = readToken();
+  if (token) return `Bearer ${token}`;
+  return undefined;
+}
+
 async function api<T>(url: string, opts?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const auth = authHeader();
+  if (auth) headers['Authorization'] = auth;
+  const mergedHeaders = { ...headers, ...(opts?.headers as Record<string, string> | undefined) };
+  const res = await fetch(url, { ...opts, headers: mergedHeaders });
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res.json();
 }

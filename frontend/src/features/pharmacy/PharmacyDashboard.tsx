@@ -7,7 +7,7 @@ export function PharmacyDashboard() {
   const { data: returns = [] } = useSaleReturns();
   const { data: interventions = [] } = useInterventions();
 
-  if (salesLoading) return <p>Loading…</p>;
+  if (salesLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
 
   const totalSales = sales.length;
   const dispensed = sales.filter((s) => s.isDispensed).length;

@@ -9,7 +9,7 @@ export function SaleReturnsPage() {
   const statusLabel = (s: number) =>
     s === 1 ? "Initiated" : s === 2 ? "Approved" : s === 3 ? "Completed" : "Rejected";
 
-  if (isLoading) return <p>Loading…</p>;
+  if (isLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
   return (
     <section className="page">
       <header className="page__header"><h1>Sale Returns</h1></header>
