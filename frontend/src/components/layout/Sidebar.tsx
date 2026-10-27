@@ -150,6 +150,13 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     _hover={{ bg: active ? "rgba(134, 188, 37, 0.22)" : "rgba(255, 255, 255, 0.08)", color: "#FFFFFF" }}
                     _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
                     _expanded={{ bg: "color-palette.subtle", color: "#1F1F1F" }}
+                    sx={{
+                      "&[aria-expanded='true']": { bg: "#F4F4F5 !important", color: "#1F1F1F !important" },
+                      "&[aria-expanded='true'] p, &[aria-expanded='true'] span, &[aria-expanded='true'] svg, &[aria-expanded='true'] .chakra-stack > *": {
+                        color: "#1F1F1F !important",
+                        fill: "#1F1F1F !important",
+                      },
+                    }}
                     aria-expanded={open}
                     aria-current={active ? "true" : undefined}
                     data-active={active || undefined}
@@ -171,7 +178,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
-                      <Text flex={1} textAlign="left" truncate>
+                      <Text flex={1} textAlign="left" truncate color="inherit">
                         {section.title}
                       </Text>
                       <Box
