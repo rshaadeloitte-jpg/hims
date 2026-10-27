@@ -1069,7 +1069,9 @@ table tbody tr:hover,
 }
 
 [role="tab"][aria-selected="true"],
-.tab--active {
+[role="tab"][aria-selected="true"]:hover,
+.tab--active,
+.tab--active:hover {
   background: var(--color-deloitte-dark, #111827);
   color: #FFFFFF;
   border-color: var(--color-deloitte-dark, #111827);
