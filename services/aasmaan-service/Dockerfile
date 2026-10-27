@@ -5,4 +5,4 @@ COPY target/*.jar app.jar
 USER hims:hims
 EXPOSE 8112
 
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseSerialGC", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]

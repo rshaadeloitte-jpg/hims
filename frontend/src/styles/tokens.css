@@ -17,6 +17,13 @@
   --text-muted: #6B7280;        /* Helper text, placeholders */
   --text-inverse: #FFFFFF;
 
+  /* ── Aliases kept for legacy CSS that references --color-* tokens ─── */
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-primary: var(--color-deloitte-dark);
+  --color-primary-hover: var(--color-deloitte-green-dark);
+  --color-primary-soft: var(--color-deloitte-green-soft);
+
   /* ── Status Colors (readable on white) ──────────────────────────── */
   --color-success: #15803D;     /* WCAG 4.5:1 */
   --color-success-soft: #DCFCE7;

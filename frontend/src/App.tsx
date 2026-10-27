@@ -32,6 +32,7 @@ import { LabOrdersPage } from "./features/lab/LabOrdersPage";
 import { BedBoardPage } from "./features/adt/BedBoardPage";
 import { QueueDashboardPage } from "./features/queue/QueueDashboardPage";
 import { LoginPage } from "./features/auth/LoginPage";
+import { HomePage } from "./features/home/HomePage";
 import { AuthAdminPage } from "./features/auth/AuthAdminPage";
 import { ReportsPage } from "./features/reports/ReportsPage";
 import { ReportExecutionsPage } from "./features/reports/ReportExecutionsPage";
@@ -93,7 +94,6 @@ import { HospitalSetupPage } from "./features/commons/HospitalSetup";
 function AuthenticatedRoutes() {
   return (
     <Routes>
-          <Route path="/" element={<MasterListPage />} />
           <Route path="/masters" element={<MasterListPage />} />
           <Route path="/masters/:entity" element={<MasterListPage />} />
           <Route path="/masters/:entity/new" element={<MasterEditPage />} />
@@ -170,10 +170,31 @@ function AuthenticatedRoutes() {
 }
 
 export default function App() {
+  let hasToken = false;
+  try {
+    hasToken =
+      !!sessionStorage.getItem("access_token") ||
+      !!sessionStorage.getItem("auth_token");
+  } catch {
+    hasToken = false;
+  }
+
   return (
     <Routes>
       {/* Public Auth */}
       <Route path="/auth/login" element={<LoginPage />} />
+
+      {/* Home / Login entry based on session auth token */}
+      <Route
+        path="/"
+        element={
+          hasToken ? (
+            <LoginPage />
+          ) : (
+            <HomePage />
+          )
+        }
+      />
 
       {/* Public Touchscreen Kiosk */}
       <Route path="/kiosk" element={<KioskPage />} />

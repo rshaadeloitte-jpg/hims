@@ -3,7 +3,7 @@
 ## Legacy Codebase Cross-Reference Rule
 
 When implementing any new feature, ALWAYS:
-1. Check the old IHMS codebase at `/Users/adityabanerjee/personal_project/ihms/src` for existing logic covering that feature
+1. Check the old IHMS codebase at `/home/aditya/office-work/ihms/src` for existing logic covering that feature
 2. Port business rules, validation, field names, and stored procedure behavior from the old code
 3. Mark the corresponding gap as done in `docs/modernization/GAP-ANALYSIS-AND-PLAN.md`
 4. No further clarification is required once the old codebase logic has been reviewed and ported
@@ -67,7 +67,7 @@ python3 verify_and_run.py agy "Audit for security issues" "npm test"
 - **Backend**: Java microservices under `services/` (DDD layers: api/application/domain/infrastructure)
 - **Frontend**: React+Vite+TypeScript under `frontend/src/features/`
 - **Docs**: Modernization docs under `docs/modernization/`
-- **Old codebase**: `/Users/adityabanerjee/personal_project/ihms/src` (Java monolith, `com.ohum`)
+- **Old codebase**: `/home/aditya/office-work/ihms/src` (Java monolith, `com.ohum`)
 
 ## Conventions
 
@@ -76,34 +76,34 @@ python3 verify_and_run.py agy "Audit for security issues" "npm test"
 - Never add speculative features; only implement what the gap matrix lists
 - Run lint/typecheck/tests after every change
 
-## Bidirectional Sync — `D:\hims` (frontend standalone repo)
+## Bidirectional Sync — `/home/aditya/office-work/hims` (frontend standalone repo)
 
 The frontend code lives in two repos:
-- **`D:\hims_new_deloitte`** (this repo) — monorepo with backend + frontend under `frontend/`
-- **`D:\hims`** — standalone frontend repo (copy of `frontend/`)
+- **`/home/aditya/office-work/hims`** (this repo) — monorepo with backend + frontend under `frontend/`
+- **`/home/aditya/office-work/hims`** — standalone frontend repo (copy of `frontend/`) [not present in this environment]
 
 ### Remotes
 | Repo | Remote name | Path |
 |------|-------------|------|
-| `D:\hims` | `hims_new_deloitte` | `D:\hims_new_deloitte` |
-| `D:\hims_new_deloitte` | `hims` | `D:\hims` |
+| `/home/aditya/office-work/hims` | `hims_new_deloitte` | `/home/aditya/office-work/hims` |
+| `/home/aditya/office-work/hims` | `hims` | `/home/aditya/office-work/hims` |
 
 ### Sync Rules
 
 **When you change frontend code in THIS repo (`hims_new_deloitte`):**
 ```bash
-# After committing, push frontend changes to D:\hims
+# After committing, push frontend changes to /home/aditya/office-work/hims
 git add frontend/ && git commit -m "feat(frontend): <description>"
 # Push to the standalone frontend repo
-cd D:\hims && git fetch hims_new_deloitte && git merge hims_new_deloitte/main --no-edit
+cd /home/aditya/office-work/hims && git fetch hims_new_deloitte && git merge hims_new_deloitte/main --no-edit
 # Or if branches differ:
-cd D:\hims && git fetch hims_new_deloitte && git checkout main && git merge hims_new_deloitte/frontend-sync
+cd /home/aditya/office-work/hims && git fetch hims_new_deloitte && git checkout main && git merge hims_new_deloitte/frontend-sync
 ```
 
-**When you change frontend code in `D:\hims`:**
+**When you change frontend code in `/home/aditya/office-work/hims`:**
 ```bash
-# After committing in D:\hims, pull changes into this repo's frontend/
-cd D:\hims_new_deloitte && git fetch hims && git checkout main && git merge hims/main --no-edit
+# After committing in /home/aditya/office-work/hims, pull changes into this repo's frontend/
+cd /home/aditya/office-work/hims && git fetch hims && git checkout main && git merge hims/main --no-edit
 ```
 
 **Quick sync script (from either repo):**
@@ -116,5 +116,5 @@ git pull origin main && git pull hims main
 ```
 
 ### Conflict Resolution
-- If both repos modify the same frontend file, resolve conflicts in `D:\hims_new_deloitte` (source of truth for monorepo)
-- Then push the resolved state to `D:\hims`
+- If both repos modify the same frontend file, resolve conflicts in `/home/aditya/office-work/hims` (source of truth for monorepo)
+- Then push the resolved state to `/home/aditya/office-work/hims`

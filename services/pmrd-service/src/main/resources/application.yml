@@ -1,13 +1,13 @@
 spring:
   application:
-    name: appointment-service
+    name: pmrd-service
   datasource:
     url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
       maximum-pool-size: 10
-      pool-name: appointment-cp
+      pool-name: pmrd-cp
   jpa:
     hibernate:
       ddl-auto: none
@@ -16,13 +16,14 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_appointment
+        default_schema: ihms_pmrd
         globally_quoted_identifiers: true
   flyway:
-    default-schema: ihms_appointment
+    default-schema: ihms_pmrd
     create-schemas: true           # history table needs ihms_appointment before V1 executes
     locations: classpath:db/migration
     baseline-on-migrate: true
+    baseline-version: 0
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
@@ -75,8 +76,8 @@ management:
 
 info:
   app:
-    name: appointment-service
-    description: iHMS Appointment & Encounter service (S02) - first Wave-3 service (Catalog #2); doctor schedules, slot search, booking with unique-slot constraint (BR-OPD-002), lifecycle book/checkin/complete/cancel/noshow; outbox AppointmentBooked + E-02 EncounterCreated (encounter-created.v1)
+    name: pmrd-service
+    description: iHMS PMRD service - first Wave-3 service (Catalog #2); doctor schedules, slot search, booking with unique-slot constraint (BR-OPD-002), lifecycle book/checkin/complete/cancel/noshow; outbox AppointmentBooked + E-02 EncounterCreated (encounter-created.v1)
     version: 0.1.0-SNAPSHOT
 
 logging:

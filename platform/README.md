@@ -1,5 +1,7 @@
 # iHMS Modernization — Platform (Wave 0, MIG-003)
 
+> NOTE: PostgreSQL, Redis, Kafka, Solr and ZooKeeper are now provided by EXTERNAL connections (see .env). This compose file no longer starts them.
+
 Local development infrastructure for the target platform. See `docs/modernization/implementation/IMPLEMENTATION-PLAN.md` for slice S0 scope.
 
 ## Stack
