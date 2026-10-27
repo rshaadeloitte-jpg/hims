@@ -1218,11 +1218,17 @@ html, body, #root {
 }
 
 /* Sidebar expanded tabs: dark text/icons on the light expanded background */
-button.hims-button[aria-expanded="true"],
-button.hims-button[aria-expanded="true"] p,
-button.hims-button[aria-expanded="true"] svg,
-button.hims-button[aria-expanded="true"] .chakra-icon {
+.hims-button[aria-expanded="true"] {
+  background-color: rgb(244, 244, 245) !important;
   color: #1f1f1f !important;
+}
+
+.hims-button[aria-expanded="true"] p,
+.hims-button[aria-expanded="true"] span,
+.hims-button[aria-expanded="true"] svg,
+.hims-button[aria-expanded="true"] .chakra-stack > * {
+  color: #1f1f1f !important;
+  fill: #1f1f1f !important;
 }
 
 /* Responsive images / no overflow */
