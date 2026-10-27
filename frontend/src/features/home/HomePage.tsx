@@ -3,7 +3,7 @@ import { DeloitteLogo } from "../../components/DeloitteIcon";
 
 export function HomePage() {
   return (
-    <Flex minH="60vh" align="center" justify="center" py={10}>
+    <Flex minH="100vh" align="center" justify="center" py={10}>
       <VStack gap={6} textAlign="center">
         <DeloitteLogo size={48} />
         <VStack gap={1}>

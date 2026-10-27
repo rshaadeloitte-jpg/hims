@@ -65,7 +65,7 @@ export function LoginPage() {
   };
 
   return (
-    <Flex minH="60vh" align="center" justify="center" py={10}>
+    <Flex minH="100vh" align="center" justify="center" py={10}>
       <Card.Root w="full" maxW="md" bg="white" boxShadow="md">
         <Card.Body p={8}>
           <HStack gap={3} mb={6}>
