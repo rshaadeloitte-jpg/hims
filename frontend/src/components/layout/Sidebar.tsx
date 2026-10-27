@@ -106,14 +106,17 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     to={section.items[0].to}
                     onClick={onCloseMobile}
                     title={section.title}
+                    data-active={active || undefined}
                     style={{ textDecoration: "none", display: "block" }}
                   >
                     <Flex
                       justify="center"
                       p={1.5}
                       borderRadius="md"
-                      color={active ? "white" : "gray.300"}
-                      _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                      color={active ? "#FFFFFF" : "#D1D5DB"}
+                      _hover={{ bg: "rgba(255, 255, 255, 0.08)", color: "#FFFFFF" }}
+                      _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
+                      data-active={active || undefined}
                     >
                       <Flex
                         w="34px"
@@ -121,10 +124,10 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         align="center"
                         justify="center"
                         borderRadius="md"
-                        bg={active ? "brand.500" : "whiteAlpha.100"}
+                        bg={active ? "#86BC25" : "rgba(255, 255, 255, 0.08)"}
                         border="1px solid"
-                        borderColor={active ? "brand.400" : "whiteAlpha.100"}
-                        color={active ? "deloitte.black" : "gray.300"}
+                        borderColor={active ? "#9CCD46" : "rgba(255, 255, 255, 0.12)"}
+                        color={active ? "#1F1F1F" : "#D1D5DB"}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
@@ -138,13 +141,18 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     px={2.5}
                     py={2}
                     h="auto"
-                    color={active ? "white" : "gray.300"}
+                    color={active ? "#FFFFFF" : "#D1D5DB"}
                     fontSize="11px"
                     fontWeight="extrabold"
                     letterSpacing="0.09em"
                     textTransform="uppercase"
-                    _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                    bg={active ? "rgba(134, 188, 37, 0.14)" : "transparent"}
+                    _hover={{ bg: active ? "rgba(134, 188, 37, 0.22)" : "rgba(255, 255, 255, 0.08)", color: "#FFFFFF" }}
+                    _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
                     aria-expanded={open}
+                    aria-current={active ? "true" : undefined}
+                    data-active={active || undefined}
+                    data-expanded={open || undefined}
                     onClick={() => toggle(section.id)}
                   >
                     <HStack gap={2.5} w="full">
@@ -155,10 +163,10 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         justify="center"
                         borderRadius="md"
                         flex="none"
-                        bg={active ? "brand.500" : "whiteAlpha.100"}
+                        bg={active ? "#86BC25" : "rgba(255, 255, 255, 0.08)"}
                         border="1px solid"
-                        borderColor={active ? "brand.400" : "whiteAlpha.100"}
-                        color={active ? "deloitte.black" : "gray.300"}
+                        borderColor={active ? "#9CCD46" : "rgba(255, 255, 255, 0.12)"}
+                        color={active ? "#1F1F1F" : "#D1D5DB"}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
@@ -177,12 +185,15 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
 
                 {open && !collapsed && (
                   <VStack as="ul" m={0} p={0} mt={0.5} mb={1.5} gap="1px" align="stretch" listStyleType="none">
-                    {section.items.map((item) => (
+                    {section.items.map((item) => {
+                      const itemActive = item.end ? pathname === item.to : pathname.startsWith(item.to);
+                      return (
                       <Box as="li" key={item.to + item.label}>
                         <NavLink
                           to={item.to}
                           end={item.end}
                           onClick={onCloseMobile}
+                          data-active={itemActive || undefined}
                           style={{ textDecoration: "none", display: "block" }}
                         >
                           {({ isActive }) => (
@@ -199,9 +210,15 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                               position="relative"
                               fontSize="13px"
                               fontWeight={isActive ? "700" : "400"}
-                              color={isActive ? "white" : "gray.300"}
-                              bg={isActive ? "rgba(134, 188, 37, 0.22)" : "transparent"}
-                              _hover={{ bg: "whiteAlpha.100", color: "white" }}
+                              color={isActive ? "#FFFFFF" : "#D1D5DB"}
+                              bg={isActive ? "rgba(134, 188, 37, 0.24)" : "transparent"}
+                              borderLeftColor={isActive ? "#86BC25" : "rgba(255, 255, 255, 0.16)"}
+                              _hover={{
+                                bg: isActive ? "rgba(134, 188, 37, 0.36)" : "rgba(255, 255, 255, 0.08)",
+                                color: "#FFFFFF",
+                              }}
+                              _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
+                              data-active={isActive || undefined}
                               transition="all 0.15s ease"
                             >
                               <Text truncate>{item.label}</Text>
@@ -209,7 +226,8 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                           )}
                         </NavLink>
                       </Box>
-                    ))}
+                      );
+                    })}
                   </VStack>
                 )}
               </Box>
