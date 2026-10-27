@@ -134,10 +134,11 @@ Whenever any code change occurs (and after it is committed/pushed to origin), AL
    ssh aditya@10.68.61.135 "cd /home/aditya/office-work/hims && docker compose up -d --build"
    ```
    (Or the service-specific compose command as defined in the repo; rebuild only the changed services when possible.)
-4. **Verify**: Confirm containers are healthy:
+4. **Verify containers**: Confirm containers are healthy:
    ```
    ssh aditya@10.68.61.135 "docker ps"
    ```
+5. **Verify in browser (browser agent)**: Use the browser agent (browsermcp) to open `http://10.68.61.135:3000`, snapshot the page, and confirm the change is visible (e.g. background fills the viewport, no console errors). Report any discrepancy.
 
 Notes:
 - Docker is available on the server; all build/run happens there over SSH.
