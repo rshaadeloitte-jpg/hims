@@ -18,7 +18,7 @@ function sectionHasActivePath(sectionId: string, pathname: string): boolean {
   );
 }
 
-const SIDEBAR_BG = "surface.sidebar";
+const SIDEBAR_BG = "#1F1F1F";
 
 /**
  * Enterprise left sidebar: grouped, collapsible sections with

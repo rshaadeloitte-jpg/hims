@@ -102,7 +102,7 @@ export function AppShell({ children }: AppShellProps) {
             as="footer"
             borderTop="1px solid"
             borderColor="border.DEFAULT"
-            bg="surface.muted"
+            bg="#F8F9FA"
             color="text.muted"
             fontSize="xs"
             textAlign="center"

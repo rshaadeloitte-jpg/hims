@@ -214,7 +214,6 @@ const himsConfig = defineConfig({
     semanticTokens: {
       colors: {
         canvas: { value: "{colors.surface.canvas}" },
-        surface: { value: "{colors.surface.panel}" },
         muted: { value: "{colors.surface.muted}" },
         headerBg: { value: "{colors.surface.header}" },
         sidebarBg: { value: "{colors.surface.sidebar}" },

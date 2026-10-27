@@ -63,7 +63,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
       top={0}
       zIndex="sticky"
       h="64px"
-      bg="surface.header"
+      bg="#FFFFFF"
       borderBottom="2px solid"
       borderColor="brand.500"
       boxShadow="sm"
