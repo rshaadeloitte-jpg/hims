@@ -1217,6 +1217,14 @@ html, body, #root {
   min-width: 0;
 }
 
+/* Sidebar expanded tabs: dark text/icons on the light expanded background */
+button.hims-button[aria-expanded="true"],
+button.hims-button[aria-expanded="true"] p,
+button.hims-button[aria-expanded="true"] svg,
+button.hims-button[aria-expanded="true"] .chakra-icon {
+  color: #1f1f1f !important;
+}
+
 /* Responsive images / no overflow */
 img, video {
   max-width: 100%;

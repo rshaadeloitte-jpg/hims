@@ -149,6 +149,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     bg={active ? "rgba(134, 188, 37, 0.14)" : "transparent"}
                     _hover={{ bg: active ? "rgba(134, 188, 37, 0.22)" : "rgba(255, 255, 255, 0.08)", color: "#FFFFFF" }}
                     _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
+                    _expanded={{ bg: "color-palette.subtle", color: "#1F1F1F" }}
                     aria-expanded={open}
                     aria-current={active ? "true" : undefined}
                     data-active={active || undefined}
