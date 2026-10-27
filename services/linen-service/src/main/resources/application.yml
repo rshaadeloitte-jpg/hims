@@ -2,9 +2,9 @@ spring:
   application:
     name: linen-service
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ihms}
-    username: ${DB_USERNAME:ihms}
-    password: ${DB_PASSWORD:ihms-dev-only}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    username: ${DEV_DB_USERNAME:postgres}
+    password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
       maximum-pool-size: 10
       pool-name: linen-cp

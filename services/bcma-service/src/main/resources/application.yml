@@ -2,16 +2,16 @@ server:
   port: ${SERVER_PORT:8117}
 
 spring:
+  application:
+    name: bcma-service
   datasource:
-    url: jdbc:h2:mem:bcma;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    username: ${DEV_DB_USERNAME:postgres}
+    password: ${DEV_DB_PASSWORD:TMSProduct1234}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: bcma-cp
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
     show-sql: true
-  h2:
-    console:
-      enabled: true
