@@ -118,3 +118,28 @@ git pull origin main && git pull hims main
 ### Conflict Resolution
 - If both repos modify the same frontend file, resolve conflicts in `/home/aditya/office-work/hims` (source of truth for monorepo)
 - Then push the resolved state to `/home/aditya/office-work/hims`
+
+## Deployment — Remote Server (aditya@10.68.61.135)
+
+Whenever any code change occurs (and after it is committed/pushed to origin), ALWAYS deploy to the remote server:
+
+1. **Push to origin**: `git push origin main` (and `git push hims main` for frontend changes where applicable).
+2. **Pull on server via SSH**:
+   ```
+   ssh aditya@10.68.61.135 "cd /home/aditya/office-work/hims && git pull origin main"
+   ```
+   (Use the appropriate repo path on the server for backend/frontend.)
+3. **Deploy with Docker on server via SSH**:
+   ```
+   ssh aditya@10.68.61.135 "cd /home/aditya/office-work/hims && docker compose up -d --build"
+   ```
+   (Or the service-specific compose command as defined in the repo; rebuild only the changed services when possible.)
+4. **Verify**: Confirm containers are healthy:
+   ```
+   ssh aditya@10.68.61.135 "docker ps"
+   ```
+
+Notes:
+- Docker is available on the server; all build/run happens there over SSH.
+- Do not deploy from the local machine; always SSH into `aditya@10.68.61.135`.
+- If SSH or docker fails, report the error and stop; do not force.
