@@ -69,7 +69,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
       boxShadow="sm"
     >
       <Flex align="center" gap={4} px={4} h="full">
-        <HStack gap={3} flex="1 1 auto" minW={0}>
+        <HStack gap={3} flex="1 0 auto">
           <IconButton
             variant="ghost"
             aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -84,12 +84,14 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
           <Link
             to="/masters"
             aria-label="Deloitte HIMS home"
-            style={{ textDecoration: "none" }}
+            style={{ textDecoration: "none", flexShrink: 0 }}
           >
-            <HStack gap={2.5}>
-              <DeloitteLogo size={30} />
+            <HStack gap={2.5} flexShrink={0}>
+              <Box flex="none" display="flex">
+                <DeloitteLogo size={30} />
+              </Box>
               <VStack gap={0} lineHeight={1.1} align="flex-start">
-                <Text fontSize="19px" fontWeight="black" color="gray.900" m={0}>
+                <Text fontSize="19px" fontWeight="black" color="gray.900" m={0} whiteSpace="nowrap">
                   Deloitte<Text as="span" color="brand.500">.</Text>
                 </Text>
                 <Text
@@ -99,7 +101,8 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
                   textTransform="uppercase"
                   color="gray.500"
                   m={0}
-                  display={{ base: "none", sm: "block" }}
+                  whiteSpace="nowrap"
+                  display={{ base: "none", lg: "block" }}
                 >
                   HIMS Enterprise
                 </Text>
@@ -131,6 +134,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
           display={{ base: "none", md: "flex" }}
           position="relative"
           w="full"
+          minW="180px"
           maxW="440px"
         >
           <InputGroup
@@ -165,15 +169,19 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
               }}
               placeholder="Search modules, bills, patients…"
               aria-label="Global search"
-              h="38px"
-              bg={searchFocus ? "white" : "gray.50"}
-              border="1px solid"
-              borderColor={searchFocus ? "brand.500" : "gray.200"}
-              color="gray.800"
-              borderRadius="full"
-              fontSize="sm"
-              boxShadow={searchFocus ? "0 0 0 3px rgba(134, 188, 37, 0.2)" : "none"}
-              transition="all 0.15s ease"
+              // Inline style: the global `input:not([type=…])` rule in global.css
+              // would otherwise override Chakra's padding/radius props.
+              style={{
+                height: 38,
+                paddingLeft: 38,
+                paddingRight: 40,
+                borderRadius: 9999,
+                fontSize: 14,
+                background: searchFocus ? "#FFFFFF" : "#F9FAFB",
+                borderColor: searchFocus ? "#527A19" : "#E5E7EB",
+                boxShadow: searchFocus ? "0 0 0 3px rgba(134, 188, 37, 0.25)" : "none",
+                transition: "all 150ms ease",
+              }}
             />
           </InputGroup>
           {suggestions.length > 0 && (
@@ -228,7 +236,7 @@ export function TopHeader({ onToggleSidebar, sidebarCollapsed }: TopHeaderProps)
           )}
         </Box>
 
-        <HStack gap={2.5} flex="1 1 auto" justify="flex-end">
+        <HStack gap={2.5} flex="1 0 auto" justify="flex-end">
           <Badge
             variant="subtle"
             size="sm"

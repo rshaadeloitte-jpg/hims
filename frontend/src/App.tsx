@@ -233,25 +233,26 @@ function DocumentsRoute() {
 function ProfileRoute() {
   const id = Number(window.location.pathname.split("/").slice(-2, -1)[0]);
   return (
-    <div className="p-4">
+    <section className="page">
       <PatientProfile patientId={id || 0} />
-    </div>
+    </section>
   );
 }
 
 function PatientSearchDemo() {
   const [picked, setPicked] = useState<{ patientId: number } | null>(null);
   return (
-    <div className="p-4 space-y-3">
+    <section className="page">
+      <header className="page__header"><h1>Patient Search</h1></header>
       <PatientSearch onSelect={(p) => setPicked(p as { patientId: number })} />
       {picked && (
-        <p className="text-sm text-green-600">
+        <p className="text-sm text-green-700">
           Selected: {picked.patientId} —{" "}
           <Link to={`/patients/${picked.patientId}`} className="underline">view profile</Link>
           {" | "}
           <Link to={`/patients/${picked.patientId}/documents`} className="underline">upload documents</Link>
         </p>
       )}
-    </div>
+    </section>
   );
 }

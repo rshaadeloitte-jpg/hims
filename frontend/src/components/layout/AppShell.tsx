@@ -72,11 +72,14 @@ export function AppShell({ children }: AppShellProps) {
     <Box
       data-testid="app-shell"
       data-collapsed={collapsed || undefined}
-      minH="100vh"
+      minH="100dvh"
       display="flex"
       flexDirection="column"
       bg="canvas"
     >
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <TopHeader onToggleSidebar={toggleSidebar} sidebarCollapsed={collapsed} />
       <Flex flex={1} minH={0}>
         <Sidebar
@@ -87,6 +90,9 @@ export function AppShell({ children }: AppShellProps) {
         <Flex flex={1} minW={0} direction="column">
           <Box
             as="main"
+            id="main-content"
+            tabIndex={-1}
+            outline="none"
             flex={1}
             w="full"
             maxW="1400px"
@@ -102,7 +108,7 @@ export function AppShell({ children }: AppShellProps) {
             as="footer"
             borderTop="1px solid"
             borderColor="border.DEFAULT"
-            bg="#F8F9FA"
+            bg="surface.muted"
             color="text.muted"
             fontSize="xs"
             textAlign="center"

@@ -78,7 +78,9 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         position={{ base: "fixed", lg: "sticky" }}
         top="64px"
         left={0}
-        minH="calc(100vh - 64px)"
+        h="calc(100dvh - 64px)"
+        alignSelf="flex-start"
+        flexShrink={0}
         w={{ base: "min(266px, 84vw)", lg: collapsed ? "72px" : "266px" }}
         transform={{ base: mobileOpen ? "none" : "translateX(-105%)", lg: "none" }}
         transition="width 200ms ease, transform 200ms ease"
@@ -141,22 +143,14 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                     px={2.5}
                     py={2}
                     h="auto"
-                    color={open ? "#1F1F1F" : active ? "#FFFFFF" : "#D1D5DB"}
+                    color={open || active ? "#FFFFFF" : "#D1D5DB"}
                     fontSize="11px"
                     fontWeight="extrabold"
                     letterSpacing="0.09em"
                     textTransform="uppercase"
-                    bg={active ? "rgba(134, 188, 37, 0.14)" : "transparent"}
-                    _hover={{ bg: active ? "rgba(134, 188, 37, 0.22)" : "rgba(255, 255, 255, 0.08)", color: "#FFFFFF" }}
+                    bg={open ? "rgba(255, 255, 255, 0.06)" : "transparent"}
+                    _hover={{ bg: "rgba(255, 255, 255, 0.1)", color: "#FFFFFF" }}
                     _focusVisible={{ outline: "2px solid #86BC25", outlineOffset: "2px" }}
-                    _expanded={{ bg: "color-palette.subtle", color: "#1F1F1F" }}
-                    css={{
-                      "&[aria-expanded='true']": { backgroundColor: "#F4F4F5 !important", color: "#1F1F1F !important" },
-                      "&[aria-expanded='true'] p": { color: "#1F1F1F !important" },
-                      "&[aria-expanded='true'] span": { color: "#1F1F1F !important" },
-                      "&[aria-expanded='true'] svg": { color: "#1F1F1F !important", fill: "#1F1F1F !important" },
-                      "&[aria-expanded='true'] .chakra-stack > *": { color: "#1F1F1F !important" },
-                    }}
                     aria-expanded={open}
                     aria-current={active ? "true" : undefined}
                     data-active={active || undefined}
@@ -174,7 +168,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                         bg={active ? "#86BC25" : "rgba(255, 255, 255, 0.08)"}
                         border="1px solid"
                         borderColor={active ? "#9CCD46" : "rgba(255, 255, 255, 0.12)"}
-                        color={open ? "#1F1F1F" : (active ? "#1F1F1F" : "#D1D5DB")}
+                        color={active ? "#1F1F1F" : "#D1D5DB"}
                       >
                         <LayoutIcon name={section.icon} size={18} />
                       </Flex>
@@ -192,7 +186,19 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                 )}
 
                 {open && !collapsed && (
-                  <VStack as="ul" m={0} p={0} mt={0.5} mb={1.5} gap="1px" align="stretch" listStyleType="none">
+                  <VStack
+                    as="ul"
+                    m={0}
+                    p={0}
+                    mt={1}
+                    mb={2}
+                    ml="26px"
+                    gap="1px"
+                    align="stretch"
+                    listStyleType="none"
+                    borderLeft="1px solid"
+                    borderColor="whiteAlpha.200"
+                  >
                     {section.items.map((item) => {
                       const itemActive = item.end ? pathname === item.to : pathname.startsWith(item.to);
                       return (
@@ -208,19 +214,19 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
                             <Flex
                               align="center"
                               gap={2}
-                              ml="16px"
-                              pl="14px"
+                              ml="-1px"
+                              pl={3}
                               pr={2.5}
-                              py={1.5}
-                              borderLeft="3px solid"
-                              borderColor={isActive ? "brand.500" : "whiteAlpha.200"}
+                              py={{ base: 2.5, lg: 1.5 }}
+                              minH={{ base: "40px", lg: "32px" }}
+                              borderLeft="2px solid"
                               borderRadius="0 6px 6px 0"
                               position="relative"
                               fontSize="13px"
                               fontWeight={isActive ? "700" : "400"}
                               color={isActive ? "#FFFFFF" : "#D1D5DB"}
                               bg={isActive ? "rgba(134, 188, 37, 0.24)" : "transparent"}
-                              borderLeftColor={isActive ? "#86BC25" : "rgba(255, 255, 255, 0.16)"}
+                              borderLeftColor={isActive ? "#86BC25" : "transparent"}
                               _hover={{
                                 bg: isActive ? "rgba(134, 188, 37, 0.36)" : "rgba(255, 255, 255, 0.08)",
                                 color: "#FFFFFF",

@@ -38,6 +38,25 @@
   border: 0;
 }
 
+/* Skip link: hidden until keyboard-focused (first tab stop in AppShell) */
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -48px;
+  z-index: 2000;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-deloitte-black);
+  color: var(--text-inverse);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Shown below the sticky header so it never covers the header controls */
+.skip-link:focus {
+  top: calc(var(--header-height) + var(--space-2));
+  text-decoration: none;
+}
+
 html,
 body,
 #root {
@@ -328,6 +347,31 @@ a:hover {
   font-size: var(--font-size-sm);
 }
 
+/* Bare page content: section headings and form rows placed directly in
+   `.page` get a consistent rhythm and a toolbar surface, so pages that
+   don't use PageHeader/cards still line up with the rest of the app. */
+.page > h2,
+.page > h3 {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.page > .row,
+.page > .inline-form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  margin-bottom: 0;
+}
+
+.page > .table,
+.page > table {
+  margin-bottom: 0;
+}
+
 /* ── Form Controls & Inputs (Crisp Borders & Deloitte Modern Design) ── */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="hidden"]),
 select,
@@ -355,7 +399,8 @@ textarea,
 /* Short fields get a sensible max width on larger screens; full width on phones. */
 @media (min-width: 640px) {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="hidden"]):not([type="search"]),
-  select {
+  select,
+  .chakra-native-select__root {
     max-width: 24rem;
   }
 }
@@ -1217,18 +1262,15 @@ html, body, #root {
   min-width: 0;
 }
 
-/* Sidebar expanded tabs: dark text/icons on the light expanded background */
-.hims-button[aria-expanded="true"] {
-  background-color: rgb(244, 244, 245) !important;
-  color: #1f1f1f !important;
+/* Sidebar section headers: Chakra's button recipe paints [aria-expanded=true]
+   with the palette's light "subtle" fill; keep them on the dark sidebar. */
+aside .hims-button[aria-expanded="true"] {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
-.hims-button[aria-expanded="true"] p,
-.hims-button[aria-expanded="true"] span,
-.hims-button[aria-expanded="true"] svg,
-.hims-button[aria-expanded="true"] .chakra-stack > * {
-  color: #1f1f1f !important;
-  fill: #1f1f1f !important;
+aside .hims-button[aria-expanded="true"]:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive images / no overflow */
