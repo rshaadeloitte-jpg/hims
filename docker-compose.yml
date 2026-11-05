@@ -1,6 +1,9 @@
 name: ihms
+# Default `docker compose up -d` starts only the core services (about 5GB).
+# Use `docker compose --profile full up -d` for the full stack (needs more than 16GB RAM).
 services:
   aasmaan-service:
+    profiles: [full]
     image: ihms-aasmaan-service:latest
     container_name: ihms-aasmaan-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -13,6 +16,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   abha-service:
+    profiles: [full]
     image: ihms-abha-service:latest
     container_name: ihms-abha-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -49,6 +53,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   bcma-service:
+    profiles: [full]
     image: ihms-bcma-service:latest
     container_name: ihms-bcma-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -73,6 +78,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   bloodbank-service:
+    profiles: [full]
     image: ihms-bloodbank-service:latest
     container_name: ihms-bloodbank-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -85,6 +91,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   chemotherapy-service:
+    profiles: [full]
     image: ihms-chemotherapy-service:latest
     container_name: ihms-chemotherapy-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -97,6 +104,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   cssd-service:
+    profiles: [full]
     image: ihms-cssd-service:latest
     container_name: ihms-cssd-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -109,6 +117,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   diet-service:
+    profiles: [full]
     image: ihms-diet-service:latest
     container_name: ihms-diet-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -121,6 +130,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   equipment-service:
+    profiles: [full]
     image: ihms-equipment-service:latest
     container_name: ihms-equipment-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -133,6 +143,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   file-service:
+    profiles: [full]
     image: ihms-file-service:latest
     container_name: ihms-file-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -145,6 +156,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   forms-service:
+    profiles: [full]
     image: ihms-forms-service:latest
     container_name: ihms-forms-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -157,6 +169,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   govt-service:
+    profiles: [full]
     image: ihms-govt-service:latest
     container_name: ihms-govt-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -169,6 +182,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   grievance-service:
+    profiles: [full]
     image: ihms-grievance-service:latest
     container_name: ihms-grievance-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -193,6 +207,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   interop-service:
+    profiles: [full]
     image: ihms-interop-service:latest
     container_name: ihms-interop-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -217,6 +232,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   kiosk-service:
+    profiles: [full]
     image: ihms-kiosk-service:latest
     container_name: ihms-kiosk-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -229,6 +245,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   lab-service:
+    profiles: [full]
     image: ihms-lab-service:latest
     container_name: ihms-lab-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -241,6 +258,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   linen-service:
+    profiles: [full]
     image: ihms-linen-service:latest
     container_name: ihms-linen-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -253,6 +271,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   mortuary-service:
+    profiles: [full]
     image: ihms-mortuary-service:latest
     container_name: ihms-mortuary-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -265,6 +284,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   nursing-service:
+    profiles: [full]
     image: ihms-nursing-service:latest
     container_name: ihms-nursing-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -289,6 +309,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   ot-service:
+    profiles: [full]
     image: ihms-ot-service:latest
     container_name: ihms-ot-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -313,6 +334,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   payments-service:
+    profiles: [full]
     image: ihms-payments-service:latest
     container_name: ihms-payments-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -325,6 +347,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   pharmacy-service:
+    profiles: [full]
     image: ihms-pharmacy-service:latest
     container_name: ihms-pharmacy-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -337,6 +360,7 @@ services:
     cpus: '0.5'
     memswap_limit: 640m
   pmrd-service:
+    profiles: [full]
     image: ihms-pmrd-service:latest
     container_name: ihms-pmrd-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -361,6 +385,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   radiology-service:
+    profiles: [full]
     image: ihms-radiology-service:latest
     container_name: ihms-radiology-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -373,6 +398,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   rcm-service:
+    profiles: [full]
     image: ihms-rcm-service:latest
     container_name: ihms-rcm-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -397,6 +423,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   reporting-service:
+    profiles: [full]
     image: ihms-reporting-service:latest
     container_name: ihms-reporting-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -409,6 +436,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   rmrs-service:
+    profiles: [full]
     image: ihms-rmrs-service:latest
     container_name: ihms-rmrs-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -421,6 +449,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   search-service:
+    profiles: [full]
     image: ihms-search-service:latest
     container_name: ihms-search-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -434,6 +463,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   transport-service:
+    profiles: [full]
     image: ihms-transport-service:latest
     container_name: ihms-transport-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -446,6 +476,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   waste-service:
+    profiles: [full]
     image: ihms-waste-service:latest
     entrypoint: ["java", "-XX:+UseSerialGC", "-XX:MaxRAMPercentage=50", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30", "-jar", "app.jar"]
     container_name: ihms-waste-service
