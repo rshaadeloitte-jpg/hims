@@ -1,5 +1,6 @@
 package com.hims.iam.api;
 
+import com.hims.iam.api.dto.AuthDtos.ChangePasswordRequest;
 import com.hims.iam.api.dto.AuthDtos.LoginRequest;
 import com.hims.iam.api.dto.AuthDtos.LoginResponse;
 import com.hims.iam.api.dto.AuthDtos.LogoutRequest;
@@ -67,5 +68,18 @@ public class AuthController {
             token = authorizationHeader.substring(7).trim();
         }
         return ResponseEntity.ok(authService.validate(token));
+    }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change the authenticated user's password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        String token = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7).trim();
+        }
+        authService.changePassword(token, request.currentPassword(), request.newPassword());
+        return ResponseEntity.ok(Map.of("status", "SUCCESS", "message", "Password changed"));
     }
 }

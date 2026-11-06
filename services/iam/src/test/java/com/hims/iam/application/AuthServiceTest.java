@@ -4,6 +4,7 @@ import com.hims.iam.api.dto.AuthDtos.LoginRequest;
 import com.hims.iam.api.dto.AuthDtos.LoginResponse;
 import com.hims.iam.api.dto.AuthDtos.ValidateResponse;
 import com.hims.iam.application.exceptions.InvalidCredentialsException;
+import com.hims.iam.application.exceptions.InvalidRequestException;
 import com.hims.iam.domain.model.UserDetail;
 import com.hims.iam.domain.model.UserRole;
 import com.hims.iam.domain.model.UserRoleMaster;
@@ -35,6 +36,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 
 /** Service-layer unit tests for login/logout/validate (Mockito). */
 @ExtendWith(MockitoExtension.class)
@@ -185,6 +187,116 @@ class AuthServiceTest {
         assertThat(AuthService.sha256("abc")).isEqualTo(AuthService.sha256("abc"))
                 .hasSize(64)
                 .matches("[0-9a-f]+");
+    }
+
+
+    @Test
+    void changePassword_success_updatesHashAndRevokesToken() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("secret", "$2a$10$stored")).thenReturn(true);
+        when(passwordEncoder.matches("newpass12", "$2a$10$stored")).thenReturn(false);
+        when(passwordEncoder.encode("newpass12")).thenReturn("$2a$10$new");
+
+        authService.changePassword("tok", "secret", "newpass12");
+
+        assertThat(activeUser.getPasswordHash()).isEqualTo("$2a$10$new");
+        verify(userRepository).save(activeUser);
+        verify(revocationService).revoke(eq("tok"), any(Instant.class));
+    }
+
+    @Test
+    void changePassword_thenLogin_worksWithNewPassword() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("secret", "$2a$10$stored")).thenReturn(true);
+        when(passwordEncoder.matches("newpass12", "$2a$10$stored")).thenReturn(false);
+        when(passwordEncoder.encode("newpass12")).thenReturn("$2a$10$new");
+
+        authService.changePassword("tok", "secret", "newpass12");
+
+        when(passwordEncoder.matches("newpass12", "$2a$10$new")).thenReturn(true);
+        when(jwtTokenService.issue("rsharma", 10L, List.of("staff"), 3L)).thenReturn("new-jwt");
+        when(jwtTokenService.ttlSeconds()).thenReturn(1800L);
+
+        LoginResponse response = authService.login(new LoginRequest("rsharma", "newpass12"));
+
+        assertThat(response.accessToken()).isEqualTo("new-jwt");
+    }
+
+    @Test
+    void changePassword_oldPasswordStopsWorking() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("secret", "$2a$10$stored")).thenReturn(true);
+        when(passwordEncoder.matches("newpass12", "$2a$10$stored")).thenReturn(false);
+        when(passwordEncoder.encode("newpass12")).thenReturn("$2a$10$new");
+
+        authService.changePassword("tok", "secret", "newpass12");
+
+        when(passwordEncoder.matches("secret", "$2a$10$new")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest("rsharma", "secret")))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void changePassword_wrongCurrent_rejectedAndPasswordUnchanged() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("wrong", "$2a$10$stored")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.changePassword("tok", "wrong", "newpass12"))
+                .isInstanceOf(InvalidCredentialsException.class);
+        verify(userRepository, never()).save(any());
+        verify(revocationService, never()).revoke(anyString(), any(Instant.class));
+        assertThat(activeUser.getPasswordHash()).isEqualTo("$2a$10$stored");
+    }
+
+    @Test
+    void changePassword_sameAsCurrent_rejected() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("secret", "$2a$10$stored")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.changePassword("tok", "secret", "secret"))
+                .isInstanceOf(InvalidRequestException.class)
+                .satisfies(e -> assertThat(((InvalidRequestException) e).getErrorCode()).isEqualTo("IAM008"));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePassword_anonymousTokenMissing_throws401() {
+        assertThatThrownBy(() -> authService.changePassword(null, "secret", "newpass12"))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
+
+    @Test
+    void changePassword_tokenRevokedAfterwards() {
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
+        when(passwordEncoder.matches("secret", "$2a$10$stored")).thenReturn(true);
+        when(passwordEncoder.matches("newpass12", "$2a$10$stored")).thenReturn(false);
+        when(passwordEncoder.encode("newpass12")).thenReturn("$2a$10$new");
+
+        authService.changePassword("tok", "secret", "newpass12");
+
+        verify(revocationService).revoke(eq("tok"), any(Instant.class));
+        when(revocationService.isRevoked("tok")).thenReturn(true);
+        when(jwtTokenService.parse("tok")).thenReturn(claims);
+        when(claims.getSubject()).thenReturn("rsharma");
+        when(claims.get(JwtTokenService.CLAIM_UID, Long.class)).thenReturn(10L);
+        when(jwtTokenService.roles(claims)).thenReturn(List.of());
+        when(jwtTokenService.expiryOf(claims)).thenReturn(Instant.now().plusSeconds(30));
+        ValidateResponse vr = authService.validate("tok");
+        assertThat(vr.valid()).isFalse();
+        assertThat(vr.reason()).isEqualTo("REVOKED");
     }
 
 }

@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -109,4 +110,62 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.username").value("rsharma"));
     }
+
+    @Test
+    void changePassword_shortNewPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .with(user("rsharma").roles("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"secret\",\"newPassword\":\"short\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changePassword_sameAsCurrent_returns400() throws Exception {
+        // service-level rejection surfaces as 400 via InvalidRequestException
+        org.mockito.Mockito.doThrow(new com.hims.iam.application.exceptions.InvalidRequestException("IAM008", "New password must differ from the current password"))
+                .when(authService).changePassword(any(), anyString(), anyString());
+
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .with(user("rsharma").roles("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"secret\",\"newPassword\":\"secret1234\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("IAM008"));
+    }
+
+    @Test
+    void changePassword_anonymous_returns401() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"secret\",\"newPassword\":\"newpass12\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void changePassword_bodyWithUsernameOrUserId_doesNotTargetOtherUser() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .with(user("rsharma").roles("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"secret\",\"newPassword\":\"newpass12\",\"username\":\"victim\",\"userId\":999}"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(authService).changePassword(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq("secret"),
+                org.mockito.ArgumentMatchers.eq("newpass12"));
+    }
+
+    @Test
+    void changePassword_wrongCurrent_returns401() throws Exception {
+        org.mockito.Mockito.doThrow(new com.hims.iam.application.exceptions.InvalidCredentialsException("IAM001", "Invalid username or password"))
+                .when(authService).changePassword(any(), anyString(), anyString());
+
+        mockMvc.perform(post("/api/v1/auth/change-password")
+                        .with(user("rsharma").roles("STAFF"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentPassword\":\"wrong\",\"newPassword\":\"newpass12\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value("IAM001"));
+    }
+
 }
