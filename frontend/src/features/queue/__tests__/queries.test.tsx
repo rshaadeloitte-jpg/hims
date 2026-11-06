@@ -50,7 +50,7 @@ describe("useCounters", () => {
     });
     const { result } = renderHook(() => useCounters(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/counters", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/counters", expect.any(Object));
     expect(result.current.data?.[0]?.counterName).toBe("OPD-1");
   });
 });
@@ -63,7 +63,7 @@ describe("useTokens", () => {
     });
     const { result } = renderHook(() => useTokens(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/tokens", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/tokens", expect.any(Object));
     expect(result.current.data?.[0]?.tokenNo).toBe(42);
   });
 });
@@ -76,7 +76,7 @@ describe("useDashboard", () => {
     });
     const { result } = renderHook(() => useDashboard(0), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/dashboard", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/dashboard", expect.any(Object));
   });
 });
 
@@ -95,7 +95,7 @@ describe("useCabinBoard", () => {
     });
     const { result } = renderHook(() => useCabinBoard(3), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/cabin/3/board", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/cabin/3/board", expect.any(Object));
   });
 });
 
@@ -113,7 +113,7 @@ describe("useDoctorBatch", () => {
     });
     const { result } = renderHook(() => useDoctorBatch(42), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/doctor/42/batch", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/doctor/42/batch", expect.any(Object));
     expect(result.current.data?.[0]?.patientId).toBe(99);
   });
 });
@@ -126,7 +126,7 @@ describe("useWaitTime", () => {
     });
     const { result } = renderHook(() => useWaitTime(1), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/counters/1/wait-time", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/counters/1/wait-time", expect.any(Object));
     expect(result.current.data?.estimatedWaitMinutes).toBe(60);
   });
 });
@@ -147,7 +147,7 @@ describe("useDepartmentTokens", () => {
     });
     const { result } = renderHook(() => useDepartmentTokens(5), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(fetchMock).toHaveBeenCalledWith("/api/api/v1/queue/department/5/tokens", expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/department/5/tokens", expect.any(Object));
   });
 });
 
@@ -163,7 +163,7 @@ describe("useIssueToken", () => {
     result.current.mutate({ counterId: 1, patientId: 5, priority: "NORMAL" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/queue/tokens",
+      "/api/v1/queue/tokens",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ counterId: 1, patientId: 5, priority: "NORMAL" }),
@@ -182,7 +182,7 @@ describe("useCallNext", () => {
     result.current.mutate();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/queue/counters/1/call-next",
+      "/api/v1/queue/counters/1/call-next",
       expect.objectContaining({ method: "POST" }),
     );
   });
@@ -198,7 +198,7 @@ describe("useCallPatient", () => {
     result.current.mutate(5);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/queue/tokens/5/call",
+      "/api/v1/queue/tokens/5/call",
       expect.objectContaining({ method: "POST" }),
     );
   });
@@ -214,7 +214,7 @@ describe("useTokenAction", () => {
     result.current.mutate(1);
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      `/api/api/v1/queue/tokens/1/${action}`,
+      `/api/v1/queue/tokens/1/${action}`,
       expect.objectContaining({ method: "POST" }),
     );
   });
@@ -230,7 +230,7 @@ describe("useTransferToken", () => {
     result.current.mutate({ tokenId: 1, targetCounterId: 2 });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/queue/tokens/1/transfer",
+      "/api/v1/queue/tokens/1/transfer",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ targetCounterId: 2 }),

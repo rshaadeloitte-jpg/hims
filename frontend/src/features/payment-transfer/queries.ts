@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
  * DBT (Direct Benefit Transfer) payment workflows with Stripe-like payment form patterns.
  */
 
-const PAYMENT_TRANSFER_BASE: string = import.meta.env.VITE_PAYMENT_TRANSFER_API_BASE ?? "/api";
+const PAYMENT_TRANSFER_BASE: string = import.meta.env.VITE_PAYMENT_TRANSFER_API_BASE ?? "";
 
 async function paymentTransferJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

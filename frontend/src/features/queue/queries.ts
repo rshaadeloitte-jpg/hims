@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "/api";
+const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "";
 
 async function queueJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

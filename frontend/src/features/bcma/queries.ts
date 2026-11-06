@@ -21,7 +21,7 @@ import type {
  * - Audit trail preserved server-side
  */
 
-const BCMA_BASE: string = import.meta.env.VITE_BCMA_API_BASE ?? "/api";
+const BCMA_BASE: string = import.meta.env.VITE_BCMA_API_BASE ?? "";
 
 async function bcmaJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

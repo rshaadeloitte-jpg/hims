@@ -17,7 +17,7 @@ import type { ListQuery, MasterPayload, MasterRecord } from "./types";
  *   routes as the read API; a successful create returns 201 with the record.
  */
 
-const API_BASE: string = import.meta.env.VITE_API_BASE ?? "/api";
+const API_BASE: string = import.meta.env.VITE_API_BASE ?? "";
 
 /**
  * DEV-ONLY Basic auth (IMP-DEC-019 / red-team F-8).
@@ -180,15 +180,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 /** Endpoints of the reference-service master API. */
 export const mastersApi = {
   /** GET /api/v1/masters — supported master entity registry names. */
-  listEntities: (): Promise<string[]> => request<string[]>("/masters"),
+  listEntities: (): Promise<string[]> => request<string[]>("/api/v1/masters"),
 
   /** GET /api/v1/masters/{entity} — crudgetAll parity, unit-scoped list. */
   listScoped: (entity: string, query: ListQuery): Promise<MasterRecord[]> =>
-    request<MasterRecord[]>(`/masters/${encodeURIComponent(entity)}`, { query }),
+    request<MasterRecord[]>(`/api/v1/masters/${encodeURIComponent(entity)}`, { query }),
 
   /** GET /api/v1/masters/{entity}/all — crudgetAllAll parity, unscoped list. */
   listAll: (entity: string, query: ListQuery): Promise<MasterRecord[]> =>
-    request<MasterRecord[]>(`/masters/${encodeURIComponent(entity)}/all`, { query }),
+    request<MasterRecord[]>(`/api/v1/masters/${encodeURIComponent(entity)}/all`, { query }),
 
   /**
    * GET /api/v1/masters/{entity}/{id} — single record (crudget parity).
@@ -197,7 +197,7 @@ export const mastersApi = {
    * see JpaMasterReadRepository.findByIdScoped); Unitmaster is id-only.
    */
   getById: (entity: string, id: number | string, unitId?: number): Promise<MasterRecord> =>
-    request<MasterRecord>(`/masters/${encodeURIComponent(entity)}/${id}`, {
+    request<MasterRecord>(`/api/v1/masters/${encodeURIComponent(entity)}/${id}`, {
       query: unitId ? { unitId } : undefined,
     }),
 
@@ -208,7 +208,7 @@ export const mastersApi = {
    * (server: scope = unitId param ?? payload.unitId).
    */
   create: (entity: string, payload: MasterPayload, unitId?: number): Promise<MasterRecord> =>
-    request<MasterRecord>(`/masters/${encodeURIComponent(entity)}`, {
+    request<MasterRecord>(`/api/v1/masters/${encodeURIComponent(entity)}`, {
       method: "POST",
       query: unitId ? { unitId } : undefined,
       body: payload,
@@ -227,7 +227,7 @@ export const mastersApi = {
     payload: MasterPayload,
     unitId?: number,
   ): Promise<MasterRecord> =>
-    request<MasterRecord>(`/masters/${encodeURIComponent(entity)}/${id}`, {
+    request<MasterRecord>(`/api/v1/masters/${encodeURIComponent(entity)}/${id}`, {
       method: "PUT",
       query: unitId ? { unitId } : undefined,
       body: payload,
@@ -237,27 +237,27 @@ export const mastersApi = {
 /** Forms engine API (M40) — versioned JSON-schema store + submit. */
 export const formsApi = {
   list: (): Promise<import("../features/forms/types").FormDefinition[]> =>
-    request<import("../features/forms/types").FormDefinition[]>("/forms"),
+    request<import("../features/forms/types").FormDefinition[]>("/api/v1/forms"),
   getSchema: (id: number): Promise<import("../features/forms/types").FormSchemaResponse> =>
-    request<import("../features/forms/types").FormSchemaResponse>(`/forms/${id}/schema`),
+    request<import("../features/forms/types").FormSchemaResponse>(`/api/v1/forms/${id}/schema`),
   submit: (formId: number, data: Record<string, unknown>, patientId?: number, encounterId?: number) =>
-    request<import("../features/forms/types").FormSubmission>(`/forms/${formId}/submit`, {
+    request<import("../features/forms/types").FormSubmission>(`/api/v1/forms/${formId}/submit`, {
       method: "POST",
       query: { patientId, encounterId },
       body: data,
     }),
   listSubmissions: (formId: number): Promise<import("../features/forms/types").FormSubmission[]> =>
-    request<import("../features/forms/types").FormSubmission[]>(`/forms/${formId}/submissions`),
+    request<import("../features/forms/types").FormSubmission[]>(`/api/v1/forms/${formId}/submissions`),
   specialties: (): Promise<string[]> =>
-    request<string[]>("/forms/specialties"),
+    request<string[]>("/api/v1/forms/specialties"),
   listBySpecialty: (specialty: string): Promise<import("../features/forms/types").FormDefinition[]> =>
-    request<import("../features/forms/types").FormDefinition[]>(`/forms?specialty=${encodeURIComponent(specialty)}`),
+    request<import("../features/forms/types").FormDefinition[]>(`/api/v1/forms?specialty=${encodeURIComponent(specialty)}`),
   listByPatient: (patientId: number): Promise<import("../features/forms/types").FormSubmission[]> =>
-    request<import("../features/forms/types").FormSubmission[]>(`/forms/submissions/patient/${patientId}`),
+    request<import("../features/forms/types").FormSubmission[]>(`/api/v1/forms/submissions/patient/${patientId}`),
   listByEncounter: (encounterId: number): Promise<import("../features/forms/types").FormSubmission[]> =>
-    request<import("../features/forms/types").FormSubmission[]>(`/forms/submissions/encounter/${encounterId}`),
+    request<import("../features/forms/types").FormSubmission[]>(`/api/v1/forms/submissions/encounter/${encounterId}`),
   deleteSubmission: (formId: number, submissionId: number) =>
-    request<import("../features/forms/types").FormSubmission>(`/forms/${formId}/submissions/${submissionId}`, { method: "DELETE" }),
+    request<import("../features/forms/types").FormSubmission>(`/api/v1/forms/${formId}/submissions/${submissionId}`, { method: "DELETE" }),
   create: (payload: {
     code: string;
     name: string;
@@ -266,7 +266,7 @@ export const formsApi = {
     version: number;
     schema: Record<string, unknown>;
   }) =>
-    request<import("../features/forms/types").FormDefinition>("/forms", {
+    request<import("../features/forms/types").FormDefinition>("/api/v1/forms", {
       method: "POST",
       body: payload,
     }),
@@ -281,7 +281,7 @@ export const formsApi = {
       schema: Record<string, unknown>;
     },
   ) =>
-    request<import("../features/forms/types").FormDefinition>(`/forms/${id}`, {
+    request<import("../features/forms/types").FormDefinition>(`/api/v1/forms/${id}`, {
       method: "PUT",
       body: payload,
     }),

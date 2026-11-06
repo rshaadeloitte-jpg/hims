@@ -8,7 +8,7 @@ import { ApiError } from "../../api/client";
  * (VITE_PATIENT_API_BASE override in .env.local is the supported escape hatch).
  */
 
-const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "/api";
+const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "";
 
 async function patientJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

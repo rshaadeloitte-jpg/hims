@@ -42,7 +42,7 @@ describe('useLabOrders', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/lab/orders',
+      '/api/v1/lab/orders',
       expect.any(Object)
     );
     expect(result.current.data).toHaveLength(1);
@@ -76,7 +76,7 @@ describe('useLabOrder', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/lab/orders/1',
+      '/api/v1/lab/orders/1',
       expect.any(Object)
     );
     expect(result.current.data?.orderId).toBe(1);
@@ -115,7 +115,7 @@ describe('useCreateLabOrder', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/lab/orders',
+      '/api/v1/lab/orders',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({

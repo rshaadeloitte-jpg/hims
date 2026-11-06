@@ -55,7 +55,7 @@ describe("Transport queries", () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/api/v1/transport/vehicles",
+        "/api/v1/transport/vehicles",
         expect.any(Object)
       );
       expect(result.current.data).toHaveLength(1);
@@ -85,7 +85,7 @@ describe("Transport queries", () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/api/v1/transport/vehicles/1",
+        "/api/v1/transport/vehicles/1",
         expect.any(Object)
       );
     });
@@ -117,7 +117,7 @@ describe("Transport queries", () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/api/v1/transport/vehicles/1/in",
+        "/api/v1/transport/vehicles/1/in",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ vehicleId: 1, location: "Service Gate", odometerReading: 50000, notes: "Test" }),
@@ -145,7 +145,7 @@ describe("Transport queries", () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/api/v1/transport/vehicles/1/out",
+        "/api/v1/transport/vehicles/1/out",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ vehicleId: 1, destination: "Airport", odometerReading: 50100, purpose: "Emergency" }),
@@ -174,7 +174,7 @@ describe("Transport queries", () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(fetchMock).toHaveBeenCalledWith(
-        "/api/api/v1/transport/vehicles/1/allocate",
+        "/api/v1/transport/vehicles/1/allocate",
         expect.objectContaining({
           method: "POST",
         })

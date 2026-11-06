@@ -12,7 +12,7 @@ import { ApiError } from "../../api/client";
  * fields still matches the wire contract.
  */
 
-const APPT_BASE: string = import.meta.env.VITE_APPT_API_BASE ?? "/api";
+const APPT_BASE: string = import.meta.env.VITE_APPT_API_BASE ?? "";
 
 async function apptJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const ADT_BASE: string = import.meta.env.VITE_ADT_API_BASE ?? "/api";
+const ADT_BASE: string = import.meta.env.VITE_ADT_API_BASE ?? "";
 
 async function adtJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

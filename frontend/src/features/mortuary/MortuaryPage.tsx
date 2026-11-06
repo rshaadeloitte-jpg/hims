@@ -1,9 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { Table, Text } from "@chakra-ui/react";
+import { ApiError } from "../../api/client";
 const BASE = import.meta.env.VITE_MORTUARY_API_BASE ?? "/api";
 
 export function MortuaryPage() {
-  const { data: chambers = [] } = useQuery({ queryKey: ["mortuary-chambers"], queryFn: () => fetch(`${BASE}/v1/chambers`).then(r => r.json()) });
+  const { data } = useQuery({
+    queryKey: ["mortuary-chambers"],
+    queryFn: async () => {
+      const r = await fetch(`${BASE}/v1/chambers`);
+      if (!r.ok) throw new ApiError(r.status, "ERR", "Request failed");
+      return r.json();
+    },
+  });
+  const chambers = Array.isArray(data) ? data : [];
   return (
     <section className="page">
       <header className="page-header"><h1>Mortuary</h1></header>

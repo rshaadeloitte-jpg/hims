@@ -8,7 +8,8 @@ async function j<T>(u: string, o?: RequestInit): Promise<T> {
 export interface LinenRequest { id: number; fromStore: string; toStore: string; status: string; requestedAt: string; }
 
 export function LinenFrontPage() {
-  const { data: reqs = [] } = useQuery({ queryKey: ["linen-reqs"], queryFn: () => j<LinenRequest[]>(`${BASE}/v1/linen-requests`) });
+  const { data } = useQuery({ queryKey: ["linen-reqs"], queryFn: () => j<LinenRequest[]>(`${BASE}/v1/linen-requests`) });
+  const reqs = Array.isArray(data) ? data : [];
   const qc = useQueryClient();
   const updateStatus = useMutation({ mutationFn: ({ id, status }: { id: number; status: string }) => j(`${BASE}/v1/linen-requests/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }), onSuccess: () => qc.invalidateQueries({ queryKey: ["linen-reqs"] }) });
 

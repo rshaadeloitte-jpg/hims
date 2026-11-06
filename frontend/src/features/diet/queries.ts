@@ -33,7 +33,7 @@ import type { DietItemScheduleDetails, DietOrderDetails, DietReport } from "./ty
  *   GET  /api/v1/diet/items                        diet item masters
  */
 
-const DIET_BASE: string = import.meta.env.VITE_DIET_API_BASE ?? "/api";
+const DIET_BASE: string = import.meta.env.VITE_DIET_API_BASE ?? "";
 
 async function dietJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

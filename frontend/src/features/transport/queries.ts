@@ -9,7 +9,7 @@ import type {
   MaintenanceApprovalForm,
 } from "./zodSchema";
 
-const TRN_BASE: string = import.meta.env.VITE_TRANSPORT_API_BASE ?? "/api";
+const TRN_BASE: string = import.meta.env.VITE_TRANSPORT_API_BASE ?? "";
 
 async function trnJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -49,7 +49,7 @@ export interface VehicleRequest {
 export function useVehicleRequests() {
   return useQuery({
     queryKey: ["vehicle-requests"],
-    queryFn: () => trnJson<VehicleRequest[]>(`${TRN_BASE}/v1/vehicle-requests`),
+    queryFn: () => trnJson<VehicleRequest[]>(`${TRN_BASE}/api/v1/vehicle-requests`),
   });
 }
 
@@ -57,7 +57,7 @@ export function useCreateRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: Partial<VehicleRequest>) =>
-      trnJson<VehicleRequest>(`${TRN_BASE}/v1/vehicle-requests`, {
+      trnJson<VehicleRequest>(`${TRN_BASE}/api/v1/vehicle-requests`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -123,7 +123,7 @@ export function useAllocateVehicle() {
 export function useFuelLogs() {
   return useQuery<FuelLog[]>({
     queryKey: transportQueryKeys.fuelLogs(),
-    queryFn: () => trnJson<FuelLog[]>(`${TRN_BASE}/v1/fuel-logs`),
+    queryFn: () => trnJson<FuelLog[]>(`${TRN_BASE}/api/v1/fuel-logs`),
   });
 }
 
@@ -131,7 +131,7 @@ export function useAddFuelLog() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: FuelLogCreateForm) =>
-      trnJson<FuelLog>(`${TRN_BASE}/v1/fuel-logs`, {
+      trnJson<FuelLog>(`${TRN_BASE}/api/v1/fuel-logs`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -144,7 +144,7 @@ export function useAddFuelLog() {
 export function useMaintenanceRequests() {
   return useQuery<MaintenanceRequest[]>({
     queryKey: transportQueryKeys.maintenanceRequests(),
-    queryFn: () => trnJson<MaintenanceRequest[]>(`${TRN_BASE}/v1/maintenance`),
+    queryFn: () => trnJson<MaintenanceRequest[]>(`${TRN_BASE}/api/v1/maintenance`),
   });
 }
 
@@ -152,7 +152,7 @@ export function useCreateMaintenanceRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: MaintenanceRequestCreateForm) =>
-      trnJson<MaintenanceRequest>(`${TRN_BASE}/v1/maintenance`, {
+      trnJson<MaintenanceRequest>(`${TRN_BASE}/api/v1/maintenance`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -164,7 +164,7 @@ export function useApproveMaintenanceRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: MaintenanceApprovalForm) =>
-      trnJson<MaintenanceRequest>(`${TRN_BASE}/v1/maintenance/${input.id}/approve`, {
+      trnJson<MaintenanceRequest>(`${TRN_BASE}/api/v1/maintenance/${input.id}/approve`, {
         method: "POST",
         body: JSON.stringify(input),
       }),

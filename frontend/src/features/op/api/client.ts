@@ -31,9 +31,9 @@ import { ApiError } from "../../../api/client";
  * non-2xx into {@link ApiError} so screens can use the existing pattern.
  */
 
-const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "/api";
-const APPT_BASE: string = import.meta.env.VITE_APPT_API_BASE ?? "/api";
-const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "/api";
+const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "";
+const APPT_BASE: string = import.meta.env.VITE_APPT_API_BASE ?? "";
+const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "";
 
 const DEV_BASIC_ENABLED: boolean =
   import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_BASIC !== "false";
@@ -148,32 +148,32 @@ function toAppointmentListQuery(q: AppointmentListQuery): Record<string, unknown
 export const patientApi = {
   /** GET /api/v1/patients/search — multi-field lookup (name / MRN / mobile / ABHA). */
   search: (q: PatientSearchQuery) =>
-    request<PatientSearchHit[]>(PATIENT_BASE, "/v1/patients/search", { query: toPatientQuery(q) }),
+    request<PatientSearchHit[]>(PATIENT_BASE, "/api/v1/patients/search", { query: toPatientQuery(q) }),
 
   /** GET /api/v1/patients/{id} — full record (MIG-030). */
-  get: (id: number) => request<Patient>(PATIENT_BASE, `/v1/patients/${id}`),
+  get: (id: number) => request<Patient>(PATIENT_BASE, `/api/v1/patients/${id}`),
 
   /** POST /api/v1/patients/register — walk-in registration (BR-PAT-001 MRN gen). */
   register: (p: Omit<Patient, "id" | "mrn" | "createdAt" | "updatedAt">) =>
-    request<Patient>(PATIENT_BASE, "/v1/patients/register", { method: "POST", body: p }),
+    request<Patient>(PATIENT_BASE, "/api/v1/patients/register", { method: "POST", body: p }),
 
   /** PATCH-style update for demographic fields. */
   update: (id: number, patch: Partial<Patient>) =>
-    request<Patient>(PATIENT_BASE, `/v1/patients/${id}`, { method: "PUT", body: patch }),
+    request<Patient>(PATIENT_BASE, `/api/v1/patients/${id}`, { method: "PUT", body: patch }),
 
   /** GET /api/v1/patients/{id}/sponsors — sponsor/scheme list. */
   sponsors: (id: number) =>
-    request<Patient["sponsors"]>(PATIENT_BASE, `/v1/patients/${id}/sponsors`),
+    request<Patient["sponsors"]>(PATIENT_BASE, `/api/v1/patients/${id}/sponsors`),
 };
 
 /** appointment-service wrappers (:8091). */
 export const appointmentApi = {
   /** GET /api/v1/appointments — list with filters + legacy pagination. */
   list: (q: AppointmentListQuery) =>
-    request<AppointmentListResponse>(APPT_BASE, "/v1/appointments", { query: toAppointmentListQuery(q) }),
+    request<AppointmentListResponse>(APPT_BASE, "/api/v1/appointments", { query: toAppointmentListQuery(q) }),
 
   /** GET /api/v1/appointments/{id} — one appointment. */
-  get: (id: number) => request<Appointment>(APPT_BASE, `/v1/appointments/${id}`),
+  get: (id: number) => request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}`),
 
   /** POST /api/v1/appointments — create (BR-APT-001 unique-slot). */
   create: (body: {
@@ -185,57 +185,57 @@ export const appointmentApi = {
     endAt: string;
     source?: AppointmentSource;
     notes?: string;
-  }) => request<Appointment>(APPT_BASE, "/v1/appointments", { method: "POST", body }),
+  }) => request<Appointment>(APPT_BASE, "/api/v1/appointments", { method: "POST", body }),
 
   /** PUT /api/v1/appointments/{id}/cancel — terminal 4. */
   cancel: (id: number, reason: string) =>
-    request<Appointment>(APPT_BASE, `/v1/appointments/${id}/cancel`, { method: "PUT", body: { reason } }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/cancel`, { method: "PUT", body: { reason } }),
 
   /** PUT /api/v1/appointments/{id}/noshow — terminal 6. */
   noShow: (id: number) =>
-    request<Appointment>(APPT_BASE, `/v1/appointments/${id}/noshow`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/noshow`, { method: "PUT" }),
 
   /** PUT /api/v1/appointments/{id}/checkin — BOOKED -> CHECKED_IN. */
   checkIn: (id: number) =>
-    request<Appointment>(APPT_BASE, `/v1/appointments/${id}/checkin`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/checkin`, { method: "PUT" }),
 
   /** PUT /api/v1/appointments/{id}/complete — CHECKED_IN -> COMPLETED. */
   complete: (id: number) =>
-    request<Appointment>(APPT_BASE, `/v1/appointments/${id}/complete`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/complete`, { method: "PUT" }),
 
   /** GET /api/v1/doctors/{id}/slots?date=YYYY-MM-DD — slot picker cascade. */
   slots: (doctorId: number, date: string) =>
-    request<AppointmentSlot[]>(APPT_BASE, `/v1/doctors/${doctorId}/slots`, { query: { date } }),
+    request<AppointmentSlot[]>(APPT_BASE, `/api/v1/doctors/${doctorId}/slots`, { query: { date } }),
 
   /** GET /api/v1/doctors/schedules — weekly schedule master. */
   doctorSchedules: (departmentId?: number) =>
-    request<Doctor[]>(APPT_BASE, "/v1/doctors/schedules", { query: { departmentId } }),
+    request<Doctor[]>(APPT_BASE, "/api/v1/doctors/schedules", { query: { departmentId } }),
 
   /** GET /api/v1/departments — for the Department -> Doctor cascade. */
-  departments: () => request<Department[]>(APPT_BASE, "/v1/departments"),
+  departments: () => request<Department[]>(APPT_BASE, "/api/v1/departments"),
 };
 
 /** queue-service wrappers (:8089). */
 export const queueApi = {
   /** GET /api/v1/queue/tokens — list today's tokens (optional counterId). */
   today: (counterId?: number) =>
-    request<QueueToken[]>(QUEUE_BASE, "/v1/queue/tokens", { query: counterId ? { counterId } : undefined }),
+    request<QueueToken[]>(QUEUE_BASE, "/api/v1/queue/tokens", { query: counterId ? { counterId } : undefined }),
 
   /** POST /api/v1/queue/tokens — issue token (daily-reset per counter). */
   issue: (body: QueueTokenCreate) =>
-    request<QueueToken>(QUEUE_BASE, "/v1/queue/tokens", { method: "POST", body }),
+    request<QueueToken>(QUEUE_BASE, "/api/v1/queue/tokens", { method: "POST", body }),
 
   /** POST /api/v1/queue/counters/{id}/call-next — counter calls next. */
   callNext: (counterId: number) =>
-    request<QueueToken>(QUEUE_BASE, `/v1/queue/counters/${counterId}/call-next`, { method: "POST" }),
+    request<QueueToken>(QUEUE_BASE, `/api/v1/queue/counters/${counterId}/call-next`, { method: "POST" }),
 
   /** POST /api/v1/queue/tokens/{id}/complete — token completed. */
   complete: (id: number) =>
-    request<QueueToken>(QUEUE_BASE, `/v1/queue/tokens/${id}/complete`, { method: "POST" }),
+    request<QueueToken>(QUEUE_BASE, `/api/v1/queue/tokens/${id}/complete`, { method: "POST" }),
 
   /** POST /api/v1/queue/tokens/{id}/transfer — transfer to another counter/doctor. */
   transfer: (id: number, toCounterId: number) =>
-    request<QueueToken>(QUEUE_BASE, `/v1/queue/tokens/${id}/transfer`, {
+    request<QueueToken>(QUEUE_BASE, `/api/v1/queue/tokens/${id}/transfer`, {
       method: "POST",
       body: { toCounterId },
     }),

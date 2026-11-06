@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const REPORTING_BASE: string = import.meta.env.VITE_REPORTING_API_BASE ?? "/api";
+const REPORTING_BASE: string = import.meta.env.VITE_REPORTING_API_BASE ?? "";
 
 async function reportJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

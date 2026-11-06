@@ -43,7 +43,7 @@ describe("useInventoryItems", () => {
     const { result } = renderHook(() => useInventoryItems(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/items",
+      "/api/v1/items",
       expect.any(Object),
     );
     expect(result.current.data).toHaveLength(1);

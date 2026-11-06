@@ -30,7 +30,7 @@ export {
 export type { Bill, Charge, Payment, CreditNote, DebitNote, BillFilter };
 export { billingQueryKeys };
 
-const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "/api";
+const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "";
 
 async function billingJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

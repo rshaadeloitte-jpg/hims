@@ -47,7 +47,7 @@ describe("usePatientSearch", () => {
     const { result } = renderHook(() => usePatientSearch("Ravi", "NAME"), { wrapper: testWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/patients/search?q=Ravi&type=NAME",
+      "/api/v1/patients/search?q=Ravi&type=NAME",
       expect.any(Object),
     );
     expect(result.current.data?.[0]?.patientId).toBe(1);
@@ -65,7 +65,7 @@ describe("useRegisterPatient", () => {
     result.current.mutate({ firstName: "A", mobileNo: "9999999999" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/patients",
+      "/api/v1/patients",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ firstName: "A", mobileNo: "9999999999" }),
@@ -104,7 +104,7 @@ describe("usePatientDetail", () => {
     const { result } = renderHook(() => usePatientDetail(42), { wrapper: testWrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/patients/42",
+      "/api/v1/patients/42",
       expect.any(Object),
     );
     expect(result.current.data?.abhaAddress).toBe("priya123@abdm");
@@ -137,7 +137,7 @@ describe("useUploadPatientDocument", () => {
 
     const call = fetchMock.mock.calls[0];
     const [url, init] = call as [string, RequestInit];
-    expect(url).toBe("/api/api/v1/patients/1/documents");
+    expect(url).toBe("/api/v1/patients/1/documents");
     expect(init.method).toBe("POST");
     expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
     expect((init.body as FormData).get("documentType")).toBe("ID_PROOF");
