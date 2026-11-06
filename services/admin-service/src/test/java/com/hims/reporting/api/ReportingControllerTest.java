@@ -6,6 +6,7 @@ import com.hims.reporting.application.exceptions.InvalidReportingRequestExceptio
 import com.hims.reporting.application.exceptions.ReportingConflictException;
 import com.hims.reporting.application.exceptions.ReportingNotFoundException;
 import com.hims.admin.configuration.SecurityConfig;
+import com.hims.admin.configuration.JwtConfig;
 import com.hims.reporting.domain.model.ReportExecution;
 import com.hims.reporting.domain.model.ReportMaster;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * L0 covers the rules; L2 covers persistence on real PG16.
  */
 @WebMvcTest({IngestionController.class, ReportController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ReportingControllerTest {
 

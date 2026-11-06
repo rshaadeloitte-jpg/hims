@@ -3,6 +3,7 @@ package com.hims.item.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.item.application.StockService;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the single-writer stock API (default-deny enforced). */
 @WebMvcTest(StockController.class)
-@Import({SecurityConfig.class, StockService.class})
+@Import({SecurityConfig.class, JwtConfig.class, StockService.class})
 @AutoConfigureMockMvc
 class StockControllerTest {
 

@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PaymentTransferController.class)
-@Import(com.hims.payments.configuration.SecurityConfig.class)
+@Import({com.hims.payments.configuration.SecurityConfig.class, com.hims.payments.configuration.JwtConfig.class})
 @AutoConfigureMockMvc
 class PaymentTransferControllerTest {
 

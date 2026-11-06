@@ -3,6 +3,7 @@ package com.hims.diet.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.diet.application.DietMasterService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.diet.domain.model.DietItemMaster;
 import com.hims.diet.domain.model.DietSessionMaster;
 import com.hims.diet.domain.model.TodayDietMenu;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the diet masters + today-menu API (default-deny enforced). Service is mocked; L1 covers the logic. */
 @WebMvcTest(DietMasterController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class DietMasterControllerTest {
 

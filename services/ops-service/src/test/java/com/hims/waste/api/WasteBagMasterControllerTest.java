@@ -3,6 +3,7 @@ package com.hims.waste.api;
 import com.hims.waste.application.WasteBagMasterService;
 import com.hims.waste.application.exceptions.WasteNotFoundException;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.waste.domain.model.WasteBagMaster;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the waste bag category master API (default-deny enforced). Service is mocked. */
 @WebMvcTest(WasteBagMasterController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class WasteBagMasterControllerTest {
 

@@ -3,6 +3,7 @@ package com.hims.ordering.api;
 import com.hims.ordering.application.OrderService;
 import com.hims.ordering.application.exceptions.InvalidOrderException;
 import com.hims.ordering.configuration.SecurityConfig;
+import com.hims.ordering.configuration.JwtConfig;
 import com.hims.ordering.domain.model.ClinicalOrder;
 import com.hims.ordering.domain.model.OrderItem;
 import com.hims.ordering.domain.model.SagaState;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Service mocked; the BR-ORD rules themselves are covered at L0/L2.
  */
 @WebMvcTest({OrderController.class, InternalOrderController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class OrderControllerTest {
 

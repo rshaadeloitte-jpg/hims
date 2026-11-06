@@ -6,6 +6,7 @@ import com.hims.pharmacy.application.exceptions.InvalidSaleRequestException;
 import com.hims.pharmacy.application.exceptions.SaleNotFoundException;
 import com.hims.pharmacy.application.exceptions.StockIssueException;
 import com.hims.pharmacy.configuration.SecurityConfig;
+import com.hims.pharmacy.configuration.JwtConfig;
 import com.hims.pharmacy.domain.model.ItemSale;
 import com.hims.pharmacy.domain.model.ItemSaleDetail;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Item Sale API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(ItemSaleController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ItemSaleControllerTest {
 

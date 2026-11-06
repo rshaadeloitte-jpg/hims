@@ -4,6 +4,7 @@ import com.hims.nursing.application.NursingChartingService;
 import com.hims.nursing.application.exceptions.InvalidNursingRequestException;
 import com.hims.nursing.application.exceptions.NursingResourceNotFoundException;
 import com.hims.nursing.configuration.SecurityConfig;
+import com.hims.nursing.configuration.JwtConfig;
 import com.hims.nursing.domain.model.NurseTask;
 import com.hims.nursing.domain.model.PatientVitals;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the nursing phase-1 API (default-deny enforced). Service is mocked; L1 covers the rules. */
 @WebMvcTest(NursingController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class NursingControllerTest {
 

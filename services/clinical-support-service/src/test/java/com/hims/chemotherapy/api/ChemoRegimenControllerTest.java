@@ -3,6 +3,7 @@ package com.hims.chemotherapy.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.chemotherapy.application.ChemoRegimenService;
 import com.hims.clinicalsupport.configuration.SecurityConfig;
+import com.hims.clinicalsupport.configuration.JwtConfig;
 import com.hims.chemotherapy.domain.model.ChemoRegimen;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ChemoRegimenController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ChemoRegimenControllerTest {
 

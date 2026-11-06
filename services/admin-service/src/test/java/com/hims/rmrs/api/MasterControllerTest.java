@@ -4,6 +4,7 @@ import com.hims.rmrs.application.MasterService;
 import com.hims.rmrs.application.exceptions.DuplicateRmrsResourceException;
 import com.hims.rmrs.application.exceptions.InvalidRmrsRequestException;
 import com.hims.admin.configuration.SecurityConfig;
+import com.hims.admin.configuration.JwtConfig;
 import com.hims.rmrs.domain.model.AuthorityMaster;
 import com.hims.rmrs.domain.model.HeadMaster;
 import com.hims.rmrs.domain.model.LedgerMaster;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the treasury masters API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(MasterController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class MasterControllerTest {
 

@@ -5,6 +5,7 @@ import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
 import com.hims.rcm.application.exceptions.TidConflictException;
 import com.hims.rcm.configuration.SecurityConfig;
+import com.hims.rcm.configuration.JwtConfig;
 import com.hims.rcm.domain.model.AdmissionTid;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the admission TID registry API (default-deny enforced; 409 on duplicates). */
 @WebMvcTest(AdmissionTidController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class AdmissionTidControllerTest {
 

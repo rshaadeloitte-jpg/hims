@@ -3,6 +3,7 @@ package com.hims.lab.api;
 import com.hims.lab.application.CriticalAlertDeliveryService;
 import com.hims.lab.application.exceptions.InvalidLabRequestException;
 import com.hims.lab.configuration.SecurityConfig;
+import com.hims.lab.configuration.JwtConfig;
 import com.hims.lab.domain.model.CriticalAlertDelivery;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CriticalAlertDeliveryController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class CriticalAlertDeliveryControllerTest {
 

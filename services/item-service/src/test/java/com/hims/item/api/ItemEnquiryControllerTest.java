@@ -4,6 +4,7 @@ import com.hims.item.application.BatchAvailabilityView;
 import com.hims.item.application.ItemEnquiryService;
 import com.hims.item.application.ItemEnquiryView;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import com.hims.item.domain.model.ItemStockBalance;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ItemEnquiryController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ItemEnquiryControllerTest {
 

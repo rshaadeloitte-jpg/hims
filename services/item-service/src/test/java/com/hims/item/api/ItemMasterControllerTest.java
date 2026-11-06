@@ -2,6 +2,7 @@ package com.hims.item.api;
 
 import com.hims.item.application.ItemMasterService;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import com.hims.item.domain.model.Item;
 import com.hims.item.domain.model.ItemBatch;
 import com.hims.item.domain.model.Store;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the item/store/batch master API (default-deny enforced). Service + repositories mocked. */
 @WebMvcTest(ItemMasterController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ItemMasterControllerTest {
 

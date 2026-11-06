@@ -2,6 +2,7 @@ package com.hims.grievance.api;
 
 import com.hims.grievance.application.GrievanceMasterService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.grievance.domain.model.GrievanceCategory;
 import com.hims.grievance.domain.model.GrievanceSeverity;
 import com.hims.grievance.domain.model.GrievanceSubCategory;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the grievance classification masters API (default-deny enforced). Service + repositories mocked. */
 @WebMvcTest(GrievanceMasterController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class GrievanceMasterControllerTest {
 

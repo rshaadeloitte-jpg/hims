@@ -4,6 +4,7 @@ import com.hims.govt.application.EjsService;
 import com.hims.govt.application.exceptions.GovtNotFoundException;
 import com.hims.govt.application.exceptions.InvalidGovtRequestException;
 import com.hims.govt.configuration.SecurityConfig;
+import com.hims.govt.configuration.JwtConfig;
 import com.hims.govt.domain.model.EjsAsha;
 import com.hims.govt.domain.model.EjsIndicatorEntry;
 import com.hims.govt.domain.model.EjsIncentive;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the EJS API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(EjsController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class EjsControllerTest {
 

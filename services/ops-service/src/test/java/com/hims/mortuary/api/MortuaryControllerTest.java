@@ -5,6 +5,7 @@ import com.hims.mortuary.application.exceptions.InvalidMortuaryRequestException;
 import com.hims.mortuary.application.exceptions.MortuaryConflictException;
 import com.hims.mortuary.application.exceptions.MortuaryEntityNotFoundException;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.mortuary.domain.model.AutopsyRequest;
 import com.hims.mortuary.domain.model.DeadBody;
 import com.hims.mortuary.domain.model.ReleaseCertificate;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Contract tests for the Mortuary API (default-deny enforced). Services mocked.
  */
 @WebMvcTest(MortuaryController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class MortuaryControllerTest {
 

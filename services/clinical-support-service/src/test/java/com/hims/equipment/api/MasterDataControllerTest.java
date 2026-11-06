@@ -4,6 +4,7 @@ import com.hims.equipment.application.MasterDataService;
 import com.hims.equipment.application.exceptions.EquipmentNotFoundException;
 import com.hims.equipment.application.exceptions.InvalidEquipmentRequestException;
 import com.hims.clinicalsupport.configuration.SecurityConfig;
+import com.hims.clinicalsupport.configuration.JwtConfig;
 import com.hims.equipment.domain.model.ComplaintCategoryMaster;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * L1 covers the generic use cases. Default-deny is enforced by SecurityConfig.
  */
 @WebMvcTest(MasterDataController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class MasterDataControllerTest {
 

@@ -3,6 +3,7 @@ package com.hims.reference.api;
 import com.hims.reference.application.MasterEntityRegistry;
 import com.hims.reference.application.MasterReadUseCase;
 import com.hims.reference.configuration.SecurityConfig;
+import com.hims.reference.configuration.JwtConfig;
 import com.hims.reference.domain.model.UnitMaster;
 import com.hims.reference.domain.repository.MasterReadRepository;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * real SecurityConfig (default-deny).
  */
 @WebMvcTest(MasterReadController.class)
-@Import({SecurityConfig.class, MasterEntityRegistry.class, MasterReadUseCase.class})
+@Import({SecurityConfig.class, JwtConfig.class, MasterEntityRegistry.class, MasterReadUseCase.class})
 @AutoConfigureMockMvc
 class MasterReadControllerTest {
 

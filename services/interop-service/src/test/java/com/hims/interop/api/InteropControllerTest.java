@@ -11,6 +11,7 @@ import com.hims.interop.application.exceptions.ConflictException;
 import com.hims.interop.application.exceptions.InteropNotFoundException;
 import com.hims.interop.application.exceptions.InvalidRequestException;
 import com.hims.interop.configuration.SecurityConfig;
+import com.hims.interop.configuration.JwtConfig;
 import com.hims.interop.domain.model.AbdmRequestQueue;
 import com.hims.interop.domain.model.EhrJobDetails;
 import com.hims.interop.domain.model.InboundHis;
@@ -47,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest({InternalEventController.class, OutboundController.class, InboundController.class,
         AbdmController.class, WhatsappController.class, HealthJobController.class, SmsController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class InteropControllerTest {
 

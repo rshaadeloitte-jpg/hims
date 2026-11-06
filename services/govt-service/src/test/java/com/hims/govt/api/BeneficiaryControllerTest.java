@@ -5,6 +5,7 @@ import com.hims.govt.application.exceptions.GovtConflictException;
 import com.hims.govt.application.exceptions.GovtNotFoundException;
 import com.hims.govt.application.exceptions.InvalidGovtRequestException;
 import com.hims.govt.configuration.SecurityConfig;
+import com.hims.govt.configuration.JwtConfig;
 import com.hims.govt.domain.model.BeneficiaryEnrolment;
 import com.hims.govt.domain.model.ReferenceTid;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Beneficiary API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(BeneficiaryController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BeneficiaryControllerTest {
 

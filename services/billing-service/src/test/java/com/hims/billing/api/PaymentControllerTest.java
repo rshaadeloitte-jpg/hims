@@ -2,6 +2,7 @@ package com.hims.billing.api;
 
 import com.hims.billing.application.PaymentService;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.domain.model.Bill;
 import com.hims.billing.domain.model.Receipt;
 import com.hims.billing.domain.model.Refund;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Payments API (MIG-041). Service mocked; L1/L2 cover the rules. */
 @WebMvcTest(PaymentController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 class PaymentControllerTest {
 
     @Autowired

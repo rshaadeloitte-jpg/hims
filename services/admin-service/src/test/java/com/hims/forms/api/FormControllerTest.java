@@ -3,6 +3,7 @@ package com.hims.forms.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.forms.application.FormService;
 import com.hims.admin.configuration.SecurityConfig;
+import com.hims.admin.configuration.JwtConfig;
 import com.hims.forms.domain.model.FormDefinition;
 import com.hims.forms.domain.model.FormSubmission;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FormController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class FormControllerTest {
 

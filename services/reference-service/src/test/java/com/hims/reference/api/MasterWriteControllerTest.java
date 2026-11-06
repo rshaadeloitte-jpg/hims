@@ -3,6 +3,7 @@ package com.hims.reference.api;
 import com.hims.reference.application.MasterEntityRegistry;
 import com.hims.reference.application.MasterWriteUseCase;
 import com.hims.reference.configuration.SecurityConfig;
+import com.hims.reference.configuration.JwtConfig;
 import com.hims.reference.domain.repository.MasterReadRepository;
 import com.hims.reference.infrastructure.outbox.OutboxService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Default-deny security is exercised: unauthenticated -> 401.
  */
 @WebMvcTest(MasterWriteController.class)
-@Import({SecurityConfig.class, MasterEntityRegistry.class, MasterWriteUseCase.class})
+@Import({SecurityConfig.class, JwtConfig.class, MasterEntityRegistry.class, MasterWriteUseCase.class})
 @AutoConfigureMockMvc
 class MasterWriteControllerTest {
 

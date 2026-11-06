@@ -3,6 +3,7 @@ package com.hims.transport.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.transport.application.FleetService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.ops.configuration.UnmappedPathAdvice;
 import com.hims.transport.domain.model.Driver;
 import com.hims.transport.domain.model.FuelStationDetails;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the transport fleet API (default-deny enforced). Service is mocked; L1 covers the lifecycle. */
 @WebMvcTest(FleetController.class)
-@Import({SecurityConfig.class, UnmappedPathAdvice.class})
+@Import({SecurityConfig.class, JwtConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class FleetControllerTest {
 

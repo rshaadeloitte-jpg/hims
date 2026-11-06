@@ -2,6 +2,7 @@ package com.hims.file.api;
 
 import com.hims.file.application.FileService;
 import com.hims.file.configuration.SecurityConfig;
+import com.hims.file.configuration.JwtConfig;
 import com.hims.file.domain.model.FileDetails;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FileController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class FileControllerTest {
 

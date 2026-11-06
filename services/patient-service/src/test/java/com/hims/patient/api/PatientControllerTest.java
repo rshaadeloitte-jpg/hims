@@ -3,6 +3,7 @@ package com.hims.patient.api;
 import com.hims.patient.application.PatientRegistrationService;
 import com.hims.patient.application.exceptions.InvalidPatientRequestException;
 import com.hims.patient.configuration.SecurityConfig;
+import com.hims.patient.configuration.JwtConfig;
 import com.hims.patient.domain.model.PatientRegistration;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** L1 — REST contract: default-deny 401, status codes, JSON shape, legacy error codes. */
 @WebMvcTest(PatientController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class PatientControllerTest {
 

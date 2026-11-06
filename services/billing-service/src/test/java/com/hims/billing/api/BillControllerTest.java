@@ -2,6 +2,7 @@ package com.hims.billing.api;
 
 import com.hims.billing.application.BillingService;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.domain.model.Bill;
 import com.hims.billing.domain.model.Charge;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Billing API (default-deny enforced). Service mocked; L1/L2 cover the rules. */
 @WebMvcTest(BillController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BillControllerTest {
 

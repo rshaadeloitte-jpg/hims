@@ -4,6 +4,7 @@ import com.hims.rcm.application.NhcxService;
 import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
 import com.hims.rcm.configuration.SecurityConfig;
+import com.hims.rcm.configuration.JwtConfig;
 import com.hims.rcm.domain.model.NhcxRequest;
 import com.hims.rcm.domain.model.NhcxRequestDetail;
 import com.hims.rcm.domain.model.NhcxStatus;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for NHCX request intake / callback / list APIs (default-deny enforced). */
 @WebMvcTest(NhcxRequestController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class NhcxRequestControllerTest {
 

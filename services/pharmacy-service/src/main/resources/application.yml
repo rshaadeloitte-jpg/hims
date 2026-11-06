@@ -54,3 +54,9 @@ info:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
+
+
+ihms:
+  security:
+    jwt:
+      secret: ${IAM_JWT_SECRET:}

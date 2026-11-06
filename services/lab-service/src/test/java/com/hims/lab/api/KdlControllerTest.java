@@ -2,6 +2,7 @@ package com.hims.lab.api;
 
 import com.hims.lab.application.KdlService;
 import com.hims.lab.configuration.SecurityConfig;
+import com.hims.lab.configuration.JwtConfig;
 import com.hims.lab.domain.model.KdlResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(KdlController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class KdlControllerTest {
 

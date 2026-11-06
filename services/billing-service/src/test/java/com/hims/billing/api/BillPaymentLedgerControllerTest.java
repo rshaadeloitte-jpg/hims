@@ -2,6 +2,7 @@ package com.hims.billing.api;
 
 import com.hims.billing.application.BillPaymentLedgerService;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.domain.model.BillPaymentLedger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Contract tests for BillPaymentLedgerController.
  */
 @WebMvcTest(BillPaymentLedgerController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BillPaymentLedgerControllerTest {
 

@@ -42,6 +42,7 @@ public class DevSecurityConfig {
                                 "/error").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
+                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(JwtConfig.jwtAuthenticationConverter())))
                 .httpBasic(c -> c.realmName("ihms-dev"))
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();

@@ -2,6 +2,7 @@ package com.hims.billing.api;
 
 import com.hims.billing.application.BillingService;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.domain.model.Bill;
 import com.hims.billing.domain.model.CreditNote;
 import com.hims.billing.domain.model.PackageSubscription;
@@ -25,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BillController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BillControllerGap15Test {
 

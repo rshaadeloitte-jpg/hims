@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.billing.BillingServiceApplication;
 import com.hims.billing.configuration.DevSecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.infrastructure.outbox.OutboxRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;

@@ -3,6 +3,7 @@ package com.hims.billing.api;
 import com.hims.billing.application.DoctorShareService;
 import com.hims.billing.application.DoctorShareService.DoctorShareCalculation;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.domain.model.DoctorIncentive;
 import com.hims.billing.domain.model.DoctorShare;
 import com.hims.billing.domain.model.VisitCharge;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Extended contract tests for DoctorShareController.
  */
 @WebMvcTest(DoctorShareController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class DoctorShareControllerExtendedTest {
 

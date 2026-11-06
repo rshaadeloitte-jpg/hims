@@ -3,6 +3,7 @@ package com.hims.ordering.api;
 import com.hims.ordering.application.PrescriptionService;
 import com.hims.ordering.application.exceptions.InvalidPrescriptionException;
 import com.hims.ordering.configuration.SecurityConfig;
+import com.hims.ordering.configuration.JwtConfig;
 import com.hims.ordering.domain.model.Prescription;
 import com.hims.ordering.domain.model.PrescriptionItem;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** L1 — prescription API contract (default-deny; BR-ORD-005 errors surface as legacy envelope). */
 @WebMvcTest(PrescriptionController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class PrescriptionControllerTest {
 

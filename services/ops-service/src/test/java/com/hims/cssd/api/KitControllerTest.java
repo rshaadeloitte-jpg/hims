@@ -4,6 +4,7 @@ import com.hims.cssd.application.CssdKitService;
 import com.hims.cssd.application.exceptions.CssdNotFoundException;
 import com.hims.cssd.application.exceptions.InvalidKitRequestException;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.cssd.domain.model.Kit;
 import com.hims.cssd.domain.model.KitIssue;
 import com.hims.cssd.domain.model.SterilizationCycle;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the CSSD Kit API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(KitController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class KitControllerTest {
 

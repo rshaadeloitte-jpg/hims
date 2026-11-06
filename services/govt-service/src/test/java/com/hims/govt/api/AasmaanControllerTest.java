@@ -2,6 +2,7 @@ package com.hims.govt.api;
 
 import com.hims.govt.application.AasmaanService;
 import com.hims.govt.configuration.SecurityConfig;
+import com.hims.govt.configuration.JwtConfig;
 import com.hims.govt.application.exceptions.InvalidGovtRequestException;
 import com.hims.govt.domain.model.AasmaanCase;
 import com.hims.govt.domain.model.AasmaanCaseNote;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Aasmaan API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(AasmaanController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class AasmaanControllerTest {
 

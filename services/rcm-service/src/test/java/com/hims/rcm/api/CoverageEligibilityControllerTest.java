@@ -4,6 +4,7 @@ import com.hims.rcm.application.NhcxService;
 import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
 import com.hims.rcm.configuration.SecurityConfig;
+import com.hims.rcm.configuration.JwtConfig;
 import com.hims.rcm.domain.model.EligibilityCheck;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the coverage-eligibility API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(CoverageEligibilityController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class CoverageEligibilityControllerTest {
 

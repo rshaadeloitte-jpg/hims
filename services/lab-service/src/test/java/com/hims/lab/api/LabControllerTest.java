@@ -5,6 +5,7 @@ import com.hims.lab.application.MachineService;
 import com.hims.lab.application.exceptions.InvalidLabRequestException;
 import com.hims.lab.application.exceptions.LabEntityNotFoundException;
 import com.hims.lab.configuration.SecurityConfig;
+import com.hims.lab.configuration.JwtConfig;
 import com.hims.lab.domain.model.MachineConfiguration;
 import com.hims.lab.domain.model.PathOrderBooking;
 import com.hims.lab.domain.model.PathOrderDetail;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Lab API (default-deny enforced). Services mocked; L1 covers the rules. */
 @WebMvcTest({LabOrderController.class, MachineController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class LabControllerTest {
 

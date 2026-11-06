@@ -5,6 +5,7 @@ import com.hims.adt.application.MasterDataService;
 import com.hims.adt.application.exceptions.ActiveAdmissionExistsException;
 import com.hims.adt.application.exceptions.BedUnavailableException;
 import com.hims.adt.configuration.SecurityConfig;
+import com.hims.adt.configuration.JwtConfig;
 import com.hims.adt.domain.model.Admission;
 import com.hims.adt.domain.model.Bed;
 import com.hims.adt.domain.model.BedReservation;
@@ -41,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** Contract tests for the ADT API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest({WardController.class, BedController.class, AdmissionController.class, BedReservationController.class,
         AttendantPassController.class, AdtOpsController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class AdtControllerTest {
 

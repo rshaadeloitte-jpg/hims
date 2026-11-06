@@ -5,6 +5,7 @@ import com.hims.pharmacy.application.DrugInteractionService;
 import com.hims.pharmacy.application.SaleReturnService;
 import com.hims.pharmacy.application.exceptions.InvalidSaleRequestException;
 import com.hims.pharmacy.configuration.SecurityConfig;
+import com.hims.pharmacy.configuration.JwtConfig;
 import com.hims.pharmacy.domain.model.DrugAllergy;
 import com.hims.pharmacy.domain.model.DrugInteraction;
 import com.hims.pharmacy.domain.model.SaleReturn;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = {SaleReturnController.class, DrugAllergyController.class,
         DrugInteractionController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class GapControllersTest {
 

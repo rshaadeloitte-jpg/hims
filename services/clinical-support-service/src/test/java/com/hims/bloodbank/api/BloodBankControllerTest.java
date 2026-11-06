@@ -8,6 +8,7 @@ import com.hims.bloodbank.application.exceptions.BagConflictException;
 import com.hims.bloodbank.application.exceptions.BloodBankEntityNotFoundException;
 import com.hims.bloodbank.application.exceptions.InvalidBloodBankRequestException;
 import com.hims.clinicalsupport.configuration.SecurityConfig;
+import com.hims.clinicalsupport.configuration.JwtConfig;
 import com.hims.bloodbank.domain.model.BloodBag;
 import com.hims.bloodbank.domain.model.BloodDonor;
 import com.hims.bloodbank.domain.model.BloodRequisition;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Blood Bank API (default-deny enforced). Services mocked; L1 covers the rules. */
 @WebMvcTest({DonorController.class, BagController.class, RequisitionController.class, JobController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BloodBankControllerTest {
 

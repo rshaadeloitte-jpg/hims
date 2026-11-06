@@ -4,6 +4,7 @@ import com.hims.search.application.SearchIngestService;
 import com.hims.search.application.exceptions.InvalidSearchRequestException;
 import com.hims.search.application.exceptions.SearchNotFoundException;
 import com.hims.search.configuration.SecurityConfig;
+import com.hims.search.configuration.JwtConfig;
 import com.hims.search.domain.model.IndexRequest;
 import com.hims.search.infrastructure.indexer.SearchIndexer.SearchResultPage;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = {InternalEventController.class, SearchController.class,
         IndexRequestController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class SearchApiControllerTest {
 

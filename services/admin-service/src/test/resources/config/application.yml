@@ -2,3 +2,8 @@ spring:
   datasource:
     hikari:
       connection-init-sql: "SET search_path TO ihms_reporting,ihms_forms,ihms_rmrs"
+
+ihms:
+  security:
+    jwt:
+      secret: test-only-secret-key-0123456789abcdef0123456789abcdef

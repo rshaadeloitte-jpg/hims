@@ -3,6 +3,7 @@ package com.hims.grievance.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.grievance.application.GrievanceTicketService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.ops.configuration.UnmappedPathAdvice;
 import com.hims.grievance.domain.model.GrievanceComment;
 import com.hims.grievance.domain.model.GrievanceTicket;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the grievance ticket API (default-deny enforced). Service is mocked; L1 covers the state machine. */
 @WebMvcTest(GrievanceTicketController.class)
-@Import({SecurityConfig.class, UnmappedPathAdvice.class})
+@Import({SecurityConfig.class, JwtConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class GrievanceTicketControllerTest {
 

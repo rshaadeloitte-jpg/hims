@@ -3,6 +3,7 @@ package com.hims.ot.api;
 import com.hims.ot.application.OtScheduleService;
 import com.hims.ot.application.exceptions.InvalidOtRequestException;
 import com.hims.ot.configuration.SecurityConfig;
+import com.hims.ot.configuration.JwtConfig;
 import com.hims.ot.domain.model.OtSchedule;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the OT API (default-deny enforced). Services mocked; L1 covers the rules. */
 @WebMvcTest(OtScheduleController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class OtControllerTest {
 

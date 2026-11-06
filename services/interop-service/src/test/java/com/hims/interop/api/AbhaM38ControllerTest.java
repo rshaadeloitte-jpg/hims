@@ -6,6 +6,7 @@ import com.hims.interop.domain.model.AbhaConsent;
 import com.hims.interop.domain.model.AbhaLink;
 import com.hims.interop.domain.model.PhrPush;
 import com.hims.interop.configuration.SecurityConfig;
+import com.hims.interop.configuration.JwtConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AbhaM38Controller.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class AbhaM38ControllerTest {
 

@@ -7,6 +7,7 @@ import com.hims.rmrs.application.exceptions.DuplicateRmrsResourceException;
 import com.hims.rmrs.application.exceptions.InvalidRmrsRequestException;
 import com.hims.rmrs.application.exceptions.RmrsNotFoundException;
 import com.hims.admin.configuration.SecurityConfig;
+import com.hims.admin.configuration.JwtConfig;
 import com.hims.rmrs.domain.model.AccountingEntry;
 import com.hims.rmrs.domain.model.RmrsCollection;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the collections API (default-deny + error envelopes). Services mocked; L0 covers the rules. */
 @WebMvcTest(CollectionController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class CollectionControllerTest {
 

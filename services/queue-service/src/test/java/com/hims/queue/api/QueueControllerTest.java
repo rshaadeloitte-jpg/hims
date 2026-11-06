@@ -3,6 +3,7 @@ package com.hims.queue.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.queue.application.QueueService;
 import com.hims.queue.configuration.SecurityConfig;
+import com.hims.queue.configuration.JwtConfig;
 import com.hims.queue.domain.model.QueueToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** L1 — REST contract: default-deny 401, status codes, JSON shape, error envelope. */
 @WebMvcTest({QueueTokenController.class, QueueCounterController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class QueueControllerTest {
 

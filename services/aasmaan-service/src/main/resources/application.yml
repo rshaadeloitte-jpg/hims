@@ -14,3 +14,9 @@ spring:
     show-sql: true
 server:
   port: ${SERVER_PORT:8112}
+
+
+ihms:
+  security:
+    jwt:
+      secret: ${IAM_JWT_SECRET:}

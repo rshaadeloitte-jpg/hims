@@ -7,6 +7,7 @@ import com.hims.pharmacy.application.exceptions.BcmaVerificationException;
 import com.hims.pharmacy.application.exceptions.CompoundNotFoundException;
 import com.hims.pharmacy.application.exceptions.HomeMedicationNotFoundException;
 import com.hims.pharmacy.configuration.SecurityConfig;
+import com.hims.pharmacy.configuration.JwtConfig;
 import com.hims.pharmacy.domain.model.BcmaVerification;
 import com.hims.pharmacy.domain.model.IvCompound;
 import com.hims.pharmacy.domain.model.HomeMedication;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the new pharmacy BCMA + IV compound + home medication APIs (default-deny enforced). */
 @WebMvcTest({BcmaController.class, IvCompoundController.class, HomeMedicationController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class NewPharmacyControllerTest {
 

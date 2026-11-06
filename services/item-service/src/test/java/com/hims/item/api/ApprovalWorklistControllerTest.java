@@ -3,6 +3,7 @@ package com.hims.item.api;
 import com.hims.item.application.ApprovalWorklistService;
 import com.hims.item.application.ApprovalWorklistService.ApprovalWorklistItem;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * {@link ApprovalWorklistItem} record.
  */
 @WebMvcTest(ApprovalWorklistController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class ApprovalWorklistControllerTest {
 

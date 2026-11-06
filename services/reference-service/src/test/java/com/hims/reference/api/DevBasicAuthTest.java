@@ -4,6 +4,7 @@ import com.hims.reference.application.MasterEntityRegistry;
 import com.hims.reference.application.MasterReadUseCase;
 import com.hims.reference.application.MasterWriteUseCase;
 import com.hims.reference.configuration.DevSecurityConfig;
+import com.hims.reference.configuration.JwtConfig;
 import com.hims.reference.configuration.SecurityConfig;
 import com.hims.reference.domain.repository.MasterReadRepository;
 import com.hims.reference.infrastructure.outbox.OutboxService;
@@ -12,6 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,7 +35,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * actuator health stays anonymous.
  */
 @WebMvcTest(MasterReadController.class)
-@Import({SecurityConfig.class, DevSecurityConfig.class, MasterEntityRegistry.class, MasterReadUseCase.class})
+@Import({SecurityConfig.class, JwtConfig.class, DevSecurityConfig.class, MasterEntityRegistry.class, MasterReadUseCase.class, DevBasicAuthTest.TestUsers.class})
+@TestPropertySource(properties = {
+        "spring.security.user.name=devops",
+        "spring.security.user.password=devops-dev-only",
+        "spring.security.user.roles=DEV"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
 class DevBasicAuthTest {
@@ -56,4 +69,14 @@ class DevBasicAuthTest {
         mockMvc.perform(get("/api/v1/masters/unitmaster/1"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @TestConfiguration
+    static class TestUsers {
+        @Bean
+        UserDetailsService userDetailsService() {
+            UserDetails u = User.withUsername("devops").password("{noop}devops-dev-only").roles("DEV").build();
+            return new InMemoryUserDetailsManager(u);
+        }
+    }
+
 }

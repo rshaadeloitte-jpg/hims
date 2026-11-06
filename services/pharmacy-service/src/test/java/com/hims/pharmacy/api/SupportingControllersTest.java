@@ -6,6 +6,7 @@ import com.hims.pharmacy.application.WardPicklistService;
 import com.hims.pharmacy.application.exceptions.InvalidSaleRequestException;
 import com.hims.pharmacy.application.exceptions.SaleNotFoundException;
 import com.hims.pharmacy.configuration.SecurityConfig;
+import com.hims.pharmacy.configuration.JwtConfig;
 import com.hims.pharmacy.domain.model.DrugIntervention;
 import com.hims.pharmacy.domain.model.PrescriptionDispense;
 import com.hims.pharmacy.domain.model.WardPicklist;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = {InterventionController.class, PicklistController.class,
         PrescriptionProjectionController.class})
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class SupportingControllersTest {
 

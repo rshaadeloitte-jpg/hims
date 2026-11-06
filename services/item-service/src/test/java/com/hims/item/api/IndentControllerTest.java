@@ -2,6 +2,7 @@ package com.hims.item.api;
 
 import com.hims.item.application.IndentService;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import com.hims.item.domain.model.Indent;
 import com.hims.item.infrastructure.outbox.OutboxService;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for indent create/approve/list (WP-2). */
 @WebMvcTest(IndentController.class)
-@Import({SecurityConfig.class, IndentService.class})
+@Import({SecurityConfig.class, JwtConfig.class, IndentService.class})
 @AutoConfigureMockMvc
 class IndentControllerTest {
 

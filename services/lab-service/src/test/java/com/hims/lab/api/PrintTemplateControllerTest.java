@@ -4,6 +4,7 @@ import com.hims.lab.application.PrintTemplateService;
 import com.hims.lab.application.exceptions.InvalidLabRequestException;
 import com.hims.lab.application.exceptions.LabDuplicateException;
 import com.hims.lab.configuration.SecurityConfig;
+import com.hims.lab.configuration.JwtConfig;
 import com.hims.lab.domain.model.ReportPrintTemplate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PrintTemplateController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class PrintTemplateControllerTest {
 

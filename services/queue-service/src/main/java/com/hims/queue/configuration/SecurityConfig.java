@@ -12,7 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Default-deny security posture (IMP-DEC-006) — same contract as reference/item services.
- * Bearer/OIDC validation lands at MIG-004; disabled under profile {@code dev}
+ * Bearer JWT validation is enabled via {@link JwtConfig} (HS256, issuer iam-service); disabled under profile {@code dev}
  * where {@link DevSecurityConfig} (HTTP Basic, dev-only) replaces this chain.
  */
 @Configuration
@@ -35,6 +35,7 @@ public class SecurityConfig {
                                 "/error").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
+                .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(JwtConfig.jwtAuthenticationConverter())))
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);
         return http.build();

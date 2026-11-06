@@ -3,6 +3,7 @@ package com.hims.linen.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.linen.application.LinenRequestService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.JwtConfig;
 import com.hims.ops.configuration.UnmappedPathAdvice;
 import com.hims.linen.domain.model.LinenRequest;
 import com.hims.linen.domain.model.LinenRequestDetails;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the linen lifecycle API (default-deny enforced). Service is mocked; L1 covers the state machine. */
 @WebMvcTest(LinenRequestController.class)
-@Import({SecurityConfig.class, UnmappedPathAdvice.class})
+@Import({SecurityConfig.class, JwtConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class LinenRequestControllerTest {
 

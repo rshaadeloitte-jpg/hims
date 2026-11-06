@@ -7,6 +7,7 @@ import com.hims.payments.application.exceptions.BillingCallException;
 import com.hims.payments.application.exceptions.InvalidPaymentRequestException;
 import com.hims.payments.application.exceptions.PaymentEntityNotFoundException;
 import com.hims.payments.configuration.SecurityConfig;
+import com.hims.payments.configuration.JwtConfig;
 import com.hims.payments.domain.model.Advance;
 import com.hims.payments.domain.model.Payment;
 import com.hims.payments.domain.model.Refund;
@@ -36,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Payments &amp; Refunds API (default-deny enforced). Services mocked; L1 covers the rules. */
 @WebMvcTest(PaymentsController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class PaymentsControllerTest {
 

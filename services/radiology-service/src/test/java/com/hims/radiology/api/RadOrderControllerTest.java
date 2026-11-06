@@ -4,6 +4,7 @@ import com.hims.radiology.application.RadOrderService;
 import com.hims.radiology.application.exceptions.InvalidRadOrderException;
 import com.hims.radiology.application.exceptions.RadOrderNotFoundException;
 import com.hims.radiology.configuration.SecurityConfig;
+import com.hims.radiology.configuration.JwtConfig;
 import com.hims.radiology.domain.model.RadOrderBooking;
 import com.hims.radiology.domain.model.RadOrderDetail;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the Rad Order API (default-deny enforced). Services mocked; L0 covers the rules. */
 @WebMvcTest(RadOrderController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class RadOrderControllerTest {
 

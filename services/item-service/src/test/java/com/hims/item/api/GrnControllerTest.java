@@ -2,6 +2,7 @@ package com.hims.item.api;
 
 import com.hims.item.application.GrnService;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import com.hims.item.domain.model.Grn;
 import com.hims.item.infrastructure.outbox.OutboxService;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * D-1 single-writer path (applyMovement), one GRNPosted outbox event.
  */
 @WebMvcTest(GrnController.class)
-@Import({SecurityConfig.class, GrnService.class})
+@Import({SecurityConfig.class, JwtConfig.class, GrnService.class})
 @AutoConfigureMockMvc
 class GrnControllerTest {
 

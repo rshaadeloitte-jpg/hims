@@ -3,6 +3,7 @@ package com.hims.item.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.item.application.SupplierService;
 import com.hims.item.configuration.SecurityConfig;
+import com.hims.item.configuration.JwtConfig;
 import com.hims.item.domain.model.Supplier;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for supplier master CRUD (WP-2) — default-deny enforced. */
 @WebMvcTest(SupplierController.class)
-@Import({SecurityConfig.class, SupplierService.class})
+@Import({SecurityConfig.class, JwtConfig.class, SupplierService.class})
 @AutoConfigureMockMvc
 class SupplierControllerTest {
 

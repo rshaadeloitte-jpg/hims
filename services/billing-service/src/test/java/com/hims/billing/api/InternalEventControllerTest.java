@@ -2,6 +2,7 @@ package com.hims.billing.api;
 
 import com.hims.billing.application.BillingSagaIngressService;
 import com.hims.billing.configuration.SecurityConfig;
+import com.hims.billing.configuration.JwtConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Contract tests for InternalEventController (WP-S1 saga ingress).
  */
 @WebMvcTest(InternalEventController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class InternalEventControllerTest {
 
