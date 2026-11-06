@@ -59,7 +59,7 @@ class UserControllerTest {
                 new UserView(5L, "adoctor", "a@h.in", "Dr. A", 77L, 3L, null, null, null, true, List.of(2L), List.of("staff")));
 
         mockMvc.perform(post("/api/v1/users")
-                        .with(user("devops").roles("DEV"))
+                        .with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"adoctor\",\"password\":\"Str0ngPass!x\",\"email\":\"a@h.in\",\"roleIds\":[2]}"))
                 .andExpect(status().isCreated())
@@ -72,7 +72,7 @@ class UserControllerTest {
     @Test
     void createUser_shortPassword_mapsTo400() throws Exception {
         mockMvc.perform(post("/api/v1/users")
-                        .with(user("devops").roles("DEV"))
+                        .with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"adoctor\",\"password\":\"short\"}"))
                 .andExpect(status().isBadRequest())
@@ -83,7 +83,7 @@ class UserControllerTest {
     void getUser_unknownId_mapsTo404() throws Exception {
         when(userService.get(999L)).thenThrow(new ResourceNotFoundException("IAM006", "User not found: 999"));
 
-        mockMvc.perform(get("/api/v1/users/999").with(user("devops").roles("DEV")))
+        mockMvc.perform(get("/api/v1/users/999").with(user("devops").roles("ADMIN")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("IAM006"));
     }
@@ -94,7 +94,7 @@ class UserControllerTest {
                 new UserView(5L, "adoctor", "new@h.in", "Dr. A", 77L, 3L, null, null, null, true, List.of(), List.of()));
 
         mockMvc.perform(put("/api/v1/users/5")
-                        .with(user("devops").roles("DEV"))
+                        .with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"new@h.in\",\"status\":true}"))
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ class UserControllerTest {
                 new UserView(5L, "adoctor", null, null, null, 3L, null, null, null, true, List.of(1L), List.of("admin")));
 
         mockMvc.perform(put("/api/v1/users/5/roles")
-                        .with(user("devops").roles("DEV"))
+                        .with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"roleIds\":[1]}"))
                 .andExpect(status().isOk())

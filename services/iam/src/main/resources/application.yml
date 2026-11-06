@@ -50,7 +50,7 @@ management:
 
 app:
   otp:
-    return-in-response: ${IAM_OTP_RETURN:true} # true in dev (OTP in response), false in prod (via SMS gateway)
+    return-in-response: ${IAM_OTP_RETURN:false} # false by default; OTP never returned in prod; set true only in dev/test
   sso:
     enabled: ${IAM_SSO_ENABLED:false} # ponytail: SSO integration behind feature flag, add when IdP ready
 

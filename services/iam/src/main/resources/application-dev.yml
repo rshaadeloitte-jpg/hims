@@ -1,3 +1,2 @@
-# DEV-ONLY profile (same contract as sibling services IMP-DEC-019): all IAM
-# endpoints are open for local tooling so developers can bootstrap the first
-# admin without a token. NEVER enable outside local development.
+# DEV profile: same authorization as default chain (IMP-DEC-006); local tooling
+# must authenticate. NEVER enable outside local development.

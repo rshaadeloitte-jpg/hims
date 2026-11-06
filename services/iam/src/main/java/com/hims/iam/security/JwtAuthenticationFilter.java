@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 /** Bearer-JWT authentication filter: verifies signature/expiry and revocation, then populates the security context. */
 @Component
@@ -35,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtTokenService.parse(token);
             if (claims != null && !revocationService.isRevoked(token)) {
                 List<SimpleGrantedAuthority> authorities = jwtTokenService.roles(claims).stream()
-                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r.toUpperCase(Locale.ROOT)))
                         .toList();
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);

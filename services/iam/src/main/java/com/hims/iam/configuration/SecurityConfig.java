@@ -4,6 +4,7 @@ import com.hims.iam.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,9 +14,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * Default-deny posture with JWT bearer authentication (IMP-DEC-006 sibling contract).
- * Login/validate are public by definition; everything else requires a valid,
- * non-revoked IAM-issued access token. Disabled under profile {@code dev} where
- * {@link DevSecurityConfig} replaces this chain.
+ * Login/validate/otp endpoints and docs/health are public; everything else requires a
+ * valid, non-revoked IAM-issued access token. Admin-only resources require ROLE_ADMIN.
  */
 @Configuration
 @Profile("!dev")
@@ -35,14 +35,14 @@ public class SecurityConfig {
                 .exceptionHandling(eh -> eh.authenticationEntryPoint(
                         (request, response, ex) -> response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/v1/auth/login",
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login",
                                 "/api/v1/auth/validate",
-                                "/actuator/health/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/error").permitAll()
+                                "/api/v1/auth/otp/generate",
+                                "/api/v1/auth/otp/verify").permitAll()
+                        .requestMatchers("/actuator/health/**", "/v3/api-docs/**",
+                                "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
+                        .requestMatchers("/api/v1/users/**", "/api/v1/roles/**",
+                                "/api/v1/permissions/**", "/api/v1/notification-templates/**").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

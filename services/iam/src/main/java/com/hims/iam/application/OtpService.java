@@ -51,7 +51,7 @@ public class OtpService {
                       UserRoleMasterRepository roleMasterRepository,
                       JwtTokenService jwtTokenService,
                       PasswordEncoder passwordEncoder,
-                      @Value("${app.otp.return-in-response:true}") boolean otpReturnInResponse) {
+                      @Value("${app.otp.return-in-response:false}") boolean otpReturnInResponse) {
         this.otpRepository = otpRepository;
         this.userRepository = userRepository;
         this.userRoleRepository = userRoleRepository;

@@ -54,7 +54,7 @@ class RoleControllerTest {
                 new RoleView(1L, "admin", "Administrative operations", null, true),
                 new RoleView(2L, "staff", "Staff/provider access", null, true)));
 
-        mockMvc.perform(get("/api/v1/roles").with(user("devops").roles("DEV")))
+        mockMvc.perform(get("/api/v1/roles").with(user("devops").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("admin"))
                 .andExpect(jsonPath("$[1].code").value("staff"));
@@ -66,7 +66,7 @@ class RoleControllerTest {
                 new RoleView(4L, "nurse", "Nursing staff", 3L, true));
 
         mockMvc.perform(post("/api/v1/roles")
-                        .with(user("devops").roles("DEV"))
+                        .with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"code\":\"nurse\",\"description\":\"Nursing staff\",\"unitId\":3}"))
                 .andExpect(status().isCreated())

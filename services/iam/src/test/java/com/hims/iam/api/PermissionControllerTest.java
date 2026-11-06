@@ -48,7 +48,7 @@ class PermissionControllerTest {
     void create_valid_returns201() throws Exception {
         ModulePermission p = perm(1L, "LAB_READ", "lab");
         when(permissionService.createPermission(eq("LAB_READ"), eq("lab"), any())).thenReturn(p);
-        mockMvc.perform(post("/api/v1/permissions").with(user("devops").roles("DEV"))
+        mockMvc.perform(post("/api/v1/permissions").with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"code\":\"LAB_READ\",\"module\":\"lab\"}"))
                 .andExpect(status().isCreated())
@@ -60,7 +60,7 @@ class PermissionControllerTest {
         var rp = new com.hims.iam.domain.model.RolePermission();
         rp.setRoleId(1L); rp.setEnabledPermissionIds("[1,2]");
         when(permissionService.setRolePermissions(eq(1L), any())).thenReturn(rp);
-        mockMvc.perform(put("/api/v1/roles/1/permissions").with(user("devops").roles("DEV"))
+        mockMvc.perform(put("/api/v1/roles/1/permissions").with(user("devops").roles("ADMIN"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"permissionIds\":[1,2]}"))
                 .andExpect(status().isOk())
@@ -70,7 +70,7 @@ class PermissionControllerTest {
     @Test
     void getRolePermissions_returnsSet() throws Exception {
         when(permissionService.getRolePermissions(1L)).thenReturn(Set.of(1L, 2L));
-        mockMvc.perform(get("/api/v1/roles/1/permissions").with(user("devops").roles("DEV")))
+        mockMvc.perform(get("/api/v1/roles/1/permissions").with(user("devops").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
@@ -78,7 +78,7 @@ class PermissionControllerTest {
     @Test
     void getUserPermissions_returnsEffectiveUnion() throws Exception {
         when(permissionService.getUserEffectivePermissions(5L)).thenReturn(Set.of(1L));
-        mockMvc.perform(get("/api/v1/users/5/permissions").with(user("devops").roles("DEV")))
+        mockMvc.perform(get("/api/v1/users/5/permissions").with(user("devops").roles("ADMIN")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }

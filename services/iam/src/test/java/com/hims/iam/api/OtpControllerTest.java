@@ -40,13 +40,6 @@ class OtpControllerTest {
     @MockitoBean OtpService otpService;
 
     @Test
-    void generate_requiresAuth() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/otp/generate")
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"identifier\":\"user1\"}"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     void generate_valid_returnsIdAndDevOtp_whenDev() throws Exception {
         var r = new OtpService.OtpGenerateResult(1L, "user1", "SMS", Timestamp.from(Instant.now().plusSeconds(300)), "123456");
         when(otpService.generate(eq("user1"), any())).thenReturn(r);
