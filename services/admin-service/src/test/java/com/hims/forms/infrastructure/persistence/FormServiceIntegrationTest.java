@@ -54,14 +54,29 @@ class FormServiceIntegrationTest {
     @Test
     void seed_fiveForms_present() {
         List<FormDefinition> forms = formService.listForms();
-        assertThat(forms).hasSize(5);
+        assertThat(forms).hasSize(20);
         assertThat(forms.stream().map(FormDefinition::getCode).toList())
                 .containsExactlyInAnyOrder(
                         "NURSING_INITIAL_ASSESSMENT",
                         "EMERGENCY_TRIAGE",
                         "DISCHARGE_SUMMARY",
                         "PRE_ANESTHETIC_CHECK",
-                        "DAILY_NURSING_REPORT");
+                        "DAILY_NURSING_REPORT",
+                        "PHYSICIAN_ASSESSMENT",
+                        "OBSTETRICS_PROGRESS",
+                        "PEDIATRIC_PROGRESS",
+                        "INJURY_REPORT_MLC",
+                        "SEXUAL_ASSAULT_REPORT",
+                        "ALCOHOL_DRUG_REPORT",
+                        "VASECTOMY_NOTE",
+                        "INTAKE_OUTPUT_CHART",
+                        "FEEDING_CHART",
+                        "STROKE_ICU_CHART",
+                        "ANC_VISIT",
+                        "WHO_SURGICAL_SAFETY_CHECKLIST",
+                        "IUD_INSERTION_NOTE",
+                        "WOUND_ASSESSMENT",
+                        "MORSE_FALL_SCALE");
     }
 
     @Test

@@ -75,7 +75,7 @@ class RmrsServiceIntegrationTest {
                 "t_head_master", "t_authority_master", "t_ledger_master",
                 "t_rmrs_collection", "t_accounting_entry", "outbox",
                 "t_journal_voucher", "t_journal_voucher_leg",
-                "t_bank_statement", "t_po_request");
+                "t_bank_statement", "t_po_request", "pmrd_forms");
 
         // exactly-one-sided CHECK is pinned at the DB level
         Integer oneSidedChecks = jdbcTemplate.queryForObject("""
