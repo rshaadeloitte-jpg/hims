@@ -10,9 +10,9 @@ export function PharmacyDashboard() {
   if (salesLoading) return <div className="loading-state" role="status"><span className="spinner" aria-hidden="true" /> Loading…</div>;
 
   const totalSales = sales.length;
-  const dispensed = sales.filter((s) => s.isDispensed).length;
-  const pending = sales.filter((s) => !s.isDispensed && !s.isReturned).length;
-  const activeReturns = returns.filter((r) => r.status === 1).length;
+  const dispensed = sales.filter((s) => s.dispensed).length;
+  const pending = sales.filter((s) => !s.dispensed).length;
+  const activeReturns = returns.filter((r) => r.statusCode === 1).length;
 
   return (
     <section className="page">
@@ -29,18 +29,17 @@ export function PharmacyDashboard() {
       </div>
       <h2>Recent Sales</h2>
       <Table.Root size="sm" variant="line">
-        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">#</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader></Table.Row></Table.Header>
+        <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">#</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Dispensed</Table.ColumnHeader></Table.Row></Table.Header>
         <Table.Body>
           {sales.slice(0, 20).map((s) => (
             <Table.Row key={s.saleId}>
               <Table.Cell>{s.saleId}</Table.Cell>
               <Table.Cell>{s.patientId}</Table.Cell>
-              <Table.Cell>{s.totalAmount?.toFixed(2)}</Table.Cell>
-              <Table.Cell>{s.isDispensed ? "Dispensed" : s.isReturned ? "Returned" : "Pending"}</Table.Cell>
-              <Table.Cell>{s.createdAt?.slice(0, 10)}</Table.Cell>
+              <Table.Cell>{s.statusCode === 3 ? "Fully dispensed" : s.statusCode === 2 ? "Partial" : "Pending"}</Table.Cell>
+              <Table.Cell>{s.dispensed ? "Yes" : "No"}</Table.Cell>
             </Table.Row>
           ))}
-          {sales.length === 0 && <Table.Row><Table.Cell colSpan={5} className="muted">No sales.</Table.Cell></Table.Row>}
+          {sales.length === 0 && <Table.Row><Table.Cell colSpan={4} className="muted">No sales.</Table.Cell></Table.Row>}
         </Table.Body>
       </Table.Root>
     </section>

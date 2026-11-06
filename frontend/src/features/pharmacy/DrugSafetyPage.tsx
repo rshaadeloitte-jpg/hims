@@ -46,7 +46,7 @@ export function DrugSafetyPage() {
             <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Allergen</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Type</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Severity</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reaction</Table.ColumnHeader></Table.Row></Table.Header>
             <Table.Body>
               {allergies.map((a) => (
-                <Table.Row key={a.allergyId}><Table.Cell>{a.allergen}</Table.Cell><Table.Cell>{a.allergyType ?? "—"}</Table.Cell><Table.Cell>{a.severity ?? "—"}</Table.Cell><Table.Cell>{a.reaction ?? "—"}</Table.Cell></Table.Row>
+                <Table.Row key={a.allergyId}><Table.Cell>{a.allergen}</Table.Cell><Table.Cell>{a.allergyType ?? "—"}</Table.Cell><Table.Cell>{a.severity ?? "—"}</Table.Cell><Table.Cell>{a.reactionDescription ?? "—"}</Table.Cell></Table.Row>
               ))}
               {allergies.length === 0 && <Table.Row><Table.Cell colSpan={4} className="muted">No allergies on record.</Table.Cell></Table.Row>}
             </Table.Body>
@@ -59,6 +59,7 @@ export function DrugSafetyPage() {
               <option value="MILD">Mild</option>
               <option value="MODERATE">Moderate</option>
               <option value="SEVERE">Severe</option>
+              <option value="ANAPHYLAXIS">Anaphylaxis</option>
             </HimsSelect>
             <Button type="submit" variant="primary" loading={createAllergy.isPending} loadingText="Adding...">+ Add Allergy</Button>
           </form>
@@ -76,11 +77,16 @@ export function DrugSafetyPage() {
           <form className="inline-form" onSubmit={interactionForm.handleSubmit(submitInteraction)}>
             <TextInput type="number" placeholder="Drug 1 ID" {...interactionForm.register("drug1Id")} />
             <TextInput type="number" placeholder="Drug 2 ID" {...interactionForm.register("drug2Id")} />
+            <HimsSelect {...interactionForm.register("interactionType")}>
+              <option value="DRUG_DRUG">Drug-Drug</option>
+              <option value="DRUG_FOOD">Drug-Food</option>
+              <option value="DRUG_DISEASE">Drug-Disease</option>
+            </HimsSelect>
             <HimsSelect {...interactionForm.register("severity")}>
-              <option value="">Severity</option>
-              <option value="MILD">Mild</option>
+              <option value="MINOR">Minor</option>
               <option value="MODERATE">Moderate</option>
-              <option value="SEVERE">Severe</option>
+              <option value="MAJOR">Major</option>
+              <option value="CONTRAINDICATED">Contraindicated</option>
             </HimsSelect>
             <Button type="submit" variant="primary" loading={createInteraction.isPending} loadingText="Saving...">+ Record</Button>
           </form>

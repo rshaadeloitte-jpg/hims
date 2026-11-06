@@ -22,9 +22,9 @@ export function SaleReturnsPage() {
               <Table.Cell>{r.originalSaleId}</Table.Cell>
               <Table.Cell>{r.patientId}</Table.Cell>
               <Table.Cell>{r.returnReason}</Table.Cell>
-              <Table.Cell>{statusLabel(r.status)}</Table.Cell>
+              <Table.Cell>{statusLabel(r.statusCode)}</Table.Cell>
               <Table.Cell>
-                {r.status === 1 && (
+                {r.statusCode === 1 && (
                   <>
                     <Button variant="primary" size="sm" onClick={() => complete.mutate(r.returnId)}>Complete</Button>
                     <Button variant="secondary" size="sm" onClick={() => reject.mutate(r.returnId)}>Reject</Button>

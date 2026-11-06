@@ -33,8 +33,7 @@ export function NewSalePage() {
       .filter((l) => l.itemId)
       .map((l) => ({
         itemId: Number(l.itemId),
-        quantity: Number(l.quantity),
-        ...(l.rate ? { rate: Number(l.rate) } : {}),
+        qty: Number(l.quantity),
       }));
     if (lines.length === 0) { setErr("At least one item line is required"); return; }
     try {

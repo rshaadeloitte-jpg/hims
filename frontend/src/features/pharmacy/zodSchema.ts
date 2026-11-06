@@ -11,21 +11,20 @@ export const itemSaleSchema = z.object({
   lines: z.array(
     z.object({
       itemId: z.coerce.number().int().positive("Item is required"),
-      quantity: z.coerce.number().positive("Quantity must be > 0"),
-      rate: z.coerce.number().nonnegative().optional(),
+      qty: z.coerce.number().int().positive("Quantity must be > 0"),
+      batchId: z.string().optional(),
     }),
   ),
 });
 
 export type ItemSaleValues = z.infer<typeof itemSaleSchema>;
 
-/** Dispense form validation matching pharmacy-service requirements */
+/** Dispense lines for an item sale (POST /api/v1/item-sales/{id}/dispense). */
 export const dispenseSchema = z.object({
-  prescriptionId: z.coerce.number().int().positive(),
-  items: z.array(
+  lines: z.array(
     z.object({
-      itemId: z.coerce.number().int().positive(),
-      dispensedQuantity: z.coerce.number().int().min(1),
+      lineNo: z.coerce.number().int().positive(),
+      qty: z.coerce.number().int().min(1),
     })
   ),
 });
@@ -34,23 +33,23 @@ export type DispenseValues = z.infer<typeof dispenseSchema>;
 
 /** Drug allergy form validation */
 export const drugAllergySchema = z.object({
-  drugId: z.coerce.number().int().positive().optional(),
+  patientId: z.coerce.number().int().positive().optional(),
   allergen: z.string().min(1, "Allergen required"),
   allergyType: z.string().optional(),
-  severity: z.enum(["MILD", "MODERATE", "SEVERE"]).default("MODERATE"),
-  reaction: z.string().optional(),
-  notes: z.string().optional(),
+  severity: z.enum(["MILD", "MODERATE", "SEVERE", "ANAPHYLAXIS"]).default("MODERATE"),
+  reactionDescription: z.string().optional(),
 });
 
 export type DrugAllergyValues = z.infer<typeof drugAllergySchema>;
 
 /** Drug interaction form validation */
 export const drugInteractionSchema = z.object({
+  patientId: z.coerce.number().int().positive().optional(),
   drug1Id: z.coerce.number().int().positive(),
   drug2Id: z.coerce.number().int().positive(),
-  interactionType: z.string().optional(),
-  severity: z.enum(["MILD", "MODERATE", "SEVERE"]).default("MODERATE"),
-  notes: z.string().optional(),
+  interactionType: z.enum(["DRUG_DRUG", "DRUG_FOOD", "DRUG_DISEASE"]).default("DRUG_DRUG"),
+  severity: z.enum(["MINOR", "MODERATE", "MAJOR", "CONTRAINDICATED"]).default("MODERATE"),
+  description: z.string().optional(),
 });
 
 export type DrugInteractionValues = z.infer<typeof drugInteractionSchema>;
