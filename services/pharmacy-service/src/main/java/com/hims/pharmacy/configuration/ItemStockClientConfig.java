@@ -24,7 +24,14 @@ public class ItemStockClientConfig {
     @Bean
     public ItemStockClient itemStockClient(RestClient.Builder builder,
                                            ObjectMapper objectMapper,
-                                           @Value("${app.item-service.base-url}") String baseUrl) {
-        return new ItemStockClient(builder.baseUrl(baseUrl).build(), objectMapper);
+                                           @Value("${app.item-service.base-url}") String baseUrl,
+                                           ServiceTokenProvider tokenProvider) {
+        RestClient client = builder.baseUrl(baseUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    request.getHeaders().setBearerAuth(tokenProvider.getToken());
+                    return execution.execute(request, body);
+                })
+                .build();
+        return new ItemStockClient(client, objectMapper);
     }
 }

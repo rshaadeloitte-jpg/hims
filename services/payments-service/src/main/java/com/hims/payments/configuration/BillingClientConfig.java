@@ -18,7 +18,14 @@ public class BillingClientConfig {
 
     @Bean
     public BillingClient billingClient(RestClient.Builder builder,
-                                       @Value("${app.billing.base-url}") String baseUrl) {
-        return new BillingClient(builder.baseUrl(baseUrl).build());
+                                       @Value("${app.billing.base-url}") String baseUrl,
+                                       ServiceTokenProvider tokenProvider) {
+        RestClient client = builder.baseUrl(baseUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    request.getHeaders().setBearerAuth(tokenProvider.getToken());
+                    return execution.execute(request, body);
+                })
+                .build();
+        return new BillingClient(client);
     }
 }

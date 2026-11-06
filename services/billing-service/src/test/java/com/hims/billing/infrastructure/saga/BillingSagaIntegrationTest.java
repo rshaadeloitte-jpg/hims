@@ -72,15 +72,21 @@ class BillingSagaIntegrationTest {
      */
     static Map<String, Object> envelope(String eventId) throws Exception {
         Map<String, Object> line1 = new LinkedHashMap<>();
+        line1.put("lineNo", 1);
+        line1.put("itemType", "LAB");
         line1.put("itemId", "901");
         line1.put("serviceName", "CBC Panel");
         line1.put("rate", 250.00);
         line1.put("qty", 1);
+        line1.put("doctorSharePercent", null);
         Map<String, Object> line2 = new LinkedHashMap<>();
+        line2.put("lineNo", 2);
+        line2.put("itemType", "RADIOLOGY");
         line2.put("itemId", "902");
         line2.put("serviceName", "X-Ray Chest");
         line2.put("rate", 1000);
         line2.put("qty", 2);
+        line2.put("doctorSharePercent", 10);
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("orderId", "501");
@@ -90,6 +96,11 @@ class BillingSagaIntegrationTest {
         payload.put("lines", List.of(line1, line2));
         payload.put("prescriberId", "9");
         payload.put("wardId", "3");
+        payload.put("pharmacyPrescriptionId", null);
+        payload.put("grossTotal", 2250.00);
+        payload.put("concessionPercent", 0);
+        payload.put("concessionAmount", 0);
+        payload.put("netTotal", 2250.00);
 
         Map<String, Object> env = new LinkedHashMap<>();
         env.put("eventId", eventId);
