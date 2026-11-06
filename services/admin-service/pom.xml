@@ -41,6 +41,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
@@ -100,67 +104,7 @@
     </dependencyManagement>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>../forms-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/forms</targetPath>
-            </resource>
-            <resource>
-                <directory>../rmrs-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/rmrs</targetPath>
-            </resource>
-            <resource>
-                <directory>../reporting-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/reporting</targetPath>
-            </resource>
-            <resource>
-                <directory>../reporting-service/src/main/resources/reports</directory>
-                <targetPath>reports</targetPath>
-            </resource>
-        </resources>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>add-service-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>../forms-service/src/main/java</source>
-                                <source>../rmrs-service/src/main/java</source>
-                                <source>../reporting-service/src/main/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>com/hims/forms/FormsServiceApplication.java</exclude>
-                        <exclude>com/hims/rmrs/RmrsServiceApplication.java</exclude>
-                        <exclude>com/hims/rmrs/api/PmrdController.java</exclude>
-                        <exclude>com/hims/reporting/ReportingServiceApplication.java</exclude>
-                        <exclude>com/hims/forms/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/forms/configuration/DevSecurityConfig.java</exclude>
-                        <exclude>com/hims/rmrs/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/rmrs/configuration/DevSecurityConfig.java</exclude>
-                        <exclude>com/hims/reporting/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/reporting/configuration/DevSecurityConfig.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

@@ -61,6 +61,11 @@
 
         <!-- Test -->
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -100,62 +105,7 @@
     </dependencyManagement>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>../bloodbank-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/bloodbank</targetPath>
-            </resource>
-            <resource>
-                <directory>../chemotherapy-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/chemotherapy</targetPath>
-            </resource>
-            <resource>
-                <directory>../equipment-service/src/main/resources/db/migration</directory>
-                <targetPath>db/migration/equipment</targetPath>
-            </resource>
-        </resources>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <executions>
-                    <execution>
-                        <id>add-service-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>../bloodbank-service/src/main/java</source>
-                                <source>../chemotherapy-service/src/main/java</source>
-                                <source>../equipment-service/src/main/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>com/hims/bloodbank/BloodBankServiceApplication.java</exclude>
-                        <exclude>com/hims/chemotherapy/ChemotherapyServiceApplication.java</exclude>
-                        <exclude>com/hims/equipment/EquipmentServiceApplication.java</exclude>
-                        <exclude>com/hims/bloodbank/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/bloodbank/configuration/DevSecurityConfig.java</exclude>
-                        <exclude>com/hims/chemotherapy/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/chemotherapy/configuration/DevSecurityConfig.java</exclude>
-                        <exclude>com/hims/equipment/configuration/SecurityConfig.java</exclude>
-                        <exclude>com/hims/equipment/configuration/DevSecurityConfig.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
