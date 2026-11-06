@@ -12,11 +12,13 @@ import com.hims.iam.domain.repository.UserRoleMasterRepository;
 import com.hims.iam.domain.repository.UserRoleRepository;
 import com.hims.iam.security.JwtTokenService;
 import com.hims.iam.security.TokenRevocationService;
+import com.hims.iam.application.exceptions.InvalidRequestException;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -97,6 +99,39 @@ public class AuthService {
         }
         return new ValidateResponse(true, claims.getSubject(), claims.get(jwtUid(), Long.class),
                 jwtTokenService.roles(claims), jwtTokenService.expiryOf(claims), null);
+    }
+
+    @Transactional
+    public void changePassword(String token, String currentPassword, String newPassword) {
+        if (token == null || token.isBlank()) {
+            throw new InvalidCredentialsException("IAM001", "Invalid username or password");
+        }
+        Claims claims = jwtTokenService.parse(token);
+        if (claims == null) {
+            throw new InvalidCredentialsException("IAM001", "Invalid or expired token");
+        }
+        String username = claims.getSubject();
+        UserDetail user = userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new InvalidCredentialsException("IAM001", "Invalid username or password"));
+        if (!Boolean.TRUE.equals(user.getStatus())) {
+            throw new InvalidCredentialsException("IAM002", "Account is disabled");
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new InvalidCredentialsException("IAM001", "Invalid username or password");
+        }
+        if (newPassword.equals(currentPassword) || passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new InvalidRequestException("IAM008", "New password must differ from the current password");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedBy(user.getId());
+        user.setUpdatedDatetime(java.sql.Timestamp.from(java.time.Instant.now()));
+        userRepository.save(user);
+        log.info("Password changed for userId={}", user.getId());
+
+        Instant until = claims.getExpiration() != null
+                ? claims.getExpiration().toInstant()
+                : Instant.now().plusSeconds(3600);
+        revocationService.revoke(token, until);
     }
 
     private String jwtUid() {

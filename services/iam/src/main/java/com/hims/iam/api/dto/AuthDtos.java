@@ -1,6 +1,7 @@
 package com.hims.iam.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,5 +27,9 @@ public final class AuthDtos {
 
     public record ValidateResponse(boolean valid, String username, Long userId,
                                    List<String> roles, Instant expiresAt, String reason) {
+    }
+
+    public record ChangePasswordRequest(@NotBlank String currentPassword,
+                                       @NotBlank @Size(min = 8, max = 72) String newPassword) {
     }
 }
