@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: admin-service
+  datasource:
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_reporting,ihms_forms,ihms_rmrs
+    username: ${DEV_DB_USERNAME:postgres}
+    password: ${DEV_DB_PASSWORD:TMSProduct1234}
+    hikari:
+      maximum-pool-size: 15
+      pool-name: admin-cp
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    open-in-view: false
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true
+  flyway:
+    enabled: false
+
+server:
+  port: ${SERVER_PORT:8120}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: admin-service
+    description: iHMS Admin service - bundles forms, rmrs, reporting
+    version: 0.1.0
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
+# DEV-ONLY profile (same contract as reference-service IMP-DEC-019): HTTP Basic
+# for local tooling. REMOVED at MIG-004 (OIDC resource server).
+spring:
+  security:
+    user:
+      name: ${DEV_USERNAME:devops}
+      password: ${DEV_PASSWORD:devops-dev-only}
+      roles: DEV

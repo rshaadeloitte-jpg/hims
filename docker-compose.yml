@@ -78,7 +78,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   bloodbank-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-bloodbank-service:latest
     container_name: ihms-bloodbank-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -91,7 +91,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   chemotherapy-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-chemotherapy-service:latest
     container_name: ihms-chemotherapy-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -141,8 +141,34 @@ services:
     mem_limit: 768m
     cpus: '0.5'
     memswap_limit: 768m
-  equipment-service:
+  clinical-support-service:
     profiles: [full]
+    image: ihms-clinical-support-service:latest
+    container_name: ihms-clinical-support-service
+    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
+      SERVER_PORT: 8119, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
+      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
+      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
+    ports: ['8119:8119']
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: '0.5'
+    memswap_limit: 768m
+  admin-service:
+    profiles: [full]
+    image: ihms-admin-service:latest
+    container_name: ihms-admin-service
+    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
+      SERVER_PORT: 8120, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
+      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
+      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
+    ports: ['8120:8120']
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: '0.5'
+    memswap_limit: 768m
+  equipment-service:
+    profiles: [legacy]
     image: ihms-equipment-service:latest
     container_name: ihms-equipment-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -168,7 +194,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   forms-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-forms-service:latest
     container_name: ihms-forms-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -435,7 +461,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   reporting-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-reporting-service:latest
     container_name: ihms-reporting-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -448,7 +474,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   rmrs-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-rmrs-service:latest
     container_name: ihms-rmrs-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',

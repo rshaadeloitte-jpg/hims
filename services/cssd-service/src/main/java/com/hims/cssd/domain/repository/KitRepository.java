@@ -15,7 +15,7 @@ public interface KitRepository extends JpaRepository<Kit, Long> {
     @Query("""
             SELECT k FROM Kit k
             WHERE (:status IS NULL OR k.status = :status)
-              AND (:procedureType IS NULL OR LOWER(k.procedureType) = LOWER(:procedureType))
+              AND (:procedureType IS NULL OR LOWER(k.procedureType) = LOWER(CAST(:procedureType AS string)))
             ORDER BY k.kitId DESC
             """)
     List<Kit> search(@Param("status") Short status, @Param("procedureType") String procedureType);
