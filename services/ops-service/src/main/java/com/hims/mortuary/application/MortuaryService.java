@@ -288,7 +288,7 @@ public class MortuaryService {
         long handedOver = bodies.stream().filter(b -> DeadBody.STATUS_HANDED_OVER.equals(b.getBodyStatus())).count();
 
         return Map.of(
-                "total", bodies.size(),
+                "total", (long) bodies.size(),
                 "admitted", admitted,
                 "released", released,
                 "autopsyPending", autopsyPending,
