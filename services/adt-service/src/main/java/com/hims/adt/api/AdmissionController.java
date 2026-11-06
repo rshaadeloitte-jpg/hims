@@ -66,10 +66,14 @@ public class AdmissionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(admission);
     }
 
-    @GetMapping(params = {"patientId"})
+    @GetMapping
     @Operation(summary = "List admissions", description = "?patientId=&active=")
     public List<Admission> list(@RequestParam(required = false) Long patientId,
                                 @RequestParam(required = false) Boolean active) {
+        if (patientId == null && !Boolean.TRUE.equals(active)) {
+            throw new InvalidAdtRequestException("ADT_BAD_REQUEST",
+                    "patientId or active=true is required");
+        }
         return service.search(patientId, active);
     }
 

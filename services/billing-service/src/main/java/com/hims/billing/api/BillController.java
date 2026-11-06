@@ -68,6 +68,13 @@ public class BillController {
         return service.get(id);
     }
 
+    @GetMapping("/bills")
+    @Operation(summary = "List bills (paged)")
+    public List<Bill> listBills(@RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "20") int size) {
+        return service.listBills(page, size);
+    }
+
     @PostMapping("/bills/{id}/finalize")
     @Operation(summary = "Finalize an interim bill",
             description = "BR-BILL-004 taxes + BR-BILL-005 asymmetric split + BR-BILL-002 doctor share; snapshots; final billNo OPDBILL/IPDBILL-<seq>; E-07 InvoiceGenerated emitted ONCE via outbox.")

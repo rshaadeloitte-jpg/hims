@@ -28,6 +28,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.util.Map;
 
 /**
@@ -826,6 +830,14 @@ public class BillingService {
     }
 
     // ------------------------------------------------------------------ queries
+
+    @Transactional(readOnly = true)
+    public List<Bill> listBills(int page, int size) {
+        int p = Math.max(0, page);
+        int s = size <= 0 ? 20 : size;
+        Pageable pageable = PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "billId"));
+        return billRepository.findAll(pageable).getContent();
+    }
 
     @Transactional(readOnly = true)
     public Bill get(long billId) {

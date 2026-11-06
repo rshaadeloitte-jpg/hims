@@ -1,7 +1,8 @@
 package com.hims.reference.domain.model;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -9,9 +10,19 @@ import java.sql.Timestamp;
 
 @Entity
 @Table(name = "audit_log")
+@AttributeOverrides({
+        @AttributeOverride(name = "id", column = @Column(name = "id")),
+        @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),
+        @AttributeOverride(name = "status", column = @Column(name = "status")),
+        @AttributeOverride(name = "createdunitid", column = @Column(name = "created_unit_id")),
+        @AttributeOverride(name = "updatedunitid", column = @Column(name = "updated_unit_id")),
+        @AttributeOverride(name = "addedby", column = @Column(name = "added_by")),
+        @AttributeOverride(name = "addeddatetime", column = @Column(name = "added_datetime")),
+        @AttributeOverride(name = "updatedby", column = @Column(name = "updated_by")),
+        @AttributeOverride(name = "updateddatetime", column = @Column(name = "updated_datetime")),
+        @AttributeOverride(name = "synchronizedd", column = @Column(name = "synchronized"))
+})
 public class AuditLog extends MasterEntityBase {
-    @Id @Column(name = "id") private Long id;
-    public Long getId() { return id; } public void setId(Long v) { this.id = v; }
     @Column(name = "entity_type", nullable = false, length = 64) private String entityType;
     public String getEntityType() { return entityType; } public void setEntityType(String v) { this.entityType = v; }
     @Column(name = "entity_id", nullable = false) private Long entityId;

@@ -2,7 +2,6 @@ package com.hims.pmrd.domain.model;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "jsy_form_data")
@@ -52,9 +51,6 @@ public class JsyFormData {
     @Column(name = "form_data", columnDefinition = "TEXT")
     private String formData;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
     public JsyFormData() {}
 
     public Long getId() { return id; }
@@ -87,6 +83,4 @@ public class JsyFormData {
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public String getFormData() { return formData; }
     public void setFormData(String formData) { this.formData = formData; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
