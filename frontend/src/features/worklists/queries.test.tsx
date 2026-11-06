@@ -78,7 +78,7 @@ describe("useWorklistPatients", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/nursing/worklist?status=PENDING&priority=HIGH&dateFrom=2026-01-01",
+      "/api/v1/nursing/worklist?status=PENDING&priority=HIGH&dateFrom=2026-01-01",
       expect.any(Object),
     );
   });
@@ -98,7 +98,7 @@ describe("useWorklistPatients", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/nursing/worklist",
+      "/api/v1/nursing/worklist",
       expect.any(Object),
     );
   });
@@ -207,7 +207,7 @@ describe("useCreateTask", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/tasks",
+      "/api/v1/tasks",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -327,7 +327,7 @@ describe("useCreateCareGoal", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/care-plans/1/goals",
+      "/api/v1/care-plans/1/goals",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -365,7 +365,7 @@ describe("useCreateIntervention", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/care-plans/1/interventions",
+      "/api/v1/care-plans/1/interventions",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({

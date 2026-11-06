@@ -7,7 +7,7 @@ import type { GrievanceFormValues, FeedbackFormValues, StatusChangeValues } from
  * Uses the Vite proxy (VITE_GRIEVANCE_API_BASE) or production gateway.
  */
 
-const GRV_BASE: string = import.meta.env.VITE_GRIEVANCE_API_BASE ?? "/api";
+const GRV_BASE: string = import.meta.env.VITE_GRIEVANCE_API_BASE ?? "";
 
 async function grvJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

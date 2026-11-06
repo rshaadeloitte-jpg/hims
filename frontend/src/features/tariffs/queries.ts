@@ -13,7 +13,7 @@ import type {
  * registry (`/api/v1/masters/{entity}`) — shared CRUD surface, unit-scoped.
  */
 
-const TARIFF_BASE: string = import.meta.env.VITE_TARIFF_API_BASE ?? "/api";
+const TARIFF_BASE: string = import.meta.env.VITE_TARIFF_API_BASE ?? "";
 
 async function masterJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

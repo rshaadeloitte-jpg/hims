@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const NURSING_BASE: string = import.meta.env.VITE_NURSING_API_BASE ?? "/api";
+const NURSING_BASE: string = import.meta.env.VITE_NURSING_API_BASE ?? "";
 
 async function nrsJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

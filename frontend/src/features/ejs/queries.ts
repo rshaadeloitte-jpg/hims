@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const EJS_BASE: string = import.meta.env.VITE_EJS_API_BASE ?? "/api";
+const EJS_BASE: string = import.meta.env.VITE_EJS_API_BASE ?? "";
 
 async function ejsJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

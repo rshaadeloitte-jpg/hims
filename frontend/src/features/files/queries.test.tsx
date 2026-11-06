@@ -66,7 +66,7 @@ describe("useFiles", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files?ownerType=PATIENT&ownerId=1",
+      "/api/v1/files?ownerType=PATIENT&ownerId=1",
       expect.any(Object),
     );
     expect(result.current.data).toHaveLength(1);
@@ -87,7 +87,7 @@ describe("useFiles", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files?fileCategoryId=5",
+      "/api/v1/files?fileCategoryId=5",
       expect.any(Object),
     );
   });
@@ -117,7 +117,7 @@ describe("useFile", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/42",
+      "/api/v1/files/42",
       expect.any(Object),
     );
     expect(result.current.data?.fileName).toBe("report.pdf");
@@ -150,7 +150,7 @@ describe("useFileByToken", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/token/tok-99",
+      "/api/v1/files/token/tok-99",
       expect.any(Object),
     );
   });
@@ -183,7 +183,7 @@ describe("useUploadFile", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files",
+      "/api/v1/files",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
@@ -213,7 +213,7 @@ describe("useDeleteFile", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/42",
+      "/api/v1/files/42",
       expect.objectContaining({ method: "DELETE" }),
     );
   });
@@ -240,7 +240,7 @@ describe("useDownloadFileBase64", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/token/tok-5/base64",
+      "/api/v1/files/token/tok-5/base64",
       expect.any(Object),
     );
     expect(result.current.data?.fileData).toBe("iVBORw0KGgo=");
@@ -262,7 +262,7 @@ describe("useFileCategories", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/file-categories",
+      "/api/v1/file-categories",
       expect.any(Object),
     );
     expect(result.current.data).toHaveLength(2);
@@ -288,7 +288,7 @@ describe("useFileCategoryTree", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/file-categories/tree",
+      "/api/v1/file-categories/tree",
       expect.any(Object),
     );
   });
@@ -308,7 +308,7 @@ describe("useCreateFileCategory", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/file-categories",
+      "/api/v1/file-categories",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ code: "NEW_CAT", name: "New Category" }),
@@ -331,7 +331,7 @@ describe("useFileAnnotation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/5/annotation",
+      "/api/v1/files/5/annotation",
       expect.any(Object),
     );
   });
@@ -355,7 +355,7 @@ describe("useSaveAnnotation", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/files/5/annotation",
+      "/api/v1/files/5/annotation",
       expect.objectContaining({
         method: "PUT",
         body: JSON.stringify({ annotationJson }),

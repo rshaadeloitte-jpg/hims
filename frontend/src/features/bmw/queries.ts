@@ -29,7 +29,7 @@ import type {
  *   POST /updateBagStatus              → per-bag status advance
  */
 
-const BMW_BASE: string = import.meta.env.VITE_BMW_API_BASE ?? "/api";
+const BMW_BASE: string = import.meta.env.VITE_BMW_API_BASE ?? "";
 const BMW_PATH = `${BMW_BASE}/api/rest/bioMedicalWasteManagement`;
 
 /** Shared typed fetcher — mirrors the bmwJson shape from the legacy module. */
@@ -69,7 +69,7 @@ export function useWasteSummary(unitId: number, storeId: number, from: string, t
   return useQuery<WasteSummary>({
     queryKey: wasteQueryKeys.summary,
     queryFn: () =>
-      bmwJson<WasteSummary>(`${BMW_PATH}/getBioMedWasteCount`, {
+      bmwJson<WasteSummary>(`${BMW_BASE}/api/v1/biomedical-waste/counts`, {
         method: "POST",
         body: JSON.stringify({ unitId, storeId, fromDate: from, toDate: to }),
       }),
@@ -120,7 +120,7 @@ export function useWasteList(filter: WasteListFilterValues) {
       if (filter.storeId) (body as any).storeId = filter.storeId;
       if (filter.fromStoreId) (body as any).fromStoreId = filter.fromStoreId;
       const resp = await bmwJson<unknown[]>(
-        `${BMW_PATH}/getbioMedicalWasteStatus?${params}`,
+        `${BMW_BASE}/api/v1/biomedical-waste?${params}`,
         { method: "POST", body: JSON.stringify(body) },
       );
       // The legacy backend returns a bare array; derive total from length.

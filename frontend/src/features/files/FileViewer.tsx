@@ -78,7 +78,7 @@ export function FileViewer({
   };
 
   const getDownloadUrl = (token: string) =>
-    `${import.meta.env.VITE_FILE_API_BASE ?? "/api"}/api/v1/files/token/${token}/download`;
+    `${import.meta.env.VITE_FILE_API_BASE ?? ""}/api/v1/files/token/${token}/download`;
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;

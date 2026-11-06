@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const BASE = import.meta.env.VITE_TARIFF_API_BASE ?? "/api";
+const BASE = import.meta.env.VITE_TARIFF_API_BASE ?? "";
 async function j<T>(u: string, o?: RequestInit): Promise<T> {
   const r = await fetch(u, { headers: { "Content-Type": "application/json", "X-Request-ID": crypto.randomUUID() }, ...o });
   if (!r.ok) throw new ApiError(r.status, "ERR", "Failed");
@@ -9,7 +9,7 @@ async function j<T>(u: string, o?: RequestInit): Promise<T> {
 }
 
 export function TariffsPage() {
-  const { data: tariffs = [] } = useQuery({ queryKey: ["tariffs"], queryFn: () => j<any[]>(`${BASE}/v1/tariffs`) });
+  const { data: tariffs = [] } = useQuery({ queryKey: ["tariffs"], queryFn: () => j<any[]>(`${BASE}/api/v1/tariffs`) });
   return (
     <section className="page">
       <header className="page-header"><h1>Tariffs & Concessions</h1></header>

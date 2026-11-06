@@ -12,7 +12,7 @@ import { ApiError } from "../../api/client";
  *   GET  /api/v1/doctor-shares                     — paginated list
  */
 
-const BASE = import.meta.env.VITE_BILLING_API_BASE ?? "/api";
+const BASE = import.meta.env.VITE_BILLING_API_BASE ?? "";
 
 async function dsJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

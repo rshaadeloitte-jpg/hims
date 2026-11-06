@@ -71,7 +71,7 @@ describe("request wiring", () => {
     await mastersApi.listScoped("unitmaster", { unitId: 1, search: "jai", searchFld: "name", page: 0, count: 10 });
 
     const [input, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(String(input)).toContain("/api/masters/unitmaster");
+    expect(String(input)).toContain("/api/v1/masters/unitmaster");
     expect(String(input)).toContain("unitId=1");
     expect(String(input)).toContain("search=jai");
     expect(String(input)).toContain("searchFld=name");
@@ -86,7 +86,7 @@ describe("request wiring", () => {
     fetchMock.mockResolvedValue(jsonResponse(201, { id: 77 }));
     await mastersApi.create("unitmaster", { code: "U077", name: "New Unit" });
     const [createUrl, createInit] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(String(createUrl)).toBe("http://localhost:3000/api/masters/unitmaster");
+    expect(String(createUrl)).toBe("http://localhost:3000/api/v1/masters/unitmaster");
     expect(createInit.method).toBe("POST");
     expect((createInit.headers as Record<string, string>)["Content-Type"]).toBe("application/json");
     expect(JSON.parse(String(createInit.body))).toEqual({ code: "U077", name: "New Unit" });
@@ -94,7 +94,7 @@ describe("request wiring", () => {
     fetchMock.mockResolvedValue(jsonResponse(200, { id: 77 }));
     await mastersApi.update("unitmaster", 77, { name: "Renamed" });
     const [updateUrl, updateInit] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
-    expect(String(updateUrl)).toBe("http://localhost:3000/api/masters/unitmaster/77");
+    expect(String(updateUrl)).toBe("http://localhost:3000/api/v1/masters/unitmaster/77");
     expect(updateInit.method).toBe("PUT");
   });
 
@@ -103,7 +103,7 @@ describe("request wiring", () => {
 
     await mastersApi.getById("departmentmaster", 5, 7);
     expect(String(fetchMock.mock.calls[0][0])).toContain("unitId=7");
-    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/masters/departmentmaster/5");
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/api/v1/masters/departmentmaster/5");
 
     // create with unitId query param (server: scope = unitId param ?? payload.unitId)
     fetchMock.mockResolvedValue(jsonResponse(201, { id: 6 }));
@@ -113,7 +113,7 @@ describe("request wiring", () => {
     // PUT with unitId (scoped update; without it the backend answers BEXA031)
     fetchMock.mockResolvedValue(jsonResponse(200, { id: 5 }));
     await mastersApi.update("departmentmaster", 5, { description: "Edited" }, 7);
-    expect(String(fetchMock.mock.calls[2][0])).toContain("/api/masters/departmentmaster/5");
+    expect(String(fetchMock.mock.calls[2][0])).toContain("/api/v1/masters/departmentmaster/5");
     expect(String(fetchMock.mock.calls[2][0])).toContain("unitId=7");
     expect((fetchMock.mock.calls[2][1] as RequestInit).method).toBe("PUT");
   });

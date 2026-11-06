@@ -13,7 +13,7 @@ import { ApiError } from "../../api/client";
  *   GET    /api/v1/commons/audit/by-actor/{actorId}
  */
 
-const COMMONS_BASE: string = import.meta.env.VITE_API_BASE ?? "/api";
+const COMMONS_BASE: string = import.meta.env.VITE_API_BASE ?? "";
 
 export function generateSafeUUID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -92,7 +92,7 @@ export function useAppConfigList(unitId?: number | null) {
     queryKey: commonsQueryKeys.config(unitId),
     queryFn: () =>
       commonsJson<AppConfigEntry[]>(
-        `${COMMONS_BASE}/commons/config${unitId != null ? `?unitId=${unitId}` : ""}`,
+        `${COMMONS_BASE}/api/v1/commons/config${unitId != null ? `?unitId=${unitId}` : ""}`,
       ),
     staleTime: 30_000,
   });
@@ -103,7 +103,7 @@ export function useAppConfigByKey(key: string, unitId?: number | null) {
     queryKey: commonsQueryKeys.configByKey(key, unitId),
     queryFn: () =>
       commonsJson<{ key: string; value: string }>(
-        `${COMMONS_BASE}/commons/config/${encodeURIComponent(key)}${unitId != null ? `?unitId=${unitId}` : ""}`,
+        `${COMMONS_BASE}/api/v1/commons/config/${encodeURIComponent(key)}${unitId != null ? `?unitId=${unitId}` : ""}`,
       ),
     enabled: key.length > 0,
   });
@@ -113,7 +113,7 @@ export function useSetAppConfig(unitId?: number | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: { key: string; value?: string; description?: string }) =>
-      commonsJson<AppConfigEntry>(`${COMMONS_BASE}/commons/config${unitId != null ? `?unitId=${unitId}` : ""}`, {
+      commonsJson<AppConfigEntry>(`${COMMONS_BASE}/api/v1/commons/config${unitId != null ? `?unitId=${unitId}` : ""}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -131,7 +131,7 @@ export function useAuditByEntity(entityType: string, entityId: number) {
     queryKey: commonsQueryKeys.auditByEntity(entityType, entityId),
     queryFn: () =>
       commonsJson<AuditLogEntry[]>(
-        `${COMMONS_BASE}/commons/audit/by-entity?entityType=${encodeURIComponent(entityType)}&entityId=${entityId}`,
+        `${COMMONS_BASE}/api/v1/commons/audit/by-entity?entityType=${encodeURIComponent(entityType)}&entityId=${entityId}`,
       ),
     enabled: entityType.length > 0 && entityId > 0,
     staleTime: 10_000,
@@ -141,7 +141,7 @@ export function useAuditByEntity(entityType: string, entityId: number) {
 export function useAuditByActor(actorId: number) {
   return useQuery({
     queryKey: commonsQueryKeys.auditByActor(actorId),
-    queryFn: () => commonsJson<AuditLogEntry[]>(`${COMMONS_BASE}/commons/audit/by-actor/${actorId}`),
+    queryFn: () => commonsJson<AuditLogEntry[]>(`${COMMONS_BASE}/api/v1/commons/audit/by-actor/${actorId}`),
     enabled: actorId > 0,
   });
 }
@@ -157,7 +157,7 @@ export function useRecordAudit() {
       actorUsername?: string;
       diff?: Record<string, unknown>;
     }) =>
-      commonsJson<AuditLogEntry>(`${COMMONS_BASE}/commons/audit`, {
+      commonsJson<AuditLogEntry>(`${COMMONS_BASE}/api/v1/commons/audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

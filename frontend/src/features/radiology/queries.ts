@@ -7,7 +7,7 @@ import type {
   RadStudyItem,
 } from "./types";
 
-const RAD_BASE: string = import.meta.env.VITE_RAD_API_BASE ?? "/api";
+const RAD_BASE: string = import.meta.env.VITE_RAD_API_BASE ?? "";
 
 async function radJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

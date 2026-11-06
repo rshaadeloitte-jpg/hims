@@ -21,7 +21,7 @@ export interface DrugInteraction {
   acknowledged: boolean;
 }
 
-const PHARMACY_BASE: string = import.meta.env.VITE_PHARMACY_API_BASE ?? "/api";
+const PHARMACY_BASE: string = import.meta.env.VITE_PHARMACY_API_BASE ?? "";
 
 async function pharmacyJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

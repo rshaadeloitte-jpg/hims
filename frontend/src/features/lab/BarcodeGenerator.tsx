@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { labQueryKeys } from './queries';
 import type { LabDetail } from './types';
 
-const LAB_BASE: string = import.meta.env.VITE_LAB_API_BASE ?? '/api';
+const LAB_BASE: string = import.meta.env.VITE_LAB_API_BASE ?? "";
 
 async function labJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

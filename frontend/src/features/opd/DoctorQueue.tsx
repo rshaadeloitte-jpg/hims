@@ -119,7 +119,7 @@ function PatientCard({
 }
 
 // ── Fetch hook (uses queue-service backend) ───────────────────────────────
-const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "/api";
+const QUEUE_BASE: string = import.meta.env.VITE_QUEUE_API_BASE ?? "";
 
 function useDoctorQueue(doctorId: number, date: string) {
   return useQuery<QueuePatient[]>({

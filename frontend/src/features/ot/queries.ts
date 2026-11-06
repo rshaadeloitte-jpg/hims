@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
 
-const OT_BASE: string = import.meta.env.VITE_OT_API_BASE ?? "/api";
+const OT_BASE: string = import.meta.env.VITE_OT_API_BASE ?? "";
 
 async function otJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -306,14 +306,14 @@ export function useOtDashboard(date?: string) {
 export function useAnesthesiaRecords() {
   return useQuery<AnesthesiaRecord[]>({
     queryKey: otQueryKeys.anesthesia(),
-    queryFn: () => otJson<AnesthesiaRecord[]>(`${OT_BASE}/ot/anesthesia`),
+    queryFn: () => otJson<AnesthesiaRecord[]>(`${OT_BASE}/api/ot/anesthesia`),
   });
 }
 
 export function useAnesthesiaRecord(scheduleId: number) {
   return useQuery<AnesthesiaRecord>({
     queryKey: otQueryKeys.anesthesia(scheduleId),
-    queryFn: () => otJson<AnesthesiaRecord>(`${OT_BASE}/ot/anesthesia?scheduleId=${scheduleId}`),
+    queryFn: () => otJson<AnesthesiaRecord>(`${OT_BASE}/api/ot/anesthesia?scheduleId=${scheduleId}`),
     enabled: scheduleId > 0,
   });
 }
@@ -328,7 +328,7 @@ export function useCreatePreOp() {
       airway: string;
       comorbidities?: string;
     }) =>
-      otJson<AnesthesiaRecord>(`${OT_BASE}/ot/anesthesia/pre-op`, {
+      otJson<AnesthesiaRecord>(`${OT_BASE}/api/ot/anesthesia/pre-op`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -340,7 +340,7 @@ export function useAddVitalSign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { recordId: number; data: Omit<VitalSignRecord, "id" | "vitalId" | "recordId"> }) =>
-      otJson<VitalSignRecord>(`${OT_BASE}/ot/anesthesia/${input.recordId}/vitals`, {
+      otJson<VitalSignRecord>(`${OT_BASE}/api/ot/anesthesia/${input.recordId}/vitals`, {
         method: "POST",
         body: JSON.stringify(input.data),
       }),
@@ -351,7 +351,7 @@ export function useAddVitalSign() {
 export function useVitalSigns(recordId: number) {
   return useQuery<VitalSignRecord[]>({
     queryKey: otQueryKeys.vitals(recordId),
-    queryFn: () => otJson<VitalSignRecord[]>(`${OT_BASE}/ot/anesthesia/${recordId}/vitals`),
+    queryFn: () => otJson<VitalSignRecord[]>(`${OT_BASE}/api/ot/anesthesia/${recordId}/vitals`),
     enabled: recordId > 0,
   });
 }
@@ -360,7 +360,7 @@ export function useAddAnesthesiaDrug() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { recordId: number; data: Omit<AnesthesiaDrug, "id" | "drugId" | "recordId"> }) =>
-      otJson<AnesthesiaDrug>(`${OT_BASE}/ot/anesthesia/${input.recordId}/drugs`, {
+      otJson<AnesthesiaDrug>(`${OT_BASE}/api/ot/anesthesia/${input.recordId}/drugs`, {
         method: "POST",
         body: JSON.stringify(input.data),
       }),
@@ -371,7 +371,7 @@ export function useAddAnesthesiaDrug() {
 export function useAnesthesiaDrugs(recordId: number) {
   return useQuery<AnesthesiaDrug[]>({
     queryKey: otQueryKeys.drugs(recordId),
-    queryFn: () => otJson<AnesthesiaDrug[]>(`${OT_BASE}/ot/anesthesia/${recordId}/drugs`),
+    queryFn: () => otJson<AnesthesiaDrug[]>(`${OT_BASE}/api/ot/anesthesia/${recordId}/drugs`),
     enabled: recordId > 0,
   });
 }
@@ -380,7 +380,7 @@ export function useCompletePostOp() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { recordId: number; pacuMinutes?: number; recoveryScore?: number; complications?: string }) =>
-      otJson<AnesthesiaRecord>(`${OT_BASE}/ot/anesthesia/${input.recordId}/post-op`, {
+      otJson<AnesthesiaRecord>(`${OT_BASE}/api/ot/anesthesia/${input.recordId}/post-op`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -393,14 +393,14 @@ export function useCompletePostOp() {
 export function useChecklists() {
   return useQuery<SurgicalChecklist[]>({
     queryKey: otQueryKeys.checklists(),
-    queryFn: () => otJson<SurgicalChecklist[]>(`${OT_BASE}/ot/checklists`),
+    queryFn: () => otJson<SurgicalChecklist[]>(`${OT_BASE}/api/ot/checklists`),
   });
 }
 
 export function useChecklistsBySchedule(scheduleId: number) {
   return useQuery<SurgicalChecklist[]>({
     queryKey: otQueryKeys.checklist(scheduleId),
-    queryFn: () => otJson<SurgicalChecklist[]>(`${OT_BASE}/ot/checklists?scheduleId=${scheduleId}`),
+    queryFn: () => otJson<SurgicalChecklist[]>(`${OT_BASE}/api/ot/checklists?scheduleId=${scheduleId}`),
     enabled: scheduleId > 0,
   });
 }
@@ -409,7 +409,7 @@ export function useCreateChecklist() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { scheduleId: number; patientId: number; phase: string }) =>
-      otJson<SurgicalChecklist>(`${OT_BASE}/ot/checklists`, {
+      otJson<SurgicalChecklist>(`${OT_BASE}/api/ot/checklists`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -421,7 +421,7 @@ export function useAddChecklistItem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { checklistId: number; itemName: string; category: string }) =>
-      otJson<ChecklistItem>(`${OT_BASE}/ot/checklists/${input.checklistId}/items`, {
+      otJson<ChecklistItem>(`${OT_BASE}/api/ot/checklists/${input.checklistId}/items`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -433,7 +433,7 @@ export function useCompleteChecklistItem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (itemId: number) =>
-      otJson<ChecklistItem>(`${OT_BASE}/ot/checklists/items/${itemId}/complete`, { method: "POST" }),
+      otJson<ChecklistItem>(`${OT_BASE}/api/ot/checklists/items/${itemId}/complete`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: otQueryKeys.checklists() }),
   });
 }
@@ -442,7 +442,7 @@ export function useRecordChecklistCompletion() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { checklistId: number; overallStatus: string }) =>
-      otJson<ChecklistCompletion>(`${OT_BASE}/ot/checklists/${input.checklistId}/completion`, {
+      otJson<ChecklistCompletion>(`${OT_BASE}/api/ot/checklists/${input.checklistId}/completion`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -457,7 +457,7 @@ export function useBillingEstimates(scheduleId?: number) {
     queryKey: otQueryKeys.billingEstimates(scheduleId),
     queryFn: () =>
       otJson<OtBillingEstimate[]>(
-        `${OT_BASE}/ot/billing/estimates${scheduleId ? `?scheduleId=${scheduleId}` : ""}`
+        `${OT_BASE}/api/ot/billing/estimates${scheduleId ? `?scheduleId=${scheduleId}` : ""}`
       ),
   });
 }
@@ -466,7 +466,7 @@ export function useCreateBillingEstimate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { scheduleId: number; procedureCode: string }) =>
-      otJson<OtBillingEstimate>(`${OT_BASE}/ot/billing/estimates`, {
+      otJson<OtBillingEstimate>(`${OT_BASE}/api/ot/billing/estimates`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -478,7 +478,7 @@ export function useFinalizeBillingEstimate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (estimateId: number) =>
-      otJson<OtBillingEstimate>(`${OT_BASE}/ot/billing/estimates/${estimateId}/finalize`, {
+      otJson<OtBillingEstimate>(`${OT_BASE}/api/ot/billing/estimates/${estimateId}/finalize`, {
         method: "POST",
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: otQueryKeys.billingEstimates() }),
@@ -490,7 +490,7 @@ export function useFinalizeBillingEstimate() {
 export function useStaffSchedule(scheduleId: number) {
   return useQuery<OtStaffSchedule[]>({
     queryKey: otQueryKeys.staffSchedule(scheduleId),
-    queryFn: () => otJson<OtStaffSchedule[]>(`${OT_BASE}/ot/staff-schedule?scheduleId=${scheduleId}`),
+    queryFn: () => otJson<OtStaffSchedule[]>(`${OT_BASE}/api/ot/staff-schedule?scheduleId=${scheduleId}`),
     enabled: scheduleId > 0,
   });
 }
@@ -499,7 +499,7 @@ export function useAssignStaff() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { scheduleId: number; role: string; staffId: number; start: string; end: string }) =>
-      otJson<OtStaffSchedule>(`${OT_BASE}/ot/staff-schedule`, {
+      otJson<OtStaffSchedule>(`${OT_BASE}/api/ot/staff-schedule`, {
         method: "POST",
         body: JSON.stringify(input),
       }),
@@ -512,7 +512,7 @@ export function useAssignStaff() {
 export function useNurseSchedule(staffId: number) {
   return useQuery<OtNurseSchedule[]>({
     queryKey: otQueryKeys.nurseSchedule(staffId),
-    queryFn: () => otJson<OtNurseSchedule[]>(`${OT_BASE}/ot/nurse-schedule?staffId=${staffId}`),
+    queryFn: () => otJson<OtNurseSchedule[]>(`${OT_BASE}/api/ot/nurse-schedule?staffId=${staffId}`),
     enabled: staffId > 0,
   });
 }
@@ -527,7 +527,7 @@ export function useCreateNurseDuty() {
       dutyRoster: string;
       emergencyCall?: boolean;
     }) =>
-      otJson<OtNurseSchedule>(`${OT_BASE}/ot/nurse-schedule`, {
+      otJson<OtNurseSchedule>(`${OT_BASE}/api/ot/nurse-schedule`, {
         method: "POST",
         body: JSON.stringify(input),
       }),

@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
  * Uses the Vite proxy (VITE_BILLING_API_BASE) or production gateway.
  */
 
-const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "/api";
+const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "";
 
 export function generateSafeUUID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {

@@ -1,9 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { Table } from "@chakra-ui/react";
+import { ApiError } from "../../api/client";
 const BASE = import.meta.env.VITE_CHEMO_API_BASE ?? "/api";
 
 export function ChemotherapyPage() {
-  const { data: regimens = [] } = useQuery({ queryKey: ["chemo-regimens"], queryFn: () => fetch(`${BASE}/v1/regimens`).then(r => r.json()) });
+  const { data } = useQuery({
+    queryKey: ["chemo-regimens"],
+    queryFn: async () => {
+      const r = await fetch(`${BASE}/v1/regimens`);
+      if (!r.ok) throw new ApiError(r.status, "ERR", "Request failed");
+      return r.json();
+    },
+  });
+  const regimens = Array.isArray(data) ? data : [];
   return (
     <section className="page">
       <header className="page-header"><h1>Chemotherapy</h1></header>

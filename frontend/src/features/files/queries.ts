@@ -12,7 +12,7 @@ import { ApiError } from "../../api/client";
  * - Base64 encoding with preview before POST
  */
 
-const FILE_BASE: string = import.meta.env.VITE_FILE_API_BASE ?? "/api";
+const FILE_BASE: string = import.meta.env.VITE_FILE_API_BASE ?? "";
 
 async function fileJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

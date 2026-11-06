@@ -1,8 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+import { ApiError } from "../../api/client";
 const BASE = import.meta.env.VITE_RMRS_API_BASE ?? "/api";
 
 export function RmrsPage() {
-  const { data: journals = [] } = useQuery({ queryKey: ["rmrs-journals"], queryFn: () => fetch(`${BASE}/v1/journals`).then(r => r.json()) });
+  const { data } = useQuery({
+    queryKey: ["rmrs-journals"],
+    queryFn: async () => {
+      const r = await fetch(`${BASE}/v1/journals`);
+      if (!r.ok) throw new ApiError(r.status, "ERR", "Request failed");
+      return r.json();
+    },
+  });
+  const journals = Array.isArray(data) ? data : [];
   return (
     <section className="page">
       <header className="page-header"><h1>RMRS Treasury</h1></header>

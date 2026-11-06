@@ -66,7 +66,7 @@ export function FilesPage() {
           onPreview={(file) => {
             // Preview: trigger download in new tab
             window.open(
-              `${import.meta.env.VITE_FILE_API_BASE ?? "/api"}/api/v1/files/token/${file.fileToken}/download`,
+              `${import.meta.env.VITE_FILE_API_BASE ?? ""}/api/v1/files/token/${file.fileToken}/download`,
               "_blank",
             );
           }}

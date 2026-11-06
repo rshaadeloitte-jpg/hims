@@ -53,7 +53,7 @@ describe('useRadOrders', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders',
+      '/api/v1/rad-orders',
       expect.any(Object)
     );
     expect(result.current.data).toHaveLength(1);
@@ -76,7 +76,7 @@ describe('useRadOrders', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders?status=1&patientId=100&modality=CT',
+      '/api/v1/rad-orders?status=1&patientId=100&modality=CT',
       expect.any(Object)
     );
   });
@@ -111,7 +111,7 @@ describe('useRadOrder', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders/1',
+      '/api/v1/rad-orders/1',
       expect.any(Object)
     );
     expect(result.current.data?.radOrderId).toBe(1);
@@ -156,7 +156,7 @@ describe('useCreateRadOrder', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders',
+      '/api/v1/rad-orders',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -199,7 +199,7 @@ describe('useReportRadOrder', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders/1/report',
+      '/api/v1/rad-orders/1/report',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ reportText: 'Normal study', reportedBy: 'Dr. Smith' }),
@@ -230,7 +230,7 @@ describe('useRadOrderAction', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders/1/start',
+      '/api/v1/rad-orders/1/start',
       expect.objectContaining({ method: 'POST' })
     );
     expect(result.current.data?.status).toBe(2);
@@ -256,7 +256,7 @@ describe('useRadOrderAction', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders/1/capture-image',
+      '/api/v1/rad-orders/1/capture-image',
       expect.objectContaining({ method: 'POST' })
     );
     expect(result.current.data?.imageCaptured).toBe(true);
@@ -282,7 +282,7 @@ describe('useRadOrderAction', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/rad-orders/1/cancel',
+      '/api/v1/rad-orders/1/cancel',
       expect.objectContaining({ method: 'POST' })
     );
     expect(result.current.data?.status).toBe(4);
@@ -310,7 +310,7 @@ describe('useRadTemplates', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/radiology/templates',
+      '/api/v1/radiology/templates',
       expect.any(Object)
     );
     expect(result.current.data).toHaveLength(1);
@@ -329,7 +329,7 @@ describe('useRadTemplates', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/radiology/templates?modality=CT',
+      '/api/v1/radiology/templates?modality=CT',
       expect.any(Object)
     );
   });
@@ -360,7 +360,7 @@ describe('useCreateRadTemplate', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/radiology/templates',
+      '/api/v1/radiology/templates',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -400,7 +400,7 @@ describe('useRescheduleLine', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/radiology/orders/1/lines/1/reschedule',
+      '/api/v1/radiology/orders/1/lines/1/reschedule',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ rescheduledTo: '2024-03-15T10:00:00' }),
@@ -436,7 +436,7 @@ describe('useRequestRetest', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/api/v1/radiology/orders/1/lines/1/retest',
+      '/api/v1/radiology/orders/1/lines/1/retest',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ reason: 'Poor image quality' }),

@@ -39,7 +39,7 @@ describe("useFollowUpList", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/appointments/42/follow-ups",
+      "/api/v1/appointments/42/follow-ups",
       expect.objectContaining({ headers: expect.any(Object) }),
     );
     expect(result.current.data).toEqual([
@@ -57,7 +57,7 @@ describe("useFollowUpList", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/appointments/follow-ups/patient/7?date=2027-04-01",
+      "/api/v1/appointments/follow-ups/patient/7?date=2027-04-01",
       expect.any(Object),
     );
   });
@@ -85,7 +85,7 @@ describe("useScheduleFollowUp", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/api/v1/appointments/42/follow-up",
+      "/api/v1/appointments/42/follow-up",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ patientId: 5, followUpDate: "2027-04-01" }),

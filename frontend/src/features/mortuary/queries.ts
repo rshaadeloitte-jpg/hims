@@ -7,7 +7,7 @@ import type {
   DeathCertificateRequest,
 } from "./zodSchema";
 
-const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "/api";
+const PATIENT_BASE: string = import.meta.env.VITE_PATIENT_API_BASE ?? "";
 
 async function mortuaryJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -47,7 +47,7 @@ export interface ChamberRow {
 export function useChambers() {
   return useQuery<ChamberRow[]>({
     queryKey: mortuaryQueryKeys.chambers,
-    queryFn: () => mortuaryJson<ChamberRow[]>(`${PATIENT_BASE}/patient/getMortuaryPatients`),
+    queryFn: () => mortuaryJson<ChamberRow[]>(`${PATIENT_BASE}/api/patient/getMortuaryPatients`),
     staleTime: 30_000,
   });
 }
@@ -56,7 +56,7 @@ export function useDeceasedList() {
   return useQuery<ChamberRow[]>({
     queryKey: mortuaryQueryKeys.deceasedList,
     queryFn: () =>
-      mortuaryJson<ChamberRow[]>(`${PATIENT_BASE}/patient/getMortuaryPatients`, {
+      mortuaryJson<ChamberRow[]>(`${PATIENT_BASE}/api/patient/getMortuaryPatients`, {
         method: "POST",
         body: JSON.stringify({}),
       }),
@@ -70,7 +70,7 @@ export function useAllocateChamber() {
   return useMutation({
     mutationFn: (values: ChamberAllocationValues) =>
       mortuaryJson<{ chamberId: number; bodyName: string }>(
-        `${PATIENT_BASE}/patient/saveMortuaryAllocation`,
+        `${PATIENT_BASE}/api/patient/saveMortuaryAllocation`,
         { method: "POST", body: JSON.stringify(values) },
       ),
     onSuccess: () => {
@@ -85,7 +85,7 @@ export function useReleaseChamber() {
   return useMutation({
     mutationFn: (values: MortuaryClearanceValues) =>
       mortuaryJson<{ chamberId: number; releasedAt: string }>(
-        `${PATIENT_BASE}/patient/mortuaryClearance`,
+        `${PATIENT_BASE}/api/patient/mortuaryClearance`,
         { method: "POST", body: JSON.stringify(values) },
       ),
     onSuccess: () => {
@@ -99,7 +99,7 @@ export function useUpdateDeathDetails() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (values: DeathDetailsValues) =>
-      mortuaryJson<boolean>(`${PATIENT_BASE}/patient/updatePatientDeathDetails`, {
+      mortuaryJson<boolean>(`${PATIENT_BASE}/api/patient/updatePatientDeathDetails`, {
         method: "POST",
         body: JSON.stringify(values),
       }),
@@ -131,7 +131,7 @@ export function useDeathCertificate(patientId: number) {
     queryKey: mortuaryQueryKeys.certificate(patientId),
     queryFn: () =>
       mortuaryJson<DeathCertificate>(
-        `${PATIENT_BASE}/patient/getPatientDetailsForDeathForm?patientId=${patientId}`,
+        `${PATIENT_BASE}/api/patient/getPatientDetailsForDeathForm?patientId=${patientId}`,
       ),
     enabled: Boolean(patientId),
     staleTime: Infinity, // print-ready snapshot; refresh only on re-open
@@ -143,7 +143,7 @@ export function useRequestCertificatePrint() {
   return useMutation({
     mutationFn: (req: DeathCertificateRequest) =>
       mortuaryJson<{ printed: boolean; certNumber: string }>(
-        `${PATIENT_BASE}/patient/generateDeathCertificate`,
+        `${PATIENT_BASE}/api/patient/generateDeathCertificate`,
         { method: "POST", body: JSON.stringify(req) },
       ),
     onSuccess: (_data, vars) => {
