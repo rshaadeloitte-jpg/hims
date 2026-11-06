@@ -3,6 +3,7 @@ package com.hims.transport.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.transport.application.VehicleRequestService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.UnmappedPathAdvice;
 import com.hims.transport.domain.model.VehicleRequest;
 import com.hims.transport.domain.model.VehicleRequestDetails;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the transport request lifecycle API (default-deny enforced). Service is mocked; L1 covers the state machine. */
 @WebMvcTest(VehicleRequestController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class VehicleRequestControllerTest {
 

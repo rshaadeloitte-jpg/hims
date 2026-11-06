@@ -38,6 +38,7 @@ public class MortuaryController {
     public ResponseEntity<DeadBody> createDeadBody(@RequestBody Map<String, Object> body) {
         Timestamp deathDate = body.get("deathDate") == null ? null
                 : Timestamp.from(Instant.parse(str(body, "deathDate")));
+        Boolean policeCase = boolOf(body, "policeCase");
         DeadBody deadBody = service.createDeadBody(
                 longOf(body, "admissionId"),
                 longOf(body, "patientId"),
@@ -49,7 +50,7 @@ public class MortuaryController {
                 str(body, "nextOfKinRelation"),
                 str(body, "nextOfKinPhone"),
                 str(body, "chamberNo"),
-                boolOf(body, "policeCase"),
+                policeCase == null ? Boolean.FALSE : policeCase,
                 str(body, "mlcNo"),
                 str(body, "remark"),
                 longOf(body, "unitId"));

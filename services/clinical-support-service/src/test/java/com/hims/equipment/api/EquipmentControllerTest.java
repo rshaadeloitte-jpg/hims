@@ -3,6 +3,7 @@ package com.hims.equipment.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.equipment.application.EquipmentService;
 import com.hims.clinicalsupport.configuration.SecurityConfig;
+import com.hims.clinicalsupport.configuration.UnmappedPathAdvice;
 import com.hims.equipment.domain.model.Equipment;
 import com.hims.equipment.domain.model.EquipmentTransfer;
 import com.hims.equipment.domain.model.EquipmentWorkingStatus;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Service is mocked; L1 covers the business logic.
  */
 @WebMvcTest(EquipmentController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class EquipmentControllerTest {
 

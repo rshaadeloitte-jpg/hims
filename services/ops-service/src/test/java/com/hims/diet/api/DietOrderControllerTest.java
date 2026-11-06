@@ -3,6 +3,7 @@ package com.hims.diet.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.diet.application.DietOrderService;
 import com.hims.ops.configuration.SecurityConfig;
+import com.hims.ops.configuration.UnmappedPathAdvice;
 import com.hims.diet.domain.model.DietItemScheduleDetails;
 import com.hims.diet.domain.model.DietOrderDetails;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Contract tests for the diet order + food item schedule lifecycle API (default-deny enforced). Service is mocked; L1 covers the state machine. */
 @WebMvcTest(DietOrderController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class DietOrderControllerTest {
 
