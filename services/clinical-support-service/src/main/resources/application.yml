@@ -50,11 +50,3 @@ info:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
-# DEV-ONLY profile (same contract as reference-service IMP-DEC-019): HTTP Basic
-# for local tooling. REMOVED at MIG-004 (OIDC resource server).
-spring:
-  security:
-    user:
-      name: ${DEV_USERNAME:devops}
-      password: ${DEV_PASSWORD:devops-dev-only}
-      roles: DEV

@@ -150,6 +150,7 @@
                     <excludes>
                         <exclude>com/hims/forms/FormsServiceApplication.java</exclude>
                         <exclude>com/hims/rmrs/RmrsServiceApplication.java</exclude>
+                        <exclude>com/hims/rmrs/api/PmrdController.java</exclude>
                         <exclude>com/hims/reporting/ReportingServiceApplication.java</exclude>
                         <exclude>com/hims/forms/configuration/SecurityConfig.java</exclude>
                         <exclude>com/hims/forms/configuration/DevSecurityConfig.java</exclude>
