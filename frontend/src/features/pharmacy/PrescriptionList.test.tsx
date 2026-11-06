@@ -21,16 +21,22 @@ const mockPrescriptions = [
   },
 ];
 
-vi.mock("./queries", () => ({
-  usePrescriptions: () => ({
-    data: mockPrescriptions,
-    isLoading: false,
-  }),
-  usePrescription: () => ({
-    data: mockPrescriptions[0],
-    isLoading: false,
-  }),
-}));
+vi.mock("./queries", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./queries")>();
+  return {
+    ...actual,
+    usePrescriptions: () => ({
+      data: mockPrescriptions,
+      isLoading: false,
+    }),
+    usePrescription: () => ({
+      data: mockPrescriptions[0],
+      isLoading: false,
+    }),
+    useCreateItemSale: () => ({ mutateAsync: async () => ({ saleId: 1 }), isPending: false }),
+    useDispenseItemSale: () => ({ mutateAsync: async () => ({}) , isPending: false }),
+  };
+});
 
 const queryClient = new QueryClient();
 
@@ -45,14 +51,14 @@ describe("PrescriptionList", () => {
     expect(screen.getByText("Prescription Dispensing")).toBeInTheDocument();
     expect(screen.getByText("Patient 101")).toBeInTheDocument();
     expect(screen.getByText("ACTIVE")).toBeInTheDocument();
-    expect(screen.getByText("Dispense (unavailable)")).toBeInTheDocument();
+    expect(screen.getByText("Dispense")).toBeInTheDocument();
   });
 
   test("shows prescription details when selected", () => {
     render(<PrescriptionList />, { wrapper: Wrapper });
 
-    fireEvent.click(screen.getByText("Dispense (unavailable)"));
-    // button is disabled; details panel not auto-opened. Ensure no crash.
+    fireEvent.click(screen.getByText("Dispense"));
+    // details panel opens. Ensure no crash.
     expect(screen.getByText("Prescription Dispensing")).toBeInTheDocument();
   });
 });

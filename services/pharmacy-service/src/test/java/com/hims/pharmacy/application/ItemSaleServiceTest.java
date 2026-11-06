@@ -106,7 +106,51 @@ class ItemSaleServiceTest {
         });
         when(saleRepository.findById(anyLong()))
                 .thenAnswer(inv -> Optional.ofNullable(salesById.get(inv.getArgument(0, Long.class))));
+        when(saleRepository.findByPrescriptionId(any()))
+                .thenAnswer(inv -> {
+                    Long pid = inv.getArgument(0, Long.class);
+                    return salesById.values().stream()
+                            .filter(s -> pid != null && pid.equals(s.getPrescriptionId()))
+                            .findFirst();
+                });
+        when(saleRepository.findFirstByPrescriptionId(any()))
+                .thenAnswer(inv -> {
+                    Long pid = inv.getArgument(0, Long.class);
+                    return salesById.values().stream()
+                            .filter(s -> pid != null && pid.equals(s.getPrescriptionId()))
+                            .findFirst();
+                });
+        when(saleRepository.findFirstByPrescriptionIdOrderBySaleIdDesc(any()))
+                .thenAnswer(inv -> {
+                    Long pid = inv.getArgument(0, Long.class);
+                    return salesById.values().stream()
+                            .filter(s -> pid != null && pid.equals(s.getPrescriptionId()))
+                            .reduce((a, b) -> b);
+                });
+        when(saleRepository.findTopByPrescriptionIdOrderBySaleIdDesc(any()))
+                .thenAnswer(inv -> {
+                    Long pid = inv.getArgument(0, Long.class);
+                    return salesById.values().stream()
+                            .filter(s -> pid != null && pid.equals(s.getPrescriptionId()))
+                            .reduce((a, b) -> b);
+                });
+        when(saleRepository.existsByPrescriptionId(any()))
+                .thenAnswer(inv -> {
+                    Long pid = inv.getArgument(0, Long.class);
+                    return salesById.values().stream()
+                            .anyMatch(s -> pid != null && pid.equals(s.getPrescriptionId()));
+                });
         when(saleRepository.search(any(), any())).thenAnswer(inv -> List.copyOf(salesById.values()));
+        when(saleRepository.search(any(), any(), any())).thenAnswer(inv -> {
+            Short status = inv.getArgument(0, Short.class);
+            Long patientId = inv.getArgument(1, Long.class);
+            Long prescriptionId = inv.getArgument(2, Long.class);
+            return salesById.values().stream()
+                    .filter(s -> status == null || status.equals(s.getStatusCode()))
+                    .filter(s -> patientId == null || patientId.equals(s.getPatientId()))
+                    .filter(s -> prescriptionId == null || prescriptionId.equals(s.getPrescriptionId()))
+                    .toList();
+        });
         when(detailRepository.save(any())).thenAnswer(inv -> {
             ItemSaleDetail d = inv.getArgument(0);
             detailsBySale.computeIfAbsent(d.getSaleId(), k -> new ArrayList<>()).add(d);
@@ -403,6 +447,74 @@ class ItemSaleServiceTest {
                 .isInstanceOf(SaleNotFoundException.class)
                 .extracting(e -> ((SaleNotFoundException) e).getErrorCode())
                 .isEqualTo("NOT_FOUND");
+    }
+
+    // ------------------------------------------------------------- added coverage (WP-R2)
+
+    @Test
+    void create_secondSaleForSamePrescription_rejectedWithCode_andSavesNothing() {
+        service.create(11L, 555L, List.of(line(501, 3)));
+        int before = salesById.size();
+
+        assertThatThrownBy(() -> service.create(11L, 555L, List.of(line(501, 2))))
+                .isInstanceOf(InvalidSaleRequestException.class)
+                .extracting(e -> ((InvalidSaleRequestException) e).getErrorCode())
+                .isEqualTo("PH_PRESCRIPTION_HAS_SALE");
+        assertThat(salesById).hasSize(before);
+    }
+
+    @Test
+    void create_withoutPrescription_allowsMultipleSales() {
+        ItemSale first = service.create(11L, null, List.of(line(501, 2)));
+        ItemSale second = service.create(11L, null, List.of(line(501, 2)));
+
+        assertThat(first.getSaleId()).isNotEqualTo(second.getSaleId());
+        assertThat(salesById).hasSize(2);
+    }
+
+    @Test
+    void dispense_partialThenRemainder_onSameSale_closesLine() {
+        stubStockOk(501, 1);
+        stubStockOk(501, 2);
+        ItemSale sale = service.create(11L, null, List.of(line(501, 3)));
+
+        ItemSale partial = service.dispense(sale.getSaleId(),
+                List.of(new ItemSaleService.DispenseLine(1L, 1)));
+        assertThat(partial.getStatusCode()).isEqualTo(ItemSale.STATUS_PARTIALLY_DISPENSED);
+        assertThat(partial.getDetails().get(0).getPendingQty()).isEqualTo(2);
+
+        ItemSale closed = service.dispense(sale.getSaleId(),
+                List.of(new ItemSaleService.DispenseLine(1L, 2)));
+        assertThat(closed.getStatusCode()).isEqualTo(ItemSale.STATUS_FULLY_DISPENSED);
+        assertThat(closed.getDetails().get(0).getPendingQty()).isZero();
+        assertThat(closed.getDetails().get(0).getDispensed()).isTrue();
+        itemServer.verify();
+    }
+
+    @Test
+    void dispense_pastPending_rejected() {
+        stubStockOk(501, 1);
+        ItemSale sale = service.create(11L, null, List.of(line(501, 3)));
+        service.dispense(sale.getSaleId(), List.of(new ItemSaleService.DispenseLine(1L, 1)));
+
+        assertThatThrownBy(() -> service.dispense(sale.getSaleId(),
+                        List.of(new ItemSaleService.DispenseLine(1L, 3))))
+                .isInstanceOf(InvalidSaleRequestException.class)
+                .hasMessageContaining("exceeds pending_qty 2");
+        itemServer.verify();
+    }
+
+    @Test
+    void list_filtersByPrescriptionId() {
+        service.create(11L, 555L, List.of(line(501, 2)));
+        service.create(11L, 777L, List.of(line(501, 2)));
+
+        List<ItemSale> filtered = service.list(null, null, 555L);
+        assertThat(filtered).hasSize(1);
+        assertThat(filtered.get(0).getPrescriptionId()).isEqualTo(555L);
+
+        List<ItemSale> all = service.list(null, null, null);
+        assertThat(all).hasSize(2);
     }
 
     // ------------------------------------------------------------- helpers

@@ -57,10 +57,11 @@ public class ItemSaleController {
     }
 
     @GetMapping
-    @Operation(summary = "List item sales", description = "?status= (1..3 or name PENDING / PARTIALLY_DISPENSED / FULLY_DISPENSED) and/or ?patientId= filter.")
+    @Operation(summary = "List item sales", description = "?status= (1..3 or name PENDING / PARTIALLY_DISPENSED / FULLY_DISPENSED) and/or ?patientId= and/or ?prescriptionId= filter.")
     public List<ItemSale> list(@RequestParam(required = false) String status,
-                               @RequestParam(required = false) Long patientId) {
-        return service.list(status == null ? null : parseStatus(status), patientId);
+                               @RequestParam(required = false) Long patientId,
+                               @RequestParam(required = false) Long prescriptionId) {
+        return service.list(status == null ? null : parseStatus(status), patientId, prescriptionId);
     }
 
     @PostMapping("/{id}/dispense")

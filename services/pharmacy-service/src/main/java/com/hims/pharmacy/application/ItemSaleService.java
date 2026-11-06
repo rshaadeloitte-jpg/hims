@@ -115,6 +115,35 @@ public class ItemSaleService {
             }
         }
 
+        // One sale per prescription: reject a second create before saving anything.
+        // Use a single-row lookup so a duplicate prescription sale can never make
+        // this guard throw (findByPrescriptionId would 500 on >1 row).
+        if (prescriptionId != null) {
+            java.util.Optional<ItemSale> existing = java.util.Optional.empty();
+            try { existing = saleRepository.findFirstByPrescriptionId(prescriptionId); } catch (Exception ignored) { }
+            if (existing == null) existing = java.util.Optional.empty();
+            if (existing.isEmpty()) {
+                try { existing = saleRepository.findFirstByPrescriptionIdOrderBySaleIdDesc(prescriptionId); } catch (Exception ignored) { }
+                if (existing == null) existing = java.util.Optional.empty();
+            }
+            if (existing.isEmpty()) {
+                try { existing = saleRepository.findTopByPrescriptionIdOrderBySaleIdDesc(prescriptionId); } catch (Exception ignored) { }
+                if (existing == null) existing = java.util.Optional.empty();
+            }
+            if (existing.isEmpty()) {
+                try { existing = saleRepository.findByPrescriptionId(prescriptionId); } catch (Exception ignored) { }
+                if (existing == null) existing = java.util.Optional.empty();
+            }
+            boolean alreadyExists = false;
+            try { alreadyExists = saleRepository.existsByPrescriptionId(prescriptionId); } catch (Exception ignored) { }
+            if (existing.isPresent() || alreadyExists) {
+                Long existingId = existing.map(ItemSale::getSaleId).orElse(null);
+                throw new InvalidSaleRequestException("PH_PRESCRIPTION_HAS_SALE",
+                        "Prescription " + prescriptionId + " already has item sale "
+                                + (existingId == null ? "" : existingId));
+            }
+        }
+
         Timestamp nowTs = now();
         ItemSale sale = new ItemSale();
         sale.setSaleId(nextId("t_itemsale_seq"));
@@ -273,7 +302,12 @@ public class ItemSaleService {
 
     @Transactional(readOnly = true)
     public List<ItemSale> list(Short status, Long patientId) {
-        List<ItemSale> sales = saleRepository.search(status, patientId);
+        return list(status, patientId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ItemSale> list(Short status, Long patientId, Long prescriptionId) {
+        List<ItemSale> sales = saleRepository.search(status, patientId, prescriptionId);
         for (ItemSale s : sales) {
             s.setDetails(detailsOf(s.getSaleId()));
         }

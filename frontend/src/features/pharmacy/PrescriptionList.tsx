@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePrescriptions, usePrescription } from "./queries";
+import { DispenseForm } from "./DispenseForm";
 import { Box, Button, Table, VStack } from "@chakra-ui/react";
 
 const statusLabel = (code: number) =>
@@ -17,9 +18,6 @@ export function PrescriptionList() {
       <header>
         <h1 className="text-2xl font-bold text-gray-900">Prescription Dispensing</h1>
         <p className="text-sm text-gray-500 mt-1">Process pending prescriptions for dispensing</p>
-        <p className="text-sm text-amber-600 mt-1">
-          Dispensing a prescription is not supported by the backend; use Item Sales instead.
-        </p>
       </header>
 
       <Box overflowX="auto">
@@ -68,12 +66,11 @@ export function PrescriptionList() {
                 <Table.Cell>
                   <Button
                     onClick={() => setSelectedId(p.prescriptionId)}
-                    disabled
                     variant="ghost"
                     size="sm"
-                    title="Dispensing a prescription is not supported by the backend"
+                    title="Dispense this prescription"
                   >
-                    Dispense (unavailable)
+                    Dispense
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -90,23 +87,26 @@ export function PrescriptionList() {
       </Box>
 
       {prescription && (
-        <Box mt={6} p={4} bg="gray.50" borderRadius="lg">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Prescription #{prescription.prescriptionId}
-          </h2>
-          <VStack gap={4} align="stretch">
-            {(prescription.details ?? []).map((item) => (
-              <div key={item.lineNo} className="flex justify-between p-3 bg-white border rounded-md">
-                <div>
-                  <div className="font-medium text-gray-900">Item {item.itemId}</div>
-                  <div className="text-sm text-gray-500">
-                    {item.dose} | {item.frequency} | Qty: {item.qty}
+        <>
+          <Box mt={6} p={4} bg="gray.50" borderRadius="lg">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              Prescription #{prescription.prescriptionId}
+            </h2>
+            <VStack gap={4} align="stretch">
+              {(prescription.details ?? []).map((item) => (
+                <div key={item.lineNo} className="flex justify-between p-3 bg-white border rounded-md">
+                  <div>
+                    <div className="font-medium text-gray-900">Item {item.itemId}</div>
+                    <div className="text-sm text-gray-500">
+                      {item.dose} | {item.frequency} | Qty: {item.qty}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </VStack>
-        </Box>
+              ))}
+            </VStack>
+          </Box>
+          <DispenseForm prescription={prescription} onClose={() => setSelectedId(0)} />
+        </>
       )}
     </VStack>
   );

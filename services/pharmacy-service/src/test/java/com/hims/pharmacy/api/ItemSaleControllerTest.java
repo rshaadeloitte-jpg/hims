@@ -98,7 +98,7 @@ class ItemSaleControllerTest {
 
     @Test
     void list_acceptsNamedOrNumericStatusFilter() throws Exception {
-        when(itemSaleService.list((short) 2, 505L))
+        when(itemSaleService.list((short) 2, 505L, null))
                 .thenReturn(List.of(sale(11L, ItemSale.STATUS_PARTIALLY_DISPENSED, false)));
 
         mockMvc.perform(get("/api/v1/item-sales").with(csrf()).with(user("devops").roles("DEV"))
@@ -157,6 +157,17 @@ class ItemSaleControllerTest {
                         .content("{\"lines\":[{\"lineNo\":1,\"qty\":1}]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("PH_ILLEGAL_TRANSITION"));
+    }
+
+    @Test
+    void list_passesPrescriptionIdFilter() throws Exception {
+        when(itemSaleService.list(isNull(), isNull(), eq(555L)))
+                .thenReturn(List.of(sale(12L, ItemSale.STATUS_PENDING, false)));
+
+        mockMvc.perform(get("/api/v1/item-sales").with(csrf()).with(user("devops").roles("DEV"))
+                        .param("prescriptionId", "555"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].saleId").value(12));
     }
 
     @Test

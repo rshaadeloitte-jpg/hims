@@ -57,24 +57,64 @@ export function usePrescription(id: number) {
 }
 
 // Item sales
-export function useItemSales() {
+export function useItemSales(prescriptionId?: number) {
+  const url =
+    prescriptionId != null
+      ? `${PHARMACY_BASE}/api/v1/item-sales?prescriptionId=${prescriptionId}`
+      : `${PHARMACY_BASE}/api/v1/item-sales`;
   return useQuery<ItemSale[]>({
-    queryKey: pharmacyQueryKeys.sales(),
-    queryFn: () => pharmacyJson<ItemSale[]>(`${PHARMACY_BASE}/api/v1/item-sales`),
+    queryKey:
+      prescriptionId != null
+        ? [...pharmacyQueryKeys.sales(), prescriptionId]
+        : pharmacyQueryKeys.sales(),
+    queryFn: () => pharmacyJson<ItemSale[]>(url),
+    enabled: prescriptionId == null || prescriptionId > 0,
   });
+}
+
+export interface CreateItemSalePayload {
+  patientId: number;
+  prescriptionId?: number | null;
+  lines: { itemId: number; qty: number; batchId?: string }[];
 }
 
 export function useCreateItemSale() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: any) =>
-      pharmacyJson<any>(`${PHARMACY_BASE}/api/v1/item-sales`, {
+    mutationFn: (payload: CreateItemSalePayload) =>
+      pharmacyJson<ItemSale>(`${PHARMACY_BASE}/api/v1/item-sales`, {
         method: "POST",
         body: JSON.stringify(payload),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pharmacy"] }),
   });
 }
+
+export function useItemSale(id: number) {
+  return useQuery<ItemSale>({
+    queryKey: pharmacyQueryKeys.sale(id),
+    queryFn: () => pharmacyJson<ItemSale>(`${PHARMACY_BASE}/api/v1/item-sales/${id}`),
+    enabled: id > 0,
+  });
+}
+
+export interface DispenseItemSalePayload {
+  saleId: number;
+  lines: { lineNo: number; qty: number }[];
+}
+
+export function useDispenseItemSale() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: DispenseItemSalePayload) =>
+      pharmacyJson<ItemSale>(`${PHARMACY_BASE}/api/v1/item-sales/${payload.saleId}/dispense`, {
+        method: "POST",
+        body: JSON.stringify({ lines: payload.lines }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pharmacy"] }),
+  });
+}
+
 
 // Sale returns
 export function useSaleReturns() {
