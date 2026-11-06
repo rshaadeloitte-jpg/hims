@@ -5,6 +5,7 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +30,7 @@ public class ServiceTokenProvider {
     private volatile String cachedToken;
     private volatile Instant cachedExpiry;
 
+    @Autowired
     public ServiceTokenProvider(@Value("${ihms.security.jwt.secret}") String secret) {
         this(secret, "svc-pharmacy");
     }
