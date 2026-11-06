@@ -1,0 +1,4 @@
+spring:
+  datasource:
+    hikari:
+      connection-init-sql: "SET search_path TO ihms_diet,ihms_cssd,ihms_linen,ihms_waste,ihms_mortuary,ihms_transport,ihms_grievance"

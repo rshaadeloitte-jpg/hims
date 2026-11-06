@@ -18,7 +18,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * alongside their application exceptions in later slices; the generic Spring MVC
  * handlers below already follow the reference/item/grievance contract.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.hims.equipment")
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
