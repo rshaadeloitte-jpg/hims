@@ -210,8 +210,11 @@ export const appointmentApi = {
   doctorSchedules: (departmentId?: number) =>
     request<Doctor[]>(APPT_BASE, "/api/v1/doctors/schedules", { query: { departmentId } }),
 
-  /** GET /api/v1/departments — for the Department -> Doctor cascade. */
-  departments: () => request<Department[]>(APPT_BASE, "/api/v1/masters/departmentmaster"),
+  /** GET /api/v1/masters/departmentmaster/all?unitId= — department list for the cascade (unit-scoped; unitId optional). */
+  departments: (unitId?: number | null) =>
+    request<Department[]>(APPT_BASE, "/api/v1/masters/departmentmaster/all", {
+      query: unitId != null ? { unitId } : undefined,
+    }),
 };
 
 /** queue-service wrappers (:8089). */

@@ -5,6 +5,7 @@ import {
   patientApi,
   queueApi,
 } from "./client";
+import { useOpSession } from "../store/opSession";
 import type {
   Appointment,
   AppointmentListQuery,
@@ -27,7 +28,7 @@ export const opKeys = {
   patientSearch: (q: PatientSearchQuery) => ["op", "patient", "search", q] as const,
   patient: (id: number) => ["op", "patient", id] as const,
   patientSponsors: (id: number) => ["op", "patient", id, "sponsors"] as const,
-  departments: () => ["op", "department", "list"] as const,
+  departments: (unitId?: number | null) => ["op", "department", "list", unitId ?? null] as const,
   doctorSchedules: (departmentId?: number) =>
     ["op", "doctor", "schedules", departmentId ?? null] as const,
   doctorSlots: (doctorId: number, date: string) =>
@@ -89,10 +90,15 @@ export function useUpdatePatient(id: number) {
 
 /* ── departments / doctors / slots (cascade) ───────── */
 
-export function useDepartments() {
+export function useDepartments(unitId?: number | null) {
+  // The reference-service departmentmaster is unit-scoped: reuse the OP
+  // session's unit (legacy Fg.g("UnitId")) when present, but the endpoint
+  // also works with no unit, so never fail when one is missing.
+  const sessionUnitId = useOpSession().unitId;
+  const effectiveUnitId = unitId !== undefined ? unitId : sessionUnitId;
   return useQuery({
-    queryKey: opKeys.departments(),
-    queryFn: appointmentApi.departments,
+    queryKey: opKeys.departments(effectiveUnitId),
+    queryFn: () => appointmentApi.departments(effectiveUnitId),
     staleTime: 5 * 60_000,
   });
 }

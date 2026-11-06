@@ -135,7 +135,7 @@ export const handlers = [
   http.get("/api/v1/patients/:id/sponsors", () => ok(samplePatient.sponsors ?? [])),
 
   /* ── appointment-service ── */
-  http.get("/api/v1/masters/departmentmaster", () => ok(sampleDepartments)),
+  http.get("/api/v1/masters/departmentmaster/all", () => ok(sampleDepartments)),
   http.get("/api/v1/doctors/schedules", ({ request }) => {
     const url = new URL(request.url);
     const deptId = Number(url.searchParams.get("departmentId") ?? "0");

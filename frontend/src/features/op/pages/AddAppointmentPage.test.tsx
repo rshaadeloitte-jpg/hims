@@ -4,6 +4,8 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AddAppointmentPage } from "./AddAppointmentPage";
 import "../__tests__/setup";
+import { useOpSession } from "../store/opSession";
+import { beforeEach } from "vitest";
 
 const wrap = () => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -20,6 +22,10 @@ const wrap = () => {
   );
 };
 
+beforeEach(() => {
+  useOpSession.getState().setUnit(1);
+});
+
 describe("AddAppointmentPage", () => {
   it("renders the page header and the patient search", () => {
     render(wrap());
@@ -28,6 +34,14 @@ describe("AddAppointmentPage", () => {
   });
 
   it("shows department master description text", async () => {
+    render(wrap());
+    const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
+    expect(screen.getByText("General Medicine")).toBeInTheDocument();
+  });
+
+  it("renders departments when there is no unit", async () => {
+    useOpSession.getState().setUnit(null);
     render(wrap());
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
     await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));

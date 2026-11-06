@@ -189,7 +189,12 @@ export function AddAppointmentPage() {
           </div>
         </div>
 
-        {create.isError ? (
+        {departments.isError ? (
+          <p className="alert alert--error" role="alert">
+            Could not load departments: {String((departments.error as Error)?.message ?? departments.error)}
+          </p>
+        ) : null}
+       {create.isError ? (
           <p className="alert alert--error" role="alert">
             Could not book: {String((create.error as Error)?.message ?? create.error)}
           </p>
