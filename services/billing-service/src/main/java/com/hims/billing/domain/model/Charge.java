@@ -62,8 +62,8 @@ public class Charge extends BillingBase {
     @Column(name = "concession_plan_pct", nullable = false, precision = 5, scale = 2)
     private BigDecimal concessionPlanPct = BigDecimal.ZERO;
 
-    @Column(name = "concession_bill_pct", precision = 5, scale = 2)
-    private BigDecimal concessionBillPct;
+    @Column(name = "concession_bill_pct", nullable = false, precision = 5, scale = 2)
+    private BigDecimal concessionBillPct = BigDecimal.ZERO;
 
     @Column(name = "flat_concession_amount", precision = 12, scale = 2)
     private BigDecimal flatConcessionAmount;
