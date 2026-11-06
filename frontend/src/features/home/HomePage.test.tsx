@@ -319,6 +319,7 @@ describe("HomePage", () => {
         name: "Dr. Sarah Connor",
         role: "Chief Medical Officer",
         email: "sconnor@hospital.org",
+        exp: Math.floor(Date.now() / 1000) + 3600,
       }),
     );
     localStorage.setItem("access_token", `fakeheader.${jwtPayload}.fakesig`);

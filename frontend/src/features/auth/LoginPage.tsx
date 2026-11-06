@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -14,19 +15,39 @@ import {
 import { DeloitteLogo } from '../../components/DeloitteIcon';
 import { FormField, TextInput } from '../../components/ui/form';
 import { useLogin, useGenerateOtp, useVerifyOtp } from './queries';
+import { isSessionValid, persistToken } from './session';
 import { loginSchema, otpVerifySchema } from './zodSchema';
 import type { LoginValues, OtpVerifyValues } from './zodSchema';
 
 type AuthMode = 'credentials' | 'otp';
 
+export function sanitizeRedirectPath(from: unknown): string {
+  let path: string | undefined;
 
-function persistToken(token: string) {
-  try { localStorage.setItem('access_token', token); } catch { /* ignore */ }
-  try { sessionStorage.setItem('access_token', token); } catch { /* ignore */ }
-  try { document.cookie = `access_token=${encodeURIComponent(token)}; path=/; SameSite=Lax`; } catch { /* ignore */ }
+  if (typeof from === 'string') {
+    path = from;
+  } else if (
+    from &&
+    typeof from === 'object' &&
+    'pathname' in from &&
+    typeof (from as { pathname: unknown }).pathname === 'string'
+  ) {
+    const loc = from as { pathname: string; search?: string; hash?: string };
+    path = `${loc.pathname}${loc.search ?? ''}${loc.hash ?? ''}`;
+  }
+
+  // Only accept internal paths starting with a single "/" to prevent open redirects
+  if (path && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')) {
+    return path;
+  }
+
+  return '/';
 }
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [mode, setMode] = useState<AuthMode>('credentials');
   const [otpMobile, setOtpMobile] = useState('');
   const login = useLogin();
@@ -43,11 +64,19 @@ export function LoginPage() {
 
   const otpCode = watchOtp('otp');
 
+  if (isSessionValid()) {
+    return <Navigate to="/" replace />;
+  }
+
+  const destination = sanitizeRedirectPath(
+    (location.state as { from?: unknown } | null)?.from,
+  );
+
   const onCredentialLogin = async (data: LoginValues) => {
     try {
       const tokens = await login.mutateAsync(data);
       persistToken(tokens.accessToken);
-      window.location.href = '/';
+      navigate(destination, { replace: true });
     } catch (e) { /* error displayed below */ }
   };
 
@@ -60,7 +89,7 @@ export function LoginPage() {
     try {
       const tokens = await verifyOtp.mutateAsync(data);
       persistToken(tokens.accessToken);
-      window.location.href = '/';
+      navigate(destination, { replace: true });
     } catch (e) { /* error displayed below */ }
   };
 
