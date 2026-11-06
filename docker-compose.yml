@@ -104,7 +104,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   cssd-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-cssd-service:latest
     container_name: ihms-cssd-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -117,7 +117,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   diet-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-diet-service:latest
     container_name: ihms-diet-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -129,6 +129,18 @@ services:
     mem_limit: 512m
     cpus: '0.5'
     memswap_limit: 512m
+  ops-service:
+    image: ihms-ops-service:latest
+    container_name: ihms-ops-service
+    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
+      SERVER_PORT: 8118, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
+      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
+      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
+    ports: ['8118:8118']
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: '0.5'
+    memswap_limit: 768m
   equipment-service:
     profiles: [full]
     image: ihms-equipment-service:latest
@@ -182,7 +194,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   grievance-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-grievance-service:latest
     container_name: ihms-grievance-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -258,7 +270,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   linen-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-linen-service:latest
     container_name: ihms-linen-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -271,7 +283,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   mortuary-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-mortuary-service:latest
     container_name: ihms-mortuary-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -463,7 +475,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   transport-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-transport-service:latest
     container_name: ihms-transport-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
@@ -476,7 +488,7 @@ services:
     cpus: '0.5'
     memswap_limit: 512m
   waste-service:
-    profiles: [full]
+    profiles: [legacy]
     image: ihms-waste-service:latest
     entrypoint: ["java", "-XX:+UseSerialGC", "-XX:MaxRAMPercentage=50", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30", "-jar", "app.jar"]
     container_name: ihms-waste-service
