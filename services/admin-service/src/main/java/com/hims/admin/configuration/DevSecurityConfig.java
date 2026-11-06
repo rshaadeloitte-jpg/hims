@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
-/** DEV-ONLY HTTP Basic chain: rmrs/reporting prefixes permitAll, forms stays authenticated. */
+/** DEV-ONLY HTTP Basic chain (same contract as queue-service). */
 @Profile("dev")
 @Configuration
 public class DevSecurityConfig {
@@ -30,20 +30,6 @@ public class DevSecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/error").permitAll()
-                        .requestMatchers("/api/v1/forms/**").authenticated()
-                        .requestMatchers(
-                                "/api/v1/collections/**",
-                                "/api/v1/masters/**",
-                                "/api/v1/rmrs/**",
-                                "/api/v1/bank/**",
-                                "/api/v1/po/**",
-                                "/api/v1/journals/**",
-                                "/api/v1/reports/**",
-                                "/api/v1/dashboard/**",
-                                "/api/v1/internal/**",
-                                "/api/reports/janta/**",
-                                "/api/reports/operational/**",
-                                "/api/reports/statistical/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(JwtConfig.jwtAuthenticationConverter())))
