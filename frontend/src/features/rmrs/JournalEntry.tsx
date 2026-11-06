@@ -7,7 +7,7 @@ import {
 } from "./zodSchema";
 
 interface JournalEntryProps {
-  onSaved?: (entry: { journalId: number; voucherNo: string }) => void;
+  onSaved?: (entry: { voucherId: number; voucherNo: string }) => void;
   onCancel?: () => void;
 }
 
@@ -76,14 +76,14 @@ export function JournalEntry({ onSaved, onCancel }: JournalEntryProps) {
 
   const onSubmit = async (values: JournalEntryValues) => {
     try {
-      const resp = await fetch("/api/v1/journals", {
+      const resp = await fetch("/api/v1/rmrs/journal-vouchers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      onSaved?.({ journalId: data.journalId, voucherNo: data.voucherNo });
+      onSaved?.({ voucherId: data.voucherId ?? data.id, voucherNo: data.voucherNo });
     } catch (err) {
       console.error("Journal save failed:", err);
     }

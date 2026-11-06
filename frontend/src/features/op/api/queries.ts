@@ -121,6 +121,7 @@ export function useAppointmentList(q: AppointmentListQuery) {
   return useQuery({
     queryKey: opKeys.appointmentList(q),
     queryFn: () => appointmentApi.list(q),
+    enabled: !!q.date,
     placeholderData: (prev) => prev,
   });
 }

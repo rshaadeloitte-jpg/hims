@@ -128,8 +128,7 @@ export interface AppointmentListQuery {
   doctorId?: number;
   departmentId?: number;
   patientId?: number;
-  dateFrom?: string;
-  dateTo?: string;
+  date?: string;
   page?: number;
   size?: number;
 }
@@ -152,9 +151,11 @@ export interface Doctor {
 
 export interface Department {
   id: number;
-  name: string;
-  isOpd?: boolean;
-  isActive?: boolean;
+  code?: string;
+  description?: string;
+  isclinical?: boolean;
+  isEmergency?: boolean;
+  status?: boolean;
 }
 
 /** queue-service — MIG-022 token issuance. */

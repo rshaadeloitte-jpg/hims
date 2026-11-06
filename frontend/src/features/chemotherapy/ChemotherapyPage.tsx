@@ -1,21 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Table } from "@chakra-ui/react";
-import { ApiError } from "../../api/client";
-const BASE = import.meta.env.VITE_CHEMO_API_BASE ?? "/api";
+import { TextInput } from "../../components/ui";
+import { useChemoRegimens } from "./queries";
 
 export function ChemotherapyPage() {
-  const { data } = useQuery({
-    queryKey: ["chemo-regimens"],
-    queryFn: async () => {
-      const r = await fetch(`${BASE}/v1/regimens`);
-      if (!r.ok) throw new ApiError(r.status, "ERR", "Request failed");
-      return r.json();
-    },
-  });
+  const [patientId, setPatientId] = useState(0);
+  const { data } = useChemoRegimens(patientId);
   const regimens = Array.isArray(data) ? data : [];
   return (
     <section className="page">
       <header className="page-header"><h1>Chemotherapy</h1></header>
+      <div className="card">
+        <TextInput type="number" placeholder="Patient ID" value={patientId || ""} onChange={(e) => setPatientId(Number(e.target.value))} />
+      </div>
+      {patientId > 0 ? (
       <div className="card">
         <Table.Root size="sm" variant="line">
           <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Patient</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Regimen</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Cycle</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Status</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Next Due</Table.ColumnHeader></Table.Row></Table.Header>
@@ -25,6 +23,9 @@ export function ChemotherapyPage() {
           </Table.Body>
         </Table.Root>
       </div>
+      ) : (
+        <div className="card"><p className="muted">Enter a patient ID to load regimens.</p></div>
+      )}
     </section>
   );
 }

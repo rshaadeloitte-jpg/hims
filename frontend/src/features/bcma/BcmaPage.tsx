@@ -1,12 +1,9 @@
 import { useState } from "react";
-import { useBcmaScans, useRecordBcmaScan } from "./queries";
+import { useRecordBcmaScan } from "./queries";
 
 export function BcmaPage() {
-  const { data: scans = [], isLoading } = useBcmaScans();
   const recordScan = useRecordBcmaScan();
-  const [form, setForm] = useState({ patientId: "", drugId: "" });
-
-  if (isLoading) return <p className="muted">Loading BCMA scans…</p>;
+  const [form, setForm] = useState({ patientId: "", drugIen: "", drugName: "" });
 
   return (
     <section className="page">
@@ -16,21 +13,17 @@ export function BcmaPage() {
         <div className="form-grid">
           <label>Patient ID</label>
           <input value={form.patientId} onChange={(e) => setForm({ ...form, patientId: e.target.value })} />
-          <label>Drug ID</label>
-          <input value={form.drugId} onChange={(e) => setForm({ ...form, drugId: e.target.value })} />
+          <label>Drug IEN</label>
+          <input value={form.drugIen} onChange={(e) => setForm({ ...form, drugIen: e.target.value })} />
+          <label>Drug Name</label>
+          <input value={form.drugName} onChange={(e) => setForm({ ...form, drugName: e.target.value })} />
         </div>
-        <button className="btn btn-primary" onClick={() => recordScan.mutate({ patientId: Number(form.patientId), drugId: Number(form.drugId) })}>
+        <button className="btn btn-primary" onClick={() => recordScan.mutate({ patientId: Number(form.patientId), drugIen: form.drugIen, drugName: form.drugName })}>
           Record Scan
         </button>
       </div>
       <div className="card">
-        <table className="table">
-          <thead><tr><th>Patient</th><th>Drug</th><th>Scanned At</th><th>Status</th></tr></thead>
-          <tbody>
-            {scans.map((s) => <tr key={s.id}><td>{s.patientName}</td><td>{s.drugName}</td><td>{s.scannedAt}</td><td>{s.status}</td></tr>)}
-            {scans.length === 0 && <tr><td colSpan={4} className="muted">No scans.</td></tr>}
-          </tbody>
-        </table>
+        <p className="muted">Scan history is not available.</p>
       </div>
     </section>
   );

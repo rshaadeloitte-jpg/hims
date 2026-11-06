@@ -137,8 +137,7 @@ function toAppointmentListQuery(q: AppointmentListQuery): Record<string, unknown
   if (q.doctorId !== undefined) out.doctorId = q.doctorId;
   if (q.departmentId !== undefined) out.departmentId = q.departmentId;
   if (q.patientId !== undefined) out.patientId = q.patientId;
-  if (q.dateFrom) out.dateFrom = q.dateFrom;
-  if (q.dateTo) out.dateTo = q.dateTo;
+  if (q.date) out.date = q.date;
   if (q.page !== undefined) out.page = q.page;
   if (q.size !== undefined) out.size = q.size;
   return out;
@@ -212,7 +211,7 @@ export const appointmentApi = {
     request<Doctor[]>(APPT_BASE, "/api/v1/doctors/schedules", { query: { departmentId } }),
 
   /** GET /api/v1/departments — for the Department -> Doctor cascade. */
-  departments: () => request<Department[]>(APPT_BASE, "/api/v1/departments"),
+  departments: () => request<Department[]>(APPT_BASE, "/api/v1/masters/departmentmaster"),
 };
 
 /** queue-service wrappers (:8089). */

@@ -15,14 +15,19 @@ export async function rcmJson<T>(url: string, options?: RequestInit): Promise<T>
   return res.json();
 }
 
-export interface Claim {
-  id: number;
-  patientName: string;
-  scheme: string;
-  amount: number;
-  status: string;
-  submittedAt: string;
+export interface NhcxRequest {
+  requestId: number;
+  kind: number;
+  patientId: number;
+  billId?: number;
+  admissionId?: number;
+  statusCode: number;
+  requestPayload: string;
+  responsePayload?: string;
+  correlationId: string;
 }
+
+export type Claim = NhcxRequest;
 
 export interface DMApprovalRecord extends Claim {
   approvalStage: "pending" | "dlh_approval" | "dm_approval" | "approved" | "rejected";
@@ -46,14 +51,14 @@ export interface ChiranjeeviScheme {
 }
 
 export function useClaims() {
-  return useQuery({ queryKey: ["rcm-claims"], queryFn: () => rcmJson<Claim[]>(`${RCM_BASE}/v1/rcm/claims`) });
+  return useQuery({ queryKey: ["rcm-claims"], queryFn: () => rcmJson<Claim[]>(`${RCM_BASE}/v1/claims`), enabled: false });
 }
 
 export function useSubmitClaim() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: Partial<Claim>) =>
-      rcmJson<Claim>(`${RCM_BASE}/v1/rcm/claims`, { method: "POST", body: JSON.stringify(input) }),
+    mutationFn: (input: Record<string, unknown>) =>
+      rcmJson<Claim>(`${RCM_BASE}/v1/claims`, { method: "POST", body: JSON.stringify(input) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rcm-claims"] }),
   });
 }
@@ -61,8 +66,8 @@ export function useSubmitClaim() {
 export function useClaimDetail(claimId: number) {
   return useQuery({
     queryKey: ["rcm-claim", claimId],
-    queryFn: () => rcmJson<Claim>(`${RCM_BASE}/v1/rcm/claims/${claimId}`),
-    enabled: !!claimId,
+    queryFn: () => rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}`),
+    enabled: false,
   });
 }
 
@@ -70,7 +75,7 @@ export function useApproveClaim() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (claimId: number) =>
-      rcmJson<Claim>(`${RCM_BASE}/v1/rcm/claims/${claimId}/approve`, { method: "PATCH" }),
+      rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}/approve`, { method: "PATCH" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rcm-claims"] }),
   });
 }
@@ -79,7 +84,7 @@ export function useRejectClaim() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (claimId: number) =>
-      rcmJson<Claim>(`${RCM_BASE}/v1/rcm/claims/${claimId}/reject`, { method: "PATCH" }),
+      rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}/reject`, { method: "PATCH" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["rcm-claims"] }),
   });
 }

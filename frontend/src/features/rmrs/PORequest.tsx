@@ -92,7 +92,7 @@ export function PORequest({ onSubmitted }: PORequestProps) {
   const onSubmit = async (values: PoRequestValues) => {
     try {
       const payload = { ...values, totalEstimatedAmount: totalAmount };
-      const resp = await fetch("/api/v1/po/requisitions", {
+      const resp = await fetch("/api/v1/rmrs/po-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

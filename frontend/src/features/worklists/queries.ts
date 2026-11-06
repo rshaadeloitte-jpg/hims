@@ -35,6 +35,19 @@ export interface WorklistPatient {
   totalTasks: number;
 }
 
+export interface WorklistTab {
+  name: string;
+  open: number;
+  total: number;
+}
+
+export interface WorklistSummary {
+  admissionId: number;
+  tabs: WorklistTab[];
+  openTasks: number;
+  totalTasks: number;
+}
+
 export interface NursingTaskItem {
   taskId: number;
   admissionId: number;
@@ -96,23 +109,11 @@ export const worklistQueryKeys = {
 
 // ---- Worklist patients -----------------------------------------------------
 
-export function useWorklistPatients(filter?: Record<string, unknown>) {
-  return useQuery<WorklistPatient[]>({
-    queryKey: worklistQueryKeys.patients(filter),
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (filter) {
-        for (const [k, v] of Object.entries(filter)) {
-          if (v !== undefined && v !== null && v !== "" && v !== "ALL") {
-            params.set(k, String(v));
-          }
-        }
-      }
-      const qs = params.toString();
-      return nrsJson<WorklistPatient[]>(
-        `${NURSING_BASE}/api/v1/nursing/worklist${qs ? `?${qs}` : ""}`,
-      );
-    },
+export function useWorklistPatients(admissionId?: number) {
+  return useQuery<WorklistSummary>({
+    queryKey: ["worklist", "patients", admissionId],
+    queryFn: () => nrsJson<WorklistSummary>(`${NURSING_BASE}/api/v1/nursing/worklist/${admissionId}`),
+    enabled: !!admissionId && admissionId > 0,
   });
 }
 

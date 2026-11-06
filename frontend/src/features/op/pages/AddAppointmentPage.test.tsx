@@ -27,6 +27,13 @@ describe("AddAppointmentPage", () => {
     expect(screen.getByLabelText(/find patient/i)).toBeInTheDocument();
   });
 
+  it("shows department master description text", async () => {
+    render(wrap());
+    const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;
+    await waitFor(() => expect(dept.options.length).toBeGreaterThan(1));
+    expect(screen.getByText("General Medicine")).toBeInTheDocument();
+  });
+
   it("disables the Department select until departments are loaded (cascade rule)", async () => {
     render(wrap());
     const dept = (await screen.findByLabelText(/department/i)) as HTMLSelectElement;

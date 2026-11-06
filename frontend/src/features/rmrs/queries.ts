@@ -45,35 +45,30 @@ async function rmrsJson<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface JournalEntry {
-  journalId: number;
+export interface JournalVoucher {
+  id: number;
+  voucherId?: number;
   voucherNo: string;
-  entryType: string;
-  entryDate: string;
   narration: string;
-  referenceType?: string;
-  referenceId?: number;
-  status: string;
-  totalDebit: number;
-  totalCredit: number;
-  isPosted: boolean;
-  postedAt?: string;
-  createdBy: number;
-  createdAt: string;
-  legs: JournalLeg[];
+  voucherDate: string;
+  docStatus: number;
+  postedBy?: number;
+  postedDatetime?: string;
+  reversedBy?: number;
+  reversedDatetime?: string;
 }
 
-export interface JournalLeg {
-  legId: number;
-  journalId: number;
-  accountId: number;
-  accountName: string;
-  costCenterId?: number;
-  costCenterName?: string;
+export type JournalEntry = JournalVoucher;
+
+export interface JournalVoucherLeg {
+  id: number;
+  voucherId: number;
+  ledgerId: number;
   debit: number;
   credit: number;
-  narration?: string;
 }
+
+export type JournalLeg = JournalVoucherLeg;
 
 export interface BankAccount {
   accountId: number;
@@ -87,55 +82,40 @@ export interface BankAccount {
   currency: string;
 }
 
-export interface BankStatementRow {
-  lineId: number;
-  statementDate: string;
-  description: string;
-  referenceNo?: string;
-  debitAmount: number;
-  creditAmount: number;
-  balance?: number;
-  isMatched: boolean;
-  matchedJournalId?: number;
-  matchStatus: "UNMATCHED" | "MATCHED" | "DISPUTED" | "PARTIAL";
+export interface BankStatement {
+  id: number;
+  statementLineId?: number;
+  bankLedgerId: number;
+  txnDate: string;
+  amount: number;
+  direction: string;
+  description?: string;
+  externalRef?: string;
+  docStatus: number;
+  matchedEntryId?: number;
+  matchedCollectionId?: number;
 }
 
-export interface BankReconciliation {
-  statementId: number;
-  bankAccountId: number;
-  accountNumber: string;
-  statementDate: string;
-  fromDate: string;
-  toDate: string;
-  openingBalance: number;
-  closingBalance: number;
-  totalDebits: number;
-  totalCredits: number;
-  netChange: number;
-  unmatchedCount: number;
-  matchedCount: number;
-  disputedCount: number;
-  lines: BankStatementRow[];
+export type BankStatementRow = BankStatement;
+
+export type BankReconciliation = BankStatement[];
+
+export interface PoRequest {
+  id: number;
+  requestId?: number;
+  requestNo: string;
+  requestingDeptId?: number;
+  headId: number;
+  ledgerId?: number;
+  amount: number;
+  remarks?: string;
+  docStatus: number;
+  approvedBy?: number;
+  approvedDatetime?: string;
+  issuedPoId?: number;
 }
 
-export interface PoRequisition {
-  requisitionId: number;
-  requisitionNo: string;
-  departmentId: number;
-  departmentName: string;
-  requestedBy: string;
-  priority: string;
-  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "CANCELLED" | "ORDERED";
-  justification: string;
-  totalEstimatedAmount: number;
-  expectedDeliveryDate?: string;
-  vendorSuggestion?: string;
-  createdBy: number;
-  createdAt: string;
-  updatedAt: string;
-  lines: PoRequisitionLine[];
-  approvals: PoApproval[];
-}
+export type PoRequisition = PoRequest;
 
 export interface PoRequisitionLine {
   lineId: number;
@@ -206,14 +186,14 @@ export interface PoRequisitionListFilter {
 export function useJournalEntries() {
   return useQuery<JournalEntry[]>({
     queryKey: rmrsQueryKeys.journals,
-    queryFn: () => rmrsJson<JournalEntry[]>(`${RMRS_BASE}/v1/journals`),
+    queryFn: () => rmrsJson<JournalEntry[]>(`${RMRS_BASE}/v1/rmrs/journal-vouchers`),
   });
 }
 
 export function useJournalEntry(id: number) {
   return useQuery<JournalEntry>({
     queryKey: rmrsQueryKeys.journal(id),
-    queryFn: () => rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/journals/${id}`),
+    queryFn: () => rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/rmrs/journal-vouchers/${id}`),
     enabled: id > 0,
   });
 }
@@ -222,7 +202,7 @@ export function useCreateJournalEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: JournalEntryValues) =>
-      rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/journals`, {
+      rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/rmrs/journal-vouchers`, {
         method: "POST",
         body: JSON.stringify(payload),
       }),
@@ -236,7 +216,7 @@ export function usePostJournalEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) =>
-      rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/journals/${id}/post`, { method: "PUT" }),
+      rmrsJson<JournalEntry>(`${RMRS_BASE}/v1/rmrs/journal-vouchers/${id}/post`, { method: "POST" }),
     onSuccess: (_, id) => {
       void qc.invalidateQueries({ queryKey: rmrsQueryKeys.journal(id) });
     },
@@ -263,7 +243,7 @@ export function useBankReconciliation(filter: BankReconciliationFilterValues) {
       params.set("status", filter.status);
       params.set("page", String(filter.page ?? 0));
       params.set("size", String(filter.size ?? 50));
-      return rmrsJson<BankReconciliation>(`${RMRS_BASE}/v1/bank/reconciliation?${params}`);
+      return rmrsJson<BankReconciliation>(`${RMRS_BASE}/v1/rmrs/bank-statements?${params}`);
     },
     enabled: filter.bankAccountId > 0,
   });
@@ -274,7 +254,7 @@ export function useImportStatement() {
   return useMutation({
     mutationFn: (payload: { bankAccountId: number; lines: unknown[] }) =>
       rmrsJson<{ statementId: number; importedRows: number }>(
-        `${RMRS_BASE}/v1/bank/reconciliation/statement`,
+        `${RMRS_BASE}/v1/rmrs/bank-statements`,
         {
           method: "POST",
           body: JSON.stringify(payload),
@@ -291,7 +271,7 @@ export function useMatchStatement() {
   return useMutation({
     mutationFn: (payload: BankMatchValues | BankMatchValues[]) =>
       rmrsJson<{ matchId: number; status: string }>(
-        `${RMRS_BASE}/v1/bank/reconciliation/match`,
+        `${RMRS_BASE}/v1/rmrs/bank-statements`,
         {
           method: "POST",
           body: JSON.stringify(payload),
@@ -316,7 +296,7 @@ export function usePoRequisitions(filter?: PoRequisitionListFilter) {
       if (filter?.toDate) params.set("toDate", filter.toDate);
       params.set("page", String(filter?.page ?? 0));
       params.set("size", String(filter?.size ?? 20));
-      return rmrsJson<PoRequisition[]>(`${RMRS_BASE}/v1/po/requisitions?${params}`);
+      return rmrsJson<PoRequisition[]>(`${RMRS_BASE}/v1/rmrs/po-requests?${params}`);
     },
   });
 }
@@ -324,7 +304,7 @@ export function usePoRequisitions(filter?: PoRequisitionListFilter) {
 export function usePoRequisition(id: number) {
   return useQuery<PoRequisition>({
     queryKey: rmrsQueryKeys.poRequisition(id),
-    queryFn: () => rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/po/requisitions/${id}`),
+    queryFn: () => rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/rmrs/po-requests/${id}`),
     enabled: id > 0,
   });
 }
@@ -333,7 +313,7 @@ export function useCreatePoRequisition() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: PoRequestValues) =>
-      rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/po/requisitions`, {
+      rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/rmrs/po-requests`, {
         method: "POST",
         body: JSON.stringify(payload),
       }),
@@ -346,11 +326,14 @@ export function useCreatePoRequisition() {
 export function usePoRequisitionAction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { id: number; action: PoRequestActionValues }) =>
-      rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/po/requisitions/${payload.id}/action`, {
-        method: "PUT",
+    mutationFn: (payload: { id: number; action: PoRequestActionValues }) => {
+      const a = String((payload.action as { action?: string })?.action ?? payload.action).toLowerCase();
+      const endpoint = a.includes("reject") ? "reject" : a.includes("issue") ? "issue" : "approve";
+      return rmrsJson<PoRequisition>(`${RMRS_BASE}/v1/rmrs/po-requests/${payload.id}/${endpoint}`, {
+        method: "POST",
         body: JSON.stringify(payload.action),
-      }),
+      });
+    },
     onSuccess: (_, { id }) => {
       void qc.invalidateQueries({ queryKey: rmrsQueryKeys.poRequisition(id) });
       void qc.invalidateQueries({ queryKey: ["rmrs", "po", "requisitions"] });
@@ -361,7 +344,7 @@ export function usePoRequisitionAction() {
 export function usePoDepartments() {
   return useQuery<PoDepartment[]>({
     queryKey: rmrsQueryKeys.poDepartments,
-    queryFn: () => rmrsJson<PoDepartment[]>(`${RMRS_BASE}/v1/po/departments`),
+    queryFn: () => rmrsJson<PoDepartment[]>(`${RMRS_BASE}/v1/rmrs/po-requests`),
   });
 }
 
@@ -370,7 +353,7 @@ export function usePoItems(search?: string) {
     queryKey: rmrsQueryKeys.poItems(search),
     queryFn: () => {
       const params = search ? `?search=${encodeURIComponent(search)}` : "";
-      return rmrsJson<PoItem[]>(`${RMRS_BASE}/v1/po/items${params}`);
+      return rmrsJson<PoItem[]>(`${RMRS_BASE}/v1/rmrs/po-requests${params}`);
     },
     staleTime: 5 * 60 * 1000,
   });

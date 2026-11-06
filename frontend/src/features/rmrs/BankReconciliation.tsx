@@ -57,12 +57,22 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
     try {
       // In production: replace with useBankReconciliation query
       const resp = await fetch(
-        `/api/v1/bank/reconciliation?bankAccountId=${selectedAccount}&fromDate=${fromDate}&toDate=${toDate}`,
+        `/api/v1/rmrs/bank-statements?bankAccountId=${selectedAccount}&fromDate=${fromDate}&toDate=${toDate}`,
       );
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-      setStatementRows(data.lines ?? []);
-      setUnmatchedJournals(data.unmatchedJournals ?? []);
+      const rows = Array.isArray(data) ? data : [];
+      setStatementRows(rows.map((r: any) => ({
+        lineId: r.statementLineId ?? r.id ?? 0,
+        transactionDate: r.txnDate ?? "",
+        description: r.description ?? "",
+        referenceNo: r.externalRef,
+        debitAmount: r.direction === "DEBIT" ? Number(r.amount ?? 0) : 0,
+        creditAmount: r.direction === "CREDIT" ? Number(r.amount ?? 0) : 0,
+        matchStatus: r.docStatus === 2 ? "MATCHED" : r.docStatus === 3 ? "DISPUTED" : "UNMATCHED",
+        matchedJournalId: r.matchedEntryId ?? undefined,
+      })));
+      setUnmatchedJournals([]);
     } catch (err) {
       console.error("Failed to load reconciliation:", err);
     } finally {
@@ -94,15 +104,24 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
 
       setStatementRows(parsed);
 
-      // POST to backend
-      const resp = await fetch("/api/v1/bank/reconciliation/statement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bankAccountId: selectedAccount, lines: parsed }),
-      });
+      // POST to backend (single line at a time)
+      for (const row of parsed) {
+        await fetch("/api/v1/rmrs/bank-statements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bankLedgerId: selectedAccount,
+            txnDate: row.transactionDate,
+            amount: row.debitAmount || row.creditAmount,
+            direction: row.debitAmount > 0 ? "DEBIT" : "CREDIT",
+            description: row.description,
+            externalRef: row.referenceNo,
+          }),
+        });
+      }
+      const resp = { ok: true };
       if (resp.ok) {
-        const data = await resp.json();
-        onImported?.(data.statementId);
+        onImported?.(selectedAccount);
       }
     } catch (err) {
       console.error("Import failed:", err);
@@ -113,7 +132,7 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
 
   const handleMatch = async (row: StatementRow, journalId: number) => {
     try {
-      await fetch("/api/v1/bank/reconciliation/match", {
+      await fetch("/api/v1/rmrs/bank-statements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -138,7 +157,7 @@ export function BankReconciliation({ onImported }: BankReconciliationProps) {
 
   const handleDispute = async (row: StatementRow) => {
     try {
-      await fetch("/api/v1/bank/reconciliation/dispute", {
+      await fetch("/api/v1/rmrs/bank-statements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ statementLineId: row.lineId }),

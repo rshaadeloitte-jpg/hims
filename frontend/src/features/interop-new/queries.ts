@@ -11,11 +11,14 @@ async function j<T>(url: string): Promise<T> {
 
 export interface SyncStatus {
   id: number;
-  systemName: string;
-  lastSync: string;
-  status: string;
+  drugCode: string;
+  drugName: string;
+  syncStatus: number;
+  syncAttempts?: number;
+  lastSyncAt?: string;
+  lastError?: string;
 }
 
 export function useSyncStatuses() {
-  return useQuery({ queryKey: ["interop-sync"], queryFn: () => j<SyncStatus[]>(`${INTEROP_BASE}/v1/interop/sync-statuses`) });
+  return useQuery({ queryKey: ["interop-sync"], queryFn: () => j<SyncStatus[]>(`${INTEROP_BASE}/v1/interop/eaushadhi/sync`) });
 }

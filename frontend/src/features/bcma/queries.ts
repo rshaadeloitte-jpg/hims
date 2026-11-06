@@ -215,7 +215,8 @@ export function useResolveStockAlert() {
 export function useBcmaScans() {
   return useQuery<any[]>({
     queryKey: ["bcma", "bcma-scans"],
-    queryFn: () => bcmaJson<any[]>(`${BCMA_BASE}/api/v1/bcma/bcma-scans`),
+    queryFn: () => bcmaJson<any[]>(`${BCMA_BASE}/api/bcma/scan`),
+    enabled: false,
   });
 }
 
@@ -223,9 +224,8 @@ export function useRecordBcmaScan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: any) =>
-      bcmaJson<any>(`${BCMA_BASE}/api/v1/bcma/record-bcma-scan`, {
+      bcmaJson<any>(`${BCMA_BASE}/api/bcma/scan?patientId=${payload.patientId}&drugIen=${encodeURIComponent(String(payload.drugIen ?? payload.drugId))}&drugName=${encodeURIComponent(String(payload.drugName ?? ""))}`, {
         method: "POST",
-        body: JSON.stringify(payload),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bcma"] }),
   });

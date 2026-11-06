@@ -61,9 +61,9 @@ const sampleSearch: PatientSearchHit[] = [
 /* ── appointment-service ─────────────────────────────── */
 
 const sampleDepartments: Department[] = [
-  { id: 1, name: "General Medicine", isOpd: true, isActive: true },
-  { id: 2, name: "Pediatrics", isOpd: true, isActive: true },
-  { id: 3, name: "Dermatology", isOpd: true, isActive: true },
+  { id: 1, description: "General Medicine", code: "GM", isclinical: true, status: true },
+  { id: 2, description: "Pediatrics", code: "PED", isclinical: true, status: true },
+  { id: 3, description: "Dermatology", code: "DERM", isclinical: true, status: true },
 ];
 
 const sampleDoctors: Doctor[] = [
@@ -135,7 +135,7 @@ export const handlers = [
   http.get("/api/v1/patients/:id/sponsors", () => ok(samplePatient.sponsors ?? [])),
 
   /* ── appointment-service ── */
-  http.get("/api/v1/departments", () => ok(sampleDepartments)),
+  http.get("/api/v1/masters/departmentmaster", () => ok(sampleDepartments)),
   http.get("/api/v1/doctors/schedules", ({ request }) => {
     const url = new URL(request.url);
     const deptId = Number(url.searchParams.get("departmentId") ?? "0");

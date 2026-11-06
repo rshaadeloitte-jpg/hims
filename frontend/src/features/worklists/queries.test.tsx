@@ -32,75 +32,21 @@ afterEach(() => {
 });
 
 describe("useWorklistPatients", () => {
-  it("fetches worklist patients", async () => {
+  it("fetches worklist by admission", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => [
-        {
-          id: 1,
-          name: "John Doe",
-          mrn: "MRN001",
-          admissionId: 100,
-          wardName: "ICU",
-          bedLabel: "A1",
-          goalsCount: 2,
-          medsCount: 5,
-          labsCount: 3,
-          investigationsCount: 1,
-          openTasks: 4,
-          totalTasks: 8,
-        },
-      ],
+      json: async () => ({ admissionId: 100, tabs: [] }),
     });
+    const { result } = renderHook(() => useWorklistPatients(100), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/nursing/worklist/100", expect.any(Object));
+  });
 
+  it("is disabled when no admission", () => {
     const { result } = renderHook(() => useWorklistPatients(), { wrapper: wrapper() });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(result.current.data).toHaveLength(1);
-    expect(result.current.data?.[0].mrn).toBe("MRN001");
-    expect(result.current.data?.[0].openTasks).toBe(4);
-  });
-
-  it("passes filter as query params", async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => [],
-    });
-
-    const { result } = renderHook(
-      () => useWorklistPatients({ status: "PENDING", priority: "HIGH", dateFrom: "2026-01-01" }),
-      { wrapper: wrapper() },
-    );
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/nursing/worklist?status=PENDING&priority=HIGH&dateFrom=2026-01-01",
-      expect.any(Object),
-    );
-  });
-
-  it("skips ALL and empty filter values", async () => {
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => [],
-    });
-
-    const { result } = renderHook(
-      () => useWorklistPatients({ status: "ALL", priority: "ALL", assignedTo: "" }),
-      { wrapper: wrapper() },
-    );
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/nursing/worklist",
-      expect.any(Object),
-    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.current.fetchStatus).toBe("idle");
   });
 });
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { rcmJson } from "./queries";
-import type { Claim } from "./queries";
+import type { DischargeBill } from "./queries";
 
 interface DischargeVerificationProps {
   patientId: number;
@@ -35,7 +35,7 @@ export function DischargeVerification({ patientId, onVerified }: DischargeVerifi
   const qc = useQueryClient();
   const { data: bills, isLoading } = useQuery({
     queryKey: ["rcm-discharge", patientId],
-    queryFn: () => rcmJson<Claim[]>(`/api/v1/rcm/patients/${patientId}/bills`),
+    queryFn: () => rcmJson<DischargeBill[]>(`/api/v1/rcm/patients/${patientId}/bills`),
     enabled: !!patientId,
   });
 
@@ -79,7 +79,7 @@ export function DischargeVerification({ patientId, onVerified }: DischargeVerifi
             </tr>
           </thead>
           <tbody>
-            {bills.map((bill: Claim) => (
+            {bills.map((bill: DischargeBill) => (
               <tr key={bill.id}>
                 <td>#{bill.id}</td>
                 <td>₹{bill.amount.toLocaleString("en-IN")}</td>

@@ -70,6 +70,7 @@ export function AppointmentListPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<StatusFilter>((searchParams.get("filter") as StatusFilter) || "all");
   const [page, setPage] = useState<number>(Number(searchParams.get("page") || "0") || 0);
+  const [date] = useState<string>(new Date().toISOString().slice(0, 10));
   const [highlight, _setHighlight] = useState<number | null>(
     searchParams.get("highlight") ? Number(searchParams.get("highlight")) : null,
   );
@@ -80,7 +81,7 @@ export function AppointmentListPage() {
   const [rescheduleReason, setRescheduleReason] = useState<string>("");
   const { patient: highlightedPatient } = usePatient(highlight ?? undefined);
 
-  const list = useAppointmentList({ status: filter === "all" ? "all" : filter, page, size: PAGE_SIZE });
+  const list = useAppointmentList({ date, status: filter === "all" ? "all" : filter, page, size: PAGE_SIZE });
   const cancel = useCancelAppointment();
   const noShow = useNoShowAppointment();
   const checkIn = useCheckInAppointment();

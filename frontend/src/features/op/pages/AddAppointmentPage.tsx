@@ -126,7 +126,7 @@ export function AddAppointmentPage() {
             >
               <option value="">— Select —</option>
               {(departments.data ?? []).map((d) => (
-                <option key={d.id} value={d.id}>{d.name}</option>
+                <option key={d.id} value={d.id}>{d.description ?? d.code ?? d.id}</option>
               ))}
             </HimsSelect>
           </FormField>

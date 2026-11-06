@@ -46,12 +46,13 @@ export function RcmNewPage() {
           </button>
         </div>
       )}
+      <p className="muted">Claim list, detail, approve and reject are not available.</p>
       <div className="card">
         <table className="table">
           <thead><tr><th>Patient</th><th>Scheme</th><th>Amount</th><th>Status</th><th>Submitted</th></tr></thead>
           <tbody>
-            {claims.map((c) => <tr key={c.id}><td>{c.patientName}</td><td>{c.scheme}</td><td>{c.amount}</td><td>{c.status}</td><td>{c.submittedAt}</td></tr>)}
-            {claims.length === 0 && <tr><td colSpan={5} className="muted">No claims.</td></tr>}
+            {claims.map((c) => <tr key={c.requestId}><td>{c.requestId}</td><td>{c.correlationId}</td><td>{c.statusCode}</td></tr>)}
+            {claims.length === 0 && <tr><td colSpan={3} className="muted">No claims.</td></tr>}
           </tbody>
         </table>
       </div>
