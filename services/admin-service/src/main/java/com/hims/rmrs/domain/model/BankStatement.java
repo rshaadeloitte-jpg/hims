@@ -16,10 +16,10 @@ public class BankStatement extends RmrsAuditableBase {
     public static final short STATUS_DISPUTED = 3;
 
     @Id
-    @Column(name = "id") private Long id;
+    @Column(name = "statement_line_id") private Long id;
     @Override public Long getId() { return id; }
     @Override public void setId(Long v) { this.id = v; }
-    @Column(name = "statement_line_id", nullable = false) private Long statementLineId;
+    @Column(name = "statement_line_id", insertable = false, updatable = false) private Long statementLineId;
     public Long getStatementLineId() { return statementLineId; } public void setStatementLineId(Long v) { this.statementLineId = v; }
     @Column(name = "bank_ledger_id", nullable = false) private Long bankLedgerId;
     public Long getBankLedgerId() { return bankLedgerId; } public void setBankLedgerId(Long v) { this.bankLedgerId = v; }

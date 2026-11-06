@@ -17,10 +17,10 @@ public class PoRequest extends RmrsAuditableBase {
     public static final short STATUS_REJECTED = 4;
 
     @Id
-    @Column(name = "id") private Long id;
+    @Column(name = "request_id") private Long id;
     @Override public Long getId() { return id; }
     @Override public void setId(Long v) { this.id = v; }
-    @Column(name = "request_id", nullable = false) private Long requestId;
+    @Column(name = "request_id", insertable = false, updatable = false) private Long requestId;
     public Long getRequestId() { return requestId; } public void setRequestId(Long v) { this.requestId = v; }
     @Column(name = "request_no", nullable = false, length = 64, unique = true) private String requestNo;
     public String getRequestNo() { return requestNo; } public void setRequestNo(String v) { this.requestNo = v; }

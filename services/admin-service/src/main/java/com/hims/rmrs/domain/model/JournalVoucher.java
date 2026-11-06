@@ -16,10 +16,10 @@ public class JournalVoucher extends RmrsAuditableBase {
     public static final short STATUS_REVERSED = 3;
 
     @Id
-    @Column(name = "id") private Long id;
+    @Column(name = "voucher_id") private Long id;
     @Override public Long getId() { return id; }
     @Override public void setId(Long v) { this.id = v; }
-    @Column(name = "voucher_id", nullable = false) private Long voucherId;
+    @Column(name = "voucher_id", insertable = false, updatable = false) private Long voucherId;
     public Long getVoucherId() { return voucherId; } public void setVoucherId(Long v) { this.voucherId = v; }
     @Column(name = "voucher_no", nullable = false, length = 64, unique = true) private String voucherNo;
     public String getVoucherNo() { return voucherNo; } public void setVoucherNo(String v) { this.voucherNo = v; }

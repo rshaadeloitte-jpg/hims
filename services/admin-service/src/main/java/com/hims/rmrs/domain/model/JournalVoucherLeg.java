@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 public class JournalVoucherLeg extends RmrsAuditableBase {
 
     @Id
-    @Column(name = "id") private Long id;
+    @Column(name = "leg_id") private Long id;
     @Override public Long getId() { return id; }
     @Override public void setId(Long v) { this.id = v; }
     @Column(name = "voucher_id", nullable = false) private Long voucherId;
