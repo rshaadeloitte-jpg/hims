@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, SimpleGrid, Table } from "@chakra-ui/react";
 import { FormField, HimsSelect, TextInput } from "../../components/ui";
-import { useIndents, useCreateIndent, useUpdateIndentStatus } from "./queries";
+import { useIndents, useCreateIndent } from "./queries";
 
 const STATUSES = ["REQUESTED", "APPROVED", "DISPATCHED", "RECEIVED", "REJECTED"] as const;
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -20,7 +20,6 @@ type IndentFormState = {
 export function IndentWorkflow() {
   const { data: indents = [], isLoading } = useIndents();
   const createIndent = useCreateIndent();
-  const updateStatus = useUpdateIndentStatus();
   const [showForm, setShowForm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -135,12 +134,13 @@ export function IndentWorkflow() {
                   <HimsSelect
                     aria-label={`Status for indent ${ind.id}`}
                     value={ind.status}
-                    onChange={(e) => updateStatus.mutate({ id: ind.id, status: e.target.value as typeof ind.status })}
+                    disabled
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </HimsSelect>
+                  <span className="muted">Status changes unavailable</span>
                 </Table.Cell>
               </Table.Row>
             ))}

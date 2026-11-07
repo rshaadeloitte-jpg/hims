@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button, SimpleGrid, Table } from "@chakra-ui/react";
 import { FormField, HimsSelect, TextInput } from "../../components/ui";
-import { useBloodBags, useBloodBankStock, useCreateBloodBag, useUpdateBloodBagStatus } from "./queries";
+import { useBloodBags, useCreateBloodBag } from "./queries";
 import { bloodBagSchema } from "./zodSchema";
 
 const COMPONENTS = ["WHOLE_BLOOD", "PLASMA", "PLATELETS", "RED_CELLS", "CRYOPRECIPITATE"];
@@ -9,9 +9,7 @@ const STATUSES = ["AVAILABLE", "RESERVED", "ISSUED", "EXPIRED", "DISCARDED"];
 
 export function BloodBankPage() {
   const { data: bags = [], isLoading } = useBloodBags();
-  const { data: stock } = useBloodBankStock();
   const createBag = useCreateBloodBag();
-  const updateStatus = useUpdateBloodBagStatus();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ bloodGroup: "", component: "", donorId: "", volume: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,16 +36,10 @@ export function BloodBankPage() {
         </Button>
       </header>
 
-      {stock && (
-        <div className="card">
-          <h2>Stock Summary</h2>
-          <div className="stock-grid">
-            {Object.entries(stock).map(([group, count]) => (
-              <div key={group} className="stock-item"><span>{group}</span><strong>{count}</strong></div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="card">
+        <h2>Stock Summary</h2>
+        <p className="muted">Stock summary is not available yet.</p>
+      </div>
 
       {showForm && (
         <div className="card">
@@ -93,9 +85,10 @@ export function BloodBankPage() {
                 <Table.Cell>{b.expiryDate}</Table.Cell>
                 <Table.Cell>{b.status}</Table.Cell>
                 <Table.Cell>
-                  <HimsSelect aria-label={`Status for bag ${b.bagNo}`} value={b.status} onChange={(e) => updateStatus.mutate({ id: b.id, status: e.target.value })}>
+                  <HimsSelect aria-label={`Status for bag ${b.bagNo}`} value={b.status} disabled>
                     {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </HimsSelect>
+                  <span className="muted">Status changes unavailable</span>
                 </Table.Cell>
               </Table.Row>
             ))}
