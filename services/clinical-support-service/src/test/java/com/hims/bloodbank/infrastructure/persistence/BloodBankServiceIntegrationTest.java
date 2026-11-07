@@ -28,6 +28,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -91,6 +93,9 @@ class BloodBankServiceIntegrationTest {
         Number seq = (Number) em.createNativeQuery("SELECT nextval('ihms_bloodbank.t_blooddonor_seq')")
                 .getSingleResult();
         assertThat(seq.longValue()).isPositive();
+        Number v3Seq = (Number) em.createNativeQuery("SELECT nextval('ihms_bloodbank.t_bloodcrossmatchingresult_seq')")
+                .getSingleResult();
+        assertThat(v3Seq.longValue()).isPositive();
 
         // ---- donor registry + touch -------------------------------------------------
         BloodDonor donor = donorService.create("R. Kumar", "O+", null, 1L);
@@ -108,17 +113,20 @@ class BloodBankServiceIntegrationTest {
 
         // ---- BR-BLD-001 machine end-to-end -------------------------------------------
         BloodRequisition r = requisitionService.create(501L, "O+", 700,
-                new Timestamp(System.currentTimeMillis()), 72, null);
+                new Timestamp(System.currentTimeMillis()), 72,
+                List.of(Map.of("component", "PRBC", "volumeMl", 700)));
         assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_NEW);
 
         // partial cross-match: 350 < 700 -> stays 1
-        requisitionService.crossmatch(r.getRequisitionId(), b1.getBagId());
+        var cm1 = requisitionService.crossmatch(r.getRequisitionId(), b1.getBagId());
+        requisitionService.recordCrossmatchResult(r.getRequisitionId(), cm1.getId(), "COMPATIBLE", "tester1", null, null);
         em.flush();
         r = requisitionService.get(r.getRequisitionId());
         assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_NEW);
 
         // full cross-match: cumulative 700 >= ordered 700 -> 2
-        requisitionService.crossmatch(r.getRequisitionId(), b2.getBagId());
+        var cm2 = requisitionService.crossmatch(r.getRequisitionId(), b2.getBagId());
+        requisitionService.recordCrossmatchResult(r.getRequisitionId(), cm2.getId(), "COMPATIBLE", "tester2", null, null);
         em.flush();
         r = requisitionService.get(r.getRequisitionId());
         assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_CROSS_MATCHED);
@@ -178,8 +186,10 @@ class BloodBankServiceIntegrationTest {
         BloodBag edge = bagService.create(donor.getDonorId(), "A+", 400,
                 LocalDate.now().plusDays(40), 1L);
         BloodRequisition rFresh = requisitionService.create(701L, "A+", 400,
-                new Timestamp(System.currentTimeMillis()), 72, null);
-        requisitionService.crossmatch(rFresh.getRequisitionId(), edge.getBagId());
+                new Timestamp(System.currentTimeMillis()), 72,
+                List.of(Map.of("component", "PRBC", "volumeMl", 400)));
+        var cmEdge = requisitionService.crossmatch(rFresh.getRequisitionId(), edge.getBagId());
+        requisitionService.recordCrossmatchResult(rFresh.getRequisitionId(), cmEdge.getId(), "COMPATIBLE", "tester", null, null);
         em.flush();
         assertThat(requisitionService.get(rFresh.getRequisitionId()).getStatus())
                 .isEqualTo(BloodRequisition.STATUS_CROSS_MATCHED);   // 400 >= 400
@@ -218,9 +228,12 @@ class BloodBankServiceIntegrationTest {
         BloodBag futureExpiry = bagService.create(donor.getDonorId(), "AB-", 300,
                 LocalDate.now().plusDays(10), 1L);          // untouched
         BloodRequisition r = requisitionService.create(901L, "AB-", 600,
-                new Timestamp(System.currentTimeMillis()), 72, null);
-        requisitionService.crossmatch(r.getRequisitionId(), todayExpiry.getBagId());
-        requisitionService.crossmatch(r.getRequisitionId(), futureExpiry.getBagId());   // keeps req at >=1? 600>=600 -> 2
+                new Timestamp(System.currentTimeMillis()), 72,
+                List.of(Map.of("component", "PRBC", "volumeMl", 600)));
+        var cmToday = requisitionService.crossmatch(r.getRequisitionId(), todayExpiry.getBagId());
+        requisitionService.recordCrossmatchResult(r.getRequisitionId(), cmToday.getId(), "COMPATIBLE", "tester", null, null);
+        var cmFuture = requisitionService.crossmatch(r.getRequisitionId(), futureExpiry.getBagId());   // keeps req at >=1? 600>=600 -> 2
+        requisitionService.recordCrossmatchResult(r.getRequisitionId(), cmFuture.getId(), "COMPATIBLE", "tester", null, null);
         em.flush();
 
         var summary = jobService.decrossExpired();
@@ -299,5 +312,126 @@ class BloodBankServiceIntegrationTest {
         // idempotent re-run
         var rerun = jobService.cancelStaleDonors();
         assertThat(rerun).containsEntry("cancelled", 0);
+    }
+
+    @Test
+    @Order(6)
+    void v3FlywayCrossmatchSafety_fullFlowOnRealPg() {
+        // ---- 1. Verify V3 table exists and sequence is active on real PG16 -----------
+        Number v3Count = (Number) em.createNativeQuery(
+                "SELECT count(*) FROM information_schema.tables "
+                + "WHERE table_schema='ihms_bloodbank' AND table_name='t_bloodcrossmatchingresult'").getSingleResult();
+        assertThat(v3Count.intValue()).isEqualTo(1);
+
+        // ---- 2. Donor and Bags ------------------------------------------------------
+        BloodDonor donorO = donorService.create("Donor O Negative", "O-", BloodDonor.DNR_FIT, 1L);
+        BloodDonor donorA = donorService.create("Donor A Positive", "A+", BloodDonor.DNR_FIT, 1L);
+        BloodDonor donorB = donorService.create("Donor B Positive", "B+", BloodDonor.DNR_FIT, 1L);
+
+        BloodBag bagO = bagService.create(donorO.getDonorId(), "O-", 350, LocalDate.now().plusDays(35), 1L);
+        BloodBag bagA = bagService.create(donorA.getDonorId(), "A+", 350, LocalDate.now().plusDays(35), 1L);
+        BloodBag bagB = bagService.create(donorB.getDonorId(), "B+", 350, LocalDate.now().plusDays(35), 1L);
+
+        // Patient requires O- blood (only O- is compatible)
+        BloodRequisition req = requisitionService.create(999L, "O-", 350,
+                new Timestamp(System.currentTimeMillis()), 72,
+                List.of(Map.of("component", "PRBC", "volumeMl", 350)));
+
+        // ---- 3. ABO/Rh Gate blocks incompatible bag A+ onto patient O- (409) ---------
+        var cmA = requisitionService.crossmatch(req.getRequisitionId(), bagA.getBagId());
+        em.flush();
+        assertThat(cmA.getResult()).isEqualTo("PENDING");
+        assertThat(bagRepository.findById(bagA.getBagId()).orElseThrow().getCrossMatched()).isFalse();
+
+        assertThatThrownBy(() -> requisitionService.recordCrossmatchResult(
+                req.getRequisitionId(), cmA.getId(), "COMPATIBLE", "dr.safety", null, "Gel Card"))
+                .isInstanceOf(com.hims.bloodbank.application.exceptions.BagConflictException.class)
+                .hasMessageContaining("Incompatible blood group");
+
+        // ---- 4. Issue refused while PENDING -----------------------------------------
+        var cmO = requisitionService.crossmatch(req.getRequisitionId(), bagO.getBagId());
+        em.flush();
+        assertThatThrownBy(() -> requisitionService.issue(req.getRequisitionId(), bagO.getBagId()))
+                .isInstanceOf(com.hims.bloodbank.application.exceptions.InvalidBloodBankRequestException.class);
+
+        // ---- 5. Record COMPATIBLE for compatible bag O- onto patient O- -------------
+        var compatibleResult = requisitionService.recordCrossmatchResult(
+                req.getRequisitionId(), cmO.getId(), "COMPATIBLE", "dr.safety", "Clear match", "Coombs");
+        em.flush();
+        assertThat(compatibleResult.getResult()).isEqualTo("COMPATIBLE");
+        assertThat(compatibleResult.getTestedBy()).isEqualTo("dr.safety");
+        assertThat(bagRepository.findById(bagO.getBagId()).orElseThrow().getCrossMatched()).isTrue();
+
+        // ---- 6. Issue bag O- succeeds after COMPATIBLE ------------------------------
+        BloodBag issued = requisitionService.issue(req.getRequisitionId(), bagO.getBagId());
+        em.flush();
+        assertThat(issued.getIssued()).isTrue();
+        assertThat(requisitionService.get(req.getRequisitionId()).getStatus())
+                .isEqualTo(BloodRequisition.STATUS_ISSUED);
+
+        // ---- 7. Read endpoints on real PG -------------------------------------------
+        var results = requisitionService.getCrossmatchResults(req.getRequisitionId());
+        assertThat(results).hasSizeGreaterThanOrEqualTo(2);
+        var singleResult = requisitionService.getCrossmatchResult(compatibleResult.getId());
+        assertThat(singleResult.getResult()).isEqualTo("COMPATIBLE");
+        assertThat(singleResult.getBagId()).isEqualTo(bagO.getBagId());
+
+        // ---- 8. INCOMPATIBLE releases bag reservation -------------------------------
+        BloodRequisition req2 = requisitionService.create(998L, "B+", 350,
+                new Timestamp(System.currentTimeMillis()), 72, null);
+        var cmB = requisitionService.crossmatch(req2.getRequisitionId(), bagB.getBagId());
+        em.flush();
+        assertThat(bagRepository.findById(bagB.getBagId()).orElseThrow().getRequisitionId())
+                .isEqualTo(req2.getRequisitionId());
+
+        requisitionService.recordCrossmatchResult(req2.getRequisitionId(), cmB.getId(),
+                "INCOMPATIBLE", "dr.safety", "Incompatible reaction", "Saline");
+        em.flush();
+        BloodBag releasedBag = bagRepository.findById(bagB.getBagId()).orElseThrow();
+        assertThat(releasedBag.getRequisitionId()).isNull(); // Reservation released
+        assertThat(releasedBag.getCrossMatched()).isFalse();
+
+        // ---- 9. Decross job sets isdecrossed=true in DB -----------------------------
+        backdate("UPDATE ihms_bloodbank.t_bloodbag "
+                + "SET cross_matched_test_date = now() - interval '50 hours', \"crosSMatched\"=true, requisition_id="
+                + req.getRequisitionId() + " WHERE bag_id = ?",
+                bagB.getBagId());
+        backdate("UPDATE ihms_bloodbank.t_bloodcrossmatchingresult "
+                + "SET result='COMPATIBLE', isdecrossed=false WHERE id=?",
+                cmB.getId());
+
+        jobService.decrossExpired();
+        em.flush();
+        em.clear();
+
+        Number decrossedFlag = (Number) em.createNativeQuery(
+                "SELECT count(*) FROM ihms_bloodbank.t_bloodcrossmatchingresult WHERE id=? AND isdecrossed=true")
+                .setParameter(1, cmB.getId()).getSingleResult();
+        assertThat(decrossedFlag.intValue()).isEqualTo(1);
+
+        // ---- 10. Requisition with no component blocks COMPATIBLE with BLD_COMPONENT_UNKNOWN
+        BloodBag bagTest1 = bagService.create(donorO.getDonorId(), "O-", 350, LocalDate.now().plusDays(35), 1L);
+        BloodRequisition reqNoComp = requisitionService.create(997L, "O-", 350,
+                new Timestamp(System.currentTimeMillis()), 72, null);
+        var cmNoComp = requisitionService.crossmatch(reqNoComp.getRequisitionId(), bagTest1.getBagId());
+        em.flush();
+        assertThatThrownBy(() -> requisitionService.recordCrossmatchResult(
+                reqNoComp.getRequisitionId(), cmNoComp.getId(), "COMPATIBLE", "dr.safety", null, null))
+                .isInstanceOf(com.hims.bloodbank.application.exceptions.BagConflictException.class)
+                .hasMessageContaining("Cannot record COMPATIBLE: blood component is unknown")
+                .extracting("errorCode").isEqualTo("BLD_COMPONENT_UNKNOWN");
+
+        // ---- 11. O whole blood to A+ patient refused --------------------------------
+        BloodBag bagTest2 = bagService.create(donorO.getDonorId(), "O-", 350, LocalDate.now().plusDays(35), 1L);
+        BloodRequisition reqWb = requisitionService.create(996L, "A+", 350,
+                new Timestamp(System.currentTimeMillis()), 72,
+                List.of(Map.of("component", "WHOLE BLOOD", "volumeMl", 350)));
+        var cmWb = requisitionService.crossmatch(reqWb.getRequisitionId(), bagTest2.getBagId());
+        em.flush();
+        assertThatThrownBy(() -> requisitionService.recordCrossmatchResult(
+                reqWb.getRequisitionId(), cmWb.getId(), "COMPATIBLE", "dr.safety", null, null))
+                .isInstanceOf(com.hims.bloodbank.application.exceptions.BagConflictException.class)
+                .hasMessageContaining("Incompatible blood group")
+                .extracting("errorCode").isEqualTo("BLD_INCOMPATIBLE");
     }
 }

@@ -4,9 +4,12 @@ import com.hims.bloodbank.application.exceptions.BagConflictException;
 import com.hims.bloodbank.application.exceptions.BloodBankEntityNotFoundException;
 import com.hims.bloodbank.application.exceptions.InvalidBloodBankRequestException;
 import com.hims.bloodbank.domain.model.BloodBag;
+import com.hims.bloodbank.domain.model.BloodCompatibilityGate;
+import com.hims.bloodbank.domain.model.BloodCrossmatchResult;
 import com.hims.bloodbank.domain.model.BloodRequisition;
 import com.hims.bloodbank.domain.model.BloodRequisitionDetail;
 import com.hims.bloodbank.domain.repository.BloodBagRepository;
+import com.hims.bloodbank.domain.repository.BloodCrossmatchResultRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionDetailRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionRepository;
 import jakarta.persistence.EntityManager;
@@ -15,10 +18,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Requisition lifecycle (GAP-REGISTER WP-9, Catalog #13).
@@ -29,6 +36,13 @@ import java.util.Map;
  * the linked bag states on every mutation ({@link #recomputeStatus}), so a decross
  * naturally walks a requisition back from 2 to 1 and partial cross-match never
  * promotes past 1.
+ *
+ * Patient-safety cross-match gate:
+ * 1. crossmatch() records a PENDING test result and reserves the bag.
+ * 2. recordCrossmatchResult() validates ABO/Rh compatibility gate (Gate 2).
+ *    Only COMPATIBLE promotes bag.crossMatched=true. Incompatible requests receive 409.
+ *    INCOMPATIBLE releases the bag reservation.
+ * 3. issue() requires an active, unexpired COMPATIBLE result for that bag, patient, and requisition.
  *
  * NOTE: NO BloodRequisitionCreated event is emitted on create — DEFERRED per
  * MICROSERVICE-CATALOG #13 / KAFKA-EVENT-CATALOG §3; do not add silently.
@@ -47,6 +61,7 @@ public class RequisitionService {
     private final BloodRequisitionRepository requisitionRepository;
     private final BloodRequisitionDetailRepository detailRepository;
     private final BloodBagRepository bagRepository;
+    private final BloodCrossmatchResultRepository crossmatchResultRepository;
     private final ClockHolder clocks;
 
     @PersistenceContext
@@ -55,10 +70,12 @@ public class RequisitionService {
     public RequisitionService(BloodRequisitionRepository requisitionRepository,
                               BloodRequisitionDetailRepository detailRepository,
                               BloodBagRepository bagRepository,
+                              BloodCrossmatchResultRepository crossmatchResultRepository,
                               ClockHolder clocks) {
         this.requisitionRepository = requisitionRepository;
         this.detailRepository = detailRepository;
         this.bagRepository = bagRepository;
+        this.crossmatchResultRepository = crossmatchResultRepository;
         this.clocks = clocks;
     }
 
@@ -134,7 +151,7 @@ public class RequisitionService {
         return requisitionRepository.findAll();
     }
 
-    /** Full view: header + details + linked bags (read-only — BR-BLD-004 stays in its job). */
+    /** Full view: header + details + linked bags + crossmatch results (read-only — BR-BLD-004 stays in its job). */
     @Transactional(readOnly = true)
     public Map<String, Object> detail(long requisitionId) {
         BloodRequisition r = reqOrThrow(requisitionId);
@@ -142,6 +159,7 @@ public class RequisitionService {
         view.put("requisition", r);
         view.put("details", detailRepository.findByRequisitionId(requisitionId));
         view.put("bags", bagRepository.findByRequisitionId(requisitionId));
+        view.put("crossmatchResults", crossmatchResultRepository.findByRequisitionId(requisitionId));
         view.put("crossmatchedVolumeMl", crossmatchedVolume(requisitionId));
         view.put("issuedVolumeMl", issuedVolume(requisitionId));
         return view;
@@ -149,9 +167,12 @@ public class RequisitionService {
 
     // ------------------------------------------------------------------ crossmatch / issue / cancel
 
-    /** Cross-match a bag onto the requisition (BR-BLD-001 cumulative-volume rule). */
+    /**
+     * Cross-match initiation: records a PENDING result and reserves the bag onto the requisition.
+     * Bag is reserved (requisitionId linked), but crossMatched remains false until COMPATIBLE result recorded.
+     */
     @Transactional
-    public BloodBag crossmatch(long requisitionId, long bagId) {
+    public BloodCrossmatchResult crossmatch(long requisitionId, long bagId, String method, String remarks) {
         BloodRequisition r = reqOrThrow(requisitionId);
         if (r.getStatus() == BloodRequisition.STATUS_CANCELLED_EXPIRED) {
             throw new InvalidBloodBankRequestException("BLD_STATE",
@@ -167,17 +188,166 @@ public class RequisitionService {
         if (b.getCrossMatched()) {
             throw new BagConflictException("BLD_BAG_CONFLICT", "Bag " + bagId + " already crossmatched");
         }
-        b.setCrossMatched(true);
-        b.setCrossMatchedTestDate(Timestamp.from(clocks.clock().instant()));
-        b.setRequisitionId(requisitionId);
-        stampAudit(b);
-        b = bagRepository.save(b);
+        if (b.getRequisitionId() != null && b.getRequisitionId() != requisitionId) {
+            throw new BagConflictException("BLD_BAG_CONFLICT",
+                    "Bag " + bagId + " is already reserved for requisition " + b.getRequisitionId());
+        }
 
-        recomputeStatus(r);   // partial -> stays 1; cumulative >= ordered -> 2
-        return b;
+        // Reserve the bag for this requisition
+        b.setRequisitionId(requisitionId);
+        b.setCrossMatched(false);
+        stampAudit(b);
+        bagRepository.save(b);
+
+        Long detailId = detailRepository.findByRequisitionId(requisitionId).stream()
+                .findFirst()
+                .map(BloodRequisitionDetail::getDetailId)
+                .orElse(null);
+
+        // Record PENDING result record
+        BloodCrossmatchResult resultRecord = new BloodCrossmatchResult();
+        resultRecord.setId(nextId("t_bloodcrossmatchingresult_seq"));
+        resultRecord.setRequisitionId(requisitionId);
+        resultRecord.setRequisitionDetailId(detailId);
+        resultRecord.setBagId(bagId);
+        resultRecord.setPatientId(r.getPatientId());
+        resultRecord.setMethod(method != null ? method : "Standard Crossmatch");
+        resultRecord.setResult(BloodCrossmatchResult.RESULT_PENDING);
+        resultRecord.setRemarks(remarks);
+        resultRecord.setIsDecrossed(false);
+        stampAudit(resultRecord);
+        resultRecord = crossmatchResultRepository.save(resultRecord);
+
+        return resultRecord;
     }
 
-    /** Issue a bag: only crossmatched bags are issuable (400 otherwise). */
+    /**
+     * Cross-match convenience overload.
+     */
+    @Transactional
+    public BloodCrossmatchResult crossmatch(long requisitionId, long bagId) {
+        return crossmatch(requisitionId, bagId, null, null);
+    }
+
+    /**
+     * Records compatibility test result (POST /api/v1/requisitions/{id}/crossmatch/{resultId}/result).
+     *
+     * Gate 2 ABO/Rh check:
+     * - COMPATIBLE requires bag blood group to be compatible with patient blood group for that component.
+     *   If incompatible, throws 409 BagConflictException ("BLD_INCOMPATIBLE").
+     * - On COMPATIBLE, bag.crossMatched becomes true and cumulative volume recomputes.
+     * - On INCOMPATIBLE, bag reservation is released (requisition link and crossMatched cleared).
+     */
+    @Transactional
+    public BloodCrossmatchResult recordCrossmatchResult(long requisitionId, long resultId,
+                                                        String resultOutcome, String tester,
+                                                        String remarks, String method) {
+        BloodRequisition r = reqOrThrow(requisitionId);
+        if (r.getStatus() == BloodRequisition.STATUS_CANCELLED_EXPIRED) {
+            throw new InvalidBloodBankRequestException("BLD_STATE",
+                    "Requisition " + requisitionId + " is cancelled/expired");
+        }
+        BloodCrossmatchResult record = crossmatchResultRepository.findById(resultId)
+                .orElseThrow(() -> new BloodBankEntityNotFoundException("BLD_NOT_FOUND",
+                        "Crossmatch result " + resultId + " not found"));
+
+        if (record.getRequisitionId() != requisitionId) {
+            throw new InvalidBloodBankRequestException("BLD_STATE",
+                    "Crossmatch result " + resultId + " does not belong to requisition " + requisitionId);
+        }
+        if (!BloodCrossmatchResult.RESULT_PENDING.equalsIgnoreCase(record.getResult())) {
+            throw new BagConflictException("BLD_STATE",
+                    "Crossmatch result " + resultId + " is already recorded as " + record.getResult());
+        }
+        if (Boolean.TRUE.equals(record.getIsDecrossed())) {
+            throw new InvalidBloodBankRequestException("BLD_STATE",
+                    "Crossmatch result " + resultId + " has already been decrossed");
+        }
+
+        if (resultOutcome == null || resultOutcome.isBlank()) {
+            throw new InvalidBloodBankRequestException("BLD_REQ_INVALID", "result is required");
+        }
+        String normalizedOutcome = resultOutcome.trim().toUpperCase(Locale.ROOT);
+        if (!BloodCrossmatchResult.RESULT_COMPATIBLE.equals(normalizedOutcome)
+                && !BloodCrossmatchResult.RESULT_INCOMPATIBLE.equals(normalizedOutcome)) {
+            throw new InvalidBloodBankRequestException("BLD_REQ_INVALID",
+                    "result must be COMPATIBLE or INCOMPATIBLE, got: " + resultOutcome);
+        }
+
+        BloodBag bag = bagOrThrow(record.getBagId());
+        Timestamp now = Timestamp.from(clocks.clock().instant());
+
+        if (BloodCrossmatchResult.RESULT_COMPATIBLE.equals(normalizedOutcome)) {
+            // Determine component from detail if present
+            String component = null;
+            if (record.getRequisitionDetailId() != null) {
+                component = detailRepository.findById(record.getRequisitionDetailId())
+                        .map(BloodRequisitionDetail::getComponent)
+                        .orElse(null);
+            }
+            if (component == null) {
+                component = detailRepository.findByRequisitionId(requisitionId).stream()
+                        .findFirst()
+                        .map(BloodRequisitionDetail::getComponent)
+                        .orElse(null);
+            }
+
+            if (component == null || component.isBlank()) {
+                throw new BagConflictException("BLD_COMPONENT_UNKNOWN",
+                        "Cannot record COMPATIBLE: blood component is unknown for requisition " + requisitionId);
+            }
+
+            // ABO/Rh Gate check
+            boolean compatible = BloodCompatibilityGate.isCompatible(r.getBloodGroup(), bag.getBloodGroup(), component);
+            if (!compatible) {
+                throw new BagConflictException("BLD_INCOMPATIBLE",
+                        "Incompatible blood group: Patient (" + r.getBloodGroup()
+                                + ") cannot receive Donor Bag (" + bag.getBloodGroup()
+                                + ") for component " + component);
+            }
+
+            record.setResult(BloodCrossmatchResult.RESULT_COMPATIBLE);
+            record.setTestDate(now);
+            record.setTestedBy(tester);
+            if (remarks != null) record.setRemarks(remarks);
+            if (method != null) record.setMethod(method);
+            stampAudit(record);
+            record = crossmatchResultRepository.save(record);
+
+            bag.setCrossMatched(true);
+            bag.setCrossMatchedTestDate(now);
+            stampAudit(bag);
+            bagRepository.save(bag);
+
+            recomputeStatus(r);
+        } else {
+            // INCOMPATIBLE releases the bag reservation
+            record.setResult(BloodCrossmatchResult.RESULT_INCOMPATIBLE);
+            record.setTestDate(now);
+            record.setTestedBy(tester);
+            if (remarks != null) record.setRemarks(remarks);
+            if (method != null) record.setMethod(method);
+            stampAudit(record);
+            record = crossmatchResultRepository.save(record);
+
+            bag.setCrossMatched(false);
+            bag.setCrossMatchedTestDate(null);
+            bag.setRequisitionId(null);
+            stampAudit(bag);
+            bagRepository.save(bag);
+
+            recomputeStatus(r);
+        }
+
+        return record;
+    }
+
+    /**
+     * Issue a bag:
+     * - Requires an active, unexpired COMPATIBLE crossmatch result for that bag, patient, and requisition.
+     * - Bag and crossmatch must not be expired at issue time.
+     * - Cumulative issued volume >= ordered promotes requisition to status 3.
+     */
     @Transactional
     public BloodBag issue(long requisitionId, long bagId) {
         BloodRequisition r = reqOrThrow(requisitionId);
@@ -186,16 +356,58 @@ public class RequisitionService {
                     "Requisition " + requisitionId + " is cancelled/expired");
         }
         BloodBag b = bagOrThrow(bagId);
+        if (b.getIssued()) {
+            throw new BagConflictException("BLD_BAG_CONFLICT", "Bag " + bagId + " already issued");
+        }
+
+        // Bag expiry gate at issue time (BR-BLD-003)
+        LocalDate today = LocalDate.ofInstant(clocks.clock().instant(), clocks.clock().getZone());
+        if (b.getIsbagexpired() || !b.getExpirydate().isAfter(today)) {
+            throw new BagConflictException("BLD_BAG_CONFLICT", "Bag " + bagId + " is expired");
+        }
+
+        // Bag crossmatch flag check
         if (!b.getCrossMatched() || !requisitionIdEquals(b, requisitionId)) {
             throw new InvalidBloodBankRequestException("BLD_STATE",
                     "Bag " + bagId + " is not crossmatched against requisition " + requisitionId);
         }
-        if (b.getIssued()) {
-            throw new BagConflictException("BLD_BAG_CONFLICT", "Bag " + bagId + " already issued");
+
+        // Crossmatch result record check: must have a COMPATIBLE, non-decrossed result
+        Optional<BloodCrossmatchResult> matchResult = crossmatchResultRepository
+                .findFirstByBagIdAndRequisitionIdAndPatientIdAndResultAndIsDecrossedFalse(
+                        bagId, requisitionId, r.getPatientId(), BloodCrossmatchResult.RESULT_COMPATIBLE);
+
+        if (matchResult.isEmpty()) {
+            List<BloodCrossmatchResult> anyResults = crossmatchResultRepository.findByBagId(bagId);
+            String reason = "No COMPATIBLE crossmatch result found for bag " + bagId + " on requisition " + requisitionId;
+            for (BloodCrossmatchResult res : anyResults) {
+                if (res.getRequisitionId() != requisitionId || !res.getPatientId().equals(r.getPatientId())) {
+                    reason = "Bag " + bagId + " crossmatch belongs to different patient or requisition";
+                } else if (BloodCrossmatchResult.RESULT_PENDING.equalsIgnoreCase(res.getResult())) {
+                    reason = "Bag " + bagId + " crossmatch result is PENDING";
+                } else if (BloodCrossmatchResult.RESULT_INCOMPATIBLE.equalsIgnoreCase(res.getResult())) {
+                    reason = "Bag " + bagId + " crossmatch result is INCOMPATIBLE";
+                } else if (Boolean.TRUE.equals(res.getIsDecrossed())) {
+                    reason = "Bag " + bagId + " crossmatch has been decrossed";
+                }
+            }
+            throw new InvalidBloodBankRequestException("BLD_STATE", reason);
         }
-        if (b.getIsbagexpired()) {
-            throw new BagConflictException("BLD_BAG_CONFLICT", "Bag " + bagId + " is expired");
+
+        // Crossmatch test expiry check (48h validity per BR-BLD-002)
+        BloodCrossmatchResult validResult = matchResult.get();
+        Timestamp testDate = validResult.getTestDate();
+        if (testDate == null) {
+            testDate = b.getCrossMatchedTestDate();
         }
+        if (testDate != null) {
+            Instant cutoff = clocks.clock().instant().minus(Duration.ofHours(48));
+            if (testDate.toInstant().isBefore(cutoff)) {
+                throw new InvalidBloodBankRequestException("BLD_STATE",
+                        "Crossmatch test for bag " + bagId + " is expired (>48 hours)");
+            }
+        }
+
         b.setIssued(true);
         b.setIssuedRequisitionId(requisitionId);
         stampAudit(b);
@@ -205,7 +417,7 @@ public class RequisitionService {
         return b;
     }
 
-    /** Cancel: status 1|2 -> 10; unissued crossmatched bags are released. */
+    /** Cancel: status 1|2 -> 10; unissued crossmatched bags are released and crossmatch results decrossed. */
     @Transactional
     public BloodRequisition cancel(long requisitionId) {
         BloodRequisition r = reqOrThrow(requisitionId);
@@ -225,11 +437,35 @@ public class RequisitionService {
                 bagRepository.save(b);
             }
         }
+        // Mark crossmatch results as decrossed
+        for (BloodCrossmatchResult res : crossmatchResultRepository.findByRequisitionId(requisitionId)) {
+            if (!Boolean.TRUE.equals(res.getIsDecrossed())) {
+                res.setIsDecrossed(true);
+                res.setUpdatedBy(AUDIT_ACTOR_ID);
+                res.setUpdatedDatetime(Timestamp.from(clocks.clock().instant()));
+                crossmatchResultRepository.save(res);
+            }
+        }
         r.setStatus(BloodRequisition.STATUS_CANCELLED_EXPIRED);
         mirrorDetails(requisitionId, BloodRequisition.STATUS_CANCELLED_EXPIRED, false, null);
         r.setUpdatedBy(AUDIT_ACTOR_ID);
-        r.setUpdatedDatetime(Timestamp.from(Instant.now()));
+        r.setUpdatedDatetime(Timestamp.from(clocks.clock().instant()));
         return requisitionRepository.save(r);
+    }
+
+    // ------------------------------------------------------------------ read endpoints for crossmatch results
+
+    @Transactional(readOnly = true)
+    public List<BloodCrossmatchResult> getCrossmatchResults(long requisitionId) {
+        reqOrThrow(requisitionId);
+        return crossmatchResultRepository.findByRequisitionId(requisitionId);
+    }
+
+    @Transactional(readOnly = true)
+    public BloodCrossmatchResult getCrossmatchResult(long resultId) {
+        return crossmatchResultRepository.findById(resultId)
+                .orElseThrow(() -> new BloodBankEntityNotFoundException("BLD_NOT_FOUND",
+                        "Crossmatch result " + resultId + " not found"));
     }
 
     // ------------------------------------------------------------------ status machine core
@@ -278,7 +514,7 @@ public class RequisitionService {
         }
     }
 
-    /** Cumulative cross-matched volume linked to this requisition (unissued, unexpired bags). */
+    /** Cumulative cross-matched volume linked to this requisition (unissued, unexpired bags with crossMatched=true). */
     public int crossmatchedVolume(long requisitionId) {
         return bagRepository.findByRequisitionId(requisitionId).stream()
                 .filter(b -> b.getCrossMatched() && !b.getIsbagexpired())
@@ -313,7 +549,7 @@ public class RequisitionService {
     }
 
     void stampAudit(Object entity) {
-        Timestamp now = Timestamp.from(Instant.now());
+        Timestamp now = Timestamp.from(clocks.clock().instant());
         if (entity instanceof BloodRequisition e) {
             e.setAddedBy(AUDIT_ACTOR_ID); e.setAddedDatetime(now);
             e.setUpdatedBy(AUDIT_ACTOR_ID); e.setUpdatedDatetime(now);
@@ -321,6 +557,9 @@ public class RequisitionService {
             e.setAddedBy(AUDIT_ACTOR_ID); e.setAddedDatetime(now);
             e.setUpdatedBy(AUDIT_ACTOR_ID); e.setUpdatedDatetime(now);
         } else if (entity instanceof BloodBag e) {
+            if (e.getAddedDatetime() == null) { e.setAddedBy(AUDIT_ACTOR_ID); e.setAddedDatetime(now); }
+            e.setUpdatedBy(AUDIT_ACTOR_ID); e.setUpdatedDatetime(now);
+        } else if (entity instanceof BloodCrossmatchResult e) {
             if (e.getAddedDatetime() == null) { e.setAddedBy(AUDIT_ACTOR_ID); e.setAddedDatetime(now); }
             e.setUpdatedBy(AUDIT_ACTOR_ID); e.setUpdatedDatetime(now);
         }

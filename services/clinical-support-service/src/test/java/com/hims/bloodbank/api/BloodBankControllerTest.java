@@ -10,6 +10,7 @@ import com.hims.bloodbank.application.exceptions.InvalidBloodBankRequestExceptio
 import com.hims.clinicalsupport.configuration.SecurityConfig;
 import com.hims.clinicalsupport.configuration.JwtConfig;
 import com.hims.bloodbank.domain.model.BloodBag;
+import com.hims.bloodbank.domain.model.BloodCrossmatchResult;
 import com.hims.bloodbank.domain.model.BloodDonor;
 import com.hims.bloodbank.domain.model.BloodRequisition;
 import org.junit.jupiter.api.Test;
@@ -27,8 +28,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Contract tests for the Blood Bank API (default-deny enforced). Services mocked; L1 covers the rules. */
-@WebMvcTest({DonorController.class, BagController.class, RequisitionController.class, JobController.class})
+@WebMvcTest({DonorController.class, BagController.class, RequisitionController.class, JobController.class, CrossmatchResultController.class})
 @Import({SecurityConfig.class, JwtConfig.class})
 @AutoConfigureMockMvc
 class BloodBankControllerTest {
@@ -131,7 +134,7 @@ class BloodBankControllerTest {
 
     @Test
     void crossmatchConflict_409() throws Exception {
-        when(requisitionService.crossmatch(10L, 5L))
+        when(requisitionService.crossmatch(eq(10L), eq(5L), any(), any()))
                 .thenThrow(new BagConflictException("BLD_BAG_CONFLICT", "Bag 5 already crossmatched"));
 
         mockMvc.perform(post("/api/v1/requisitions/10/crossmatch").with(user("devops").roles("DEV"))
@@ -141,6 +144,106 @@ class BloodBankControllerTest {
                                 """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errorCode").value("BLD_BAG_CONFLICT"));
+    }
+
+    @Test
+    void crossmatch_201_recordsPending() throws Exception {
+        BloodCrossmatchResult result = new BloodCrossmatchResult();
+        result.setId(55L);
+        result.setRequisitionId(10L);
+        result.setBagId(5L);
+        result.setResult(BloodCrossmatchResult.RESULT_PENDING);
+
+        when(requisitionService.crossmatch(eq(10L), eq(5L), any(), any()))
+                .thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/requisitions/10/crossmatch").with(user("devops").roles("DEV"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"bagId":5,"method":"Coombs"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(55))
+                .andExpect(jsonPath("$.result").value("PENDING"));
+    }
+
+    @Test
+    void recordResult_compatible_testerFromPrincipal() throws Exception {
+        BloodCrossmatchResult result = new BloodCrossmatchResult();
+        result.setId(55L);
+        result.setRequisitionId(10L);
+        result.setBagId(5L);
+        result.setResult(BloodCrossmatchResult.RESULT_COMPATIBLE);
+        result.setTestedBy("authenticated_doctor");
+
+        when(requisitionService.recordCrossmatchResult(eq(10L), eq(55L), eq("COMPATIBLE"),
+                eq("authenticated_doctor"), eq("Clear"), eq("Gel")))
+                .thenReturn(result);
+
+        // Even though body contains "attacker_name" for testedBy, tester must come from principal ("authenticated_doctor")
+        mockMvc.perform(post("/api/v1/requisitions/10/crossmatch/55/result")
+                        .with(user("authenticated_doctor").roles("DEV"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"result":"COMPATIBLE","testedBy":"attacker_name","remarks":"Clear","method":"Gel"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(55))
+                .andExpect(jsonPath("$.result").value("COMPATIBLE"))
+                .andExpect(jsonPath("$.testedBy").value("authenticated_doctor"));
+
+        verify(requisitionService).recordCrossmatchResult(10L, 55L, "COMPATIBLE", "authenticated_doctor", "Clear", "Gel");
+    }
+
+    @Test
+    void recordResult_incompatibleGate_409() throws Exception {
+        when(requisitionService.recordCrossmatchResult(eq(10L), eq(55L), eq("COMPATIBLE"), any(), any(), any()))
+                .thenThrow(new BagConflictException("BLD_INCOMPATIBLE", "Incompatible blood group"));
+
+        mockMvc.perform(post("/api/v1/requisitions/10/crossmatch/55/result")
+                        .with(user("dr.who").roles("DEV"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"result":"COMPATIBLE"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("BLD_INCOMPATIBLE"));
+    }
+
+    @Test
+    void getCrossmatchResultsForRequisition_200() throws Exception {
+        BloodCrossmatchResult r1 = new BloodCrossmatchResult();
+        r1.setId(101L); r1.setRequisitionId(10L); r1.setBagId(5L); r1.setResult("COMPATIBLE");
+
+        when(requisitionService.getCrossmatchResults(10L)).thenReturn(List.of(r1));
+
+        mockMvc.perform(get("/api/v1/requisitions/10/crossmatch-results").with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(101))
+                .andExpect(jsonPath("$[0].result").value("COMPATIBLE"));
+    }
+
+    @Test
+    void getCrossmatchResultById_200() throws Exception {
+        BloodCrossmatchResult r = new BloodCrossmatchResult();
+        r.setId(55L); r.setRequisitionId(10L); r.setBagId(5L); r.setResult("PENDING");
+
+        when(requisitionService.getCrossmatchResult(55L)).thenReturn(r);
+
+        mockMvc.perform(get("/api/v1/crossmatch-results/55").with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(55))
+                .andExpect(jsonPath("$.result").value("PENDING"));
+    }
+
+    @Test
+    void getCrossmatchResultById_404() throws Exception {
+        when(requisitionService.getCrossmatchResult(999L))
+                .thenThrow(new BloodBankEntityNotFoundException("BLD_NOT_FOUND", "Crossmatch result 999 not found"));
+
+        mockMvc.perform(get("/api/v1/crossmatch-results/999").with(user("devops").roles("DEV")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("BLD_NOT_FOUND"));
     }
 
     @Test

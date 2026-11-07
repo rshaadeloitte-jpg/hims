@@ -1,9 +1,11 @@
 package com.hims.bloodbank.application;
 
 import com.hims.bloodbank.domain.model.BloodBag;
+import com.hims.bloodbank.domain.model.BloodCrossmatchResult;
 import com.hims.bloodbank.domain.model.BloodDonor;
 import com.hims.bloodbank.domain.model.BloodRequisition;
 import com.hims.bloodbank.domain.repository.BloodBagRepository;
+import com.hims.bloodbank.domain.repository.BloodCrossmatchResultRepository;
 import com.hims.bloodbank.domain.repository.BloodDonorRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionDetailRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionRepository;
@@ -35,6 +37,7 @@ class JobServiceTest {
     private BloodRequisitionRepository requisitionRepository;
     private BloodDonorRepository donorRepository;
     private BloodRequisitionDetailRepository detailRepository;
+    private BloodCrossmatchResultRepository crossmatchResultRepository;
     private RequisitionService requisitionService;
     private JobService jobs;
 
@@ -48,17 +51,20 @@ class JobServiceTest {
         requisitionRepository = mock(BloodRequisitionRepository.class);
         detailRepository = mock(BloodRequisitionDetailRepository.class);
         donorRepository = mock(BloodDonorRepository.class);
+        crossmatchResultRepository = mock(BloodCrossmatchResultRepository.class);
         requisitionService = mock(RequisitionService.class);
         ClockHolder clocks = new ClockHolder(Clock.fixed(NOW, Z));
         when(requisitionService.crossmatchedVolume(anyLong())).thenReturn(0);
         when(requisitionService.issuedVolume(anyLong())).thenReturn(0);
 
         jobs = new JobService(bagRepository, requisitionRepository, detailRepository,
-                donorRepository, requisitionService, clocks, 72);
+                donorRepository, crossmatchResultRepository, requisitionService, clocks, 72);
 
         when(bagRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(donorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(requisitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(crossmatchResultRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(crossmatchResultRepository.findByBagIdAndIsDecrossedFalse(any())).thenReturn(List.of());
     }
 
     private BloodBag crossmatchedBag(long id, long reqId, int volumeMl, Instant testDate) {
@@ -131,10 +137,15 @@ class JobServiceTest {
         BloodRequisition r = req(102L, 900, BloodRequisition.STATUS_CROSS_MATCHED);
         when(requisitionRepository.findById(102L)).thenReturn(java.util.Optional.of(r));
 
+        com.hims.bloodbank.domain.model.BloodCrossmatchResult cm = new com.hims.bloodbank.domain.model.BloodCrossmatchResult();
+        cm.setId(555L); cm.setBagId(3L); cm.setIsDecrossed(false);
+        when(crossmatchResultRepository.findByBagIdAndIsDecrossedFalse(3L)).thenReturn(List.of(cm));
+
         var summary = jobs.decrossExpired();
 
         assertThat(summary.get("agedDecrossed")).isEqualTo(1);
         assertThat(stale.getCrossMatched()).isFalse();
+        assertThat(cm.getIsDecrossed()).isTrue();
         verify(requisitionService).recomputeStatus(r);
     }
 

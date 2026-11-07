@@ -4,13 +4,17 @@ import com.hims.bloodbank.application.exceptions.BagConflictException;
 import com.hims.bloodbank.application.exceptions.BloodBankEntityNotFoundException;
 import com.hims.bloodbank.application.exceptions.InvalidBloodBankRequestException;
 import com.hims.bloodbank.domain.model.BloodBag;
+import com.hims.bloodbank.domain.model.BloodCrossmatchResult;
 import com.hims.bloodbank.domain.model.BloodRequisition;
+import com.hims.bloodbank.domain.model.BloodRequisitionDetail;
 import com.hims.bloodbank.domain.repository.BloodBagRepository;
+import com.hims.bloodbank.domain.repository.BloodCrossmatchResultRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionDetailRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -29,29 +33,39 @@ import static org.mockito.Mockito.when;
  * L1 — BR-BLD-001 status machine, no Spring context.
  * Covers the register's mandatory cases: partial cross-match stays 1, full -> 2,
  * issue -> 3, cancel -> 10, plus guard rails (409/400 paths).
+ * Updated for transfusion safety gating: crossmatch records PENDING, COMPATIBLE promotes bag.
  */
 class RequisitionServiceTest {
 
     private BloodRequisitionRepository requisitionRepository;
     private BloodRequisitionDetailRepository detailRepository;
     private BloodBagRepository bagRepository;
+    private BloodCrossmatchResultRepository crossmatchResultRepository;
     private RequisitionService service;
 
     private static final Instant NOW = Instant.parse("2027-06-15T10:00:00Z");
+    private long idSeq = 100L;
 
     @BeforeEach
     void setUp() {
         requisitionRepository = mock(BloodRequisitionRepository.class);
         detailRepository = mock(BloodRequisitionDetailRepository.class);
         bagRepository = mock(BloodBagRepository.class);
+        crossmatchResultRepository = mock(BloodCrossmatchResultRepository.class);
         ClockHolder clocks = new ClockHolder(Clock.fixed(NOW, ZoneId.of("UTC")));
         service = new RequisitionService(requisitionRepository, detailRepository,
-                bagRepository, clocks);
+                bagRepository, crossmatchResultRepository, clocks);
         EntityManager em = mock(EntityManager.class);
-        org.springframework.test.util.ReflectionTestUtils.setField(service, "em", em);
+        ReflectionTestUtils.setField(service, "em", em);
+        when(em.createNativeQuery(any())).thenAnswer(inv -> {
+            var q = mock(jakarta.persistence.Query.class);
+            when(q.getSingleResult()).thenAnswer(i -> idSeq++);
+            return q;
+        });
 
         when(requisitionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(bagRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(crossmatchResultRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(detailRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(detailRepository.findByRequisitionId(any())).thenReturn(List.of());
     }
@@ -75,6 +89,9 @@ class RequisitionServiceTest {
         b.setVolumeMl(volumeMl);
         b.setCollectedAt(Timestamp.from(NOW.minusSeconds(86400)));
         b.setExpirydate(NOW.atZone(ZoneId.of("UTC")).toLocalDate().plusDays(35));
+        b.setCrossMatched(false);
+        b.setIsbagexpired(false);
+        b.setIssued(false);
         return b;
     }
 
@@ -85,20 +102,39 @@ class RequisitionServiceTest {
         }
     }
 
+    private void linkDetail(long requisitionId, String component, int volumeMl) {
+        BloodRequisitionDetail d = new BloodRequisitionDetail();
+        d.setDetailId(requisitionId * 10);
+        d.setRequisitionId(requisitionId);
+        d.setComponent(component);
+        d.setVolumeMl(volumeMl);
+        d.setRequisitionStatus(BloodRequisition.STATUS_NEW);
+        when(detailRepository.findByRequisitionId(requisitionId)).thenReturn(List.of(d));
+        when(detailRepository.findById(d.getDetailId())).thenReturn(Optional.of(d));
+    }
+
     // ------------------------------------------------- partial cross-match stays 1
 
     @Test
     void crossmatch_partial_staysNew() {
         BloodRequisition r = req(1L, 1000, BloodRequisition.STATUS_NEW);   // ordered 1000ml
         when(requisitionRepository.findById(1L)).thenReturn(Optional.of(r));
+        linkDetail(1L, "PRBC", 1000);
         BloodBag b = bag(10L, 350);
         when(bagRepository.findById(10L)).thenReturn(Optional.of(b));
         linkBags(r, new java.util.ArrayList<>(List.of(b)));
 
-        BloodBag result = service.crossmatch(1L, 10L);
+        BloodCrossmatchResult pending = service.crossmatch(1L, 10L);
+        assertThat(pending.getResult()).isEqualTo(BloodCrossmatchResult.RESULT_PENDING);
+        assertThat(b.getCrossMatched()).isFalse(); // initially false upon pending crossmatch
 
-        assertThat(result.getCrossMatched()).isTrue();
-        assertThat(result.getCrossMatchedTestDate()).isEqualTo(Timestamp.from(NOW));
+        when(crossmatchResultRepository.findById(pending.getId())).thenReturn(Optional.of(pending));
+        BloodCrossmatchResult completed = service.recordCrossmatchResult(1L, pending.getId(),
+                "COMPATIBLE", "tester1", null, null);
+
+        assertThat(completed.getResult()).isEqualTo(BloodCrossmatchResult.RESULT_COMPATIBLE);
+        assertThat(b.getCrossMatched()).isTrue();
+        assertThat(b.getCrossMatchedTestDate()).isEqualTo(Timestamp.from(NOW));
         assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_NEW);   // 350 < 1000 -> stays 1
     }
 
@@ -106,19 +142,42 @@ class RequisitionServiceTest {
     void crossmatch_full_promotesToCrossMatched() {
         BloodRequisition r = req(2L, 700, BloodRequisition.STATUS_NEW);
         when(requisitionRepository.findById(2L)).thenReturn(Optional.of(r));
+        linkDetail(2L, "PRBC", 700);
         BloodBag b1 = bag(11L, 350);
         BloodBag b2 = bag(12L, 350);
         when(bagRepository.findById(11L)).thenReturn(Optional.of(b1));
         when(bagRepository.findById(12L)).thenReturn(Optional.of(b2));
 
-        // first bag crossmatched earlier (already linked)
+        // first bag crossmatched earlier (already linked & compatible)
         b1.setCrossMatched(true);
         b1.setCrossMatchedTestDate(Timestamp.from(NOW.minusSeconds(600)));
         linkBags(r, new java.util.ArrayList<>(List.of(b1, b2)));
 
-        service.crossmatch(2L, 12L);   // cumulative 700 >= ordered 700
+        BloodCrossmatchResult pending2 = service.crossmatch(2L, 12L);
+        when(crossmatchResultRepository.findById(pending2.getId())).thenReturn(Optional.of(pending2));
+        service.recordCrossmatchResult(2L, pending2.getId(), "COMPATIBLE", "tester2", null, null);
 
-        assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_CROSS_MATCHED);
+        assertThat(b2.getCrossMatched()).isTrue();
+        assertThat(r.getStatus()).isEqualTo(BloodRequisition.STATUS_CROSS_MATCHED); // cumulative 700 >= ordered 700
+    }
+
+    @Test
+    void recordCrossmatchResult_requisitionWithNoComponent_blocksCompatibleWithBldComponentUnknown() {
+        BloodRequisition r = req(99L, 500, BloodRequisition.STATUS_NEW);
+        when(requisitionRepository.findById(99L)).thenReturn(Optional.of(r));
+        BloodBag b = bag(990L, 500);
+        when(bagRepository.findById(990L)).thenReturn(Optional.of(b));
+        linkBags(r, new java.util.ArrayList<>(List.of(b)));
+
+        BloodCrossmatchResult pending = service.crossmatch(99L, 990L);
+        when(crossmatchResultRepository.findById(pending.getId())).thenReturn(Optional.of(pending));
+        when(detailRepository.findByRequisitionId(99L)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.recordCrossmatchResult(99L, pending.getId(),
+                "COMPATIBLE", "tester", null, null))
+                .isInstanceOf(BagConflictException.class)
+                .hasMessageContaining("Cannot record COMPATIBLE: blood component is unknown")
+                .extracting("errorCode").isEqualTo("BLD_COMPONENT_UNKNOWN");
     }
 
     // --------------------------------------------------------- issue semantics
@@ -133,6 +192,22 @@ class RequisitionServiceTest {
         when(bagRepository.findById(21L)).thenReturn(Optional.of(b1));
         when(bagRepository.findById(22L)).thenReturn(Optional.of(b2));
         linkBags(r, new java.util.ArrayList<>(List.of(b1, b2)));
+
+        // Mock compatible crossmatch results for bags 21 and 22
+        BloodCrossmatchResult cm1 = new BloodCrossmatchResult();
+        cm1.setId(201L); cm1.setBagId(21L); cm1.setRequisitionId(3L); cm1.setPatientId(501L);
+        cm1.setResult(BloodCrossmatchResult.RESULT_COMPATIBLE); cm1.setTestDate(Timestamp.from(NOW));
+        cm1.setIsDecrossed(false);
+
+        BloodCrossmatchResult cm2 = new BloodCrossmatchResult();
+        cm2.setId(202L); cm2.setBagId(22L); cm2.setRequisitionId(3L); cm2.setPatientId(501L);
+        cm2.setResult(BloodCrossmatchResult.RESULT_COMPATIBLE); cm2.setTestDate(Timestamp.from(NOW));
+        cm2.setIsDecrossed(false);
+
+        when(crossmatchResultRepository.findFirstByBagIdAndRequisitionIdAndPatientIdAndResultAndIsDecrossedFalse(
+                21L, 3L, 501L, BloodCrossmatchResult.RESULT_COMPATIBLE)).thenReturn(Optional.of(cm1));
+        when(crossmatchResultRepository.findFirstByBagIdAndRequisitionIdAndPatientIdAndResultAndIsDecrossedFalse(
+                22L, 3L, 501L, BloodCrossmatchResult.RESULT_COMPATIBLE)).thenReturn(Optional.of(cm2));
 
         // partial issue first: 400 < 700 -> stays 2; then full: 400+300 >= 700 -> 3
         service.issue(3L, 21L);
@@ -153,6 +228,14 @@ class RequisitionServiceTest {
         for (BloodBag b : List.of(b1, b2)) { b.setCrossMatched(true); }
         when(bagRepository.findById(32L)).thenReturn(Optional.of(b2));
         linkBags(r, new java.util.ArrayList<>(List.of(b1, b2)));
+
+        BloodCrossmatchResult cm = new BloodCrossmatchResult();
+        cm.setId(301L); cm.setBagId(32L); cm.setRequisitionId(4L); cm.setPatientId(501L);
+        cm.setResult(BloodCrossmatchResult.RESULT_COMPATIBLE); cm.setTestDate(Timestamp.from(NOW));
+        cm.setIsDecrossed(false);
+
+        when(crossmatchResultRepository.findFirstByBagIdAndRequisitionIdAndPatientIdAndResultAndIsDecrossedFalse(
+                32L, 4L, 501L, BloodCrossmatchResult.RESULT_COMPATIBLE)).thenReturn(Optional.of(cm));
 
         service.issue(4L, 32L);   // only 500 of 1000 issued
 
@@ -214,11 +297,16 @@ class RequisitionServiceTest {
         b.setCrossMatched(true);
         linkBags(r, new java.util.ArrayList<>(List.of(b)));
 
+        BloodCrossmatchResult res = new BloodCrossmatchResult();
+        res.setId(501L); res.setRequisitionId(8L); res.setBagId(51L);
+        when(crossmatchResultRepository.findByRequisitionId(8L)).thenReturn(List.of(res));
+
         BloodRequisition cancelled = service.cancel(8L);
 
         assertThat(cancelled.getStatus()).isEqualTo(BloodRequisition.STATUS_CANCELLED_EXPIRED);
         assertThat(b.getCrossMatched()).isFalse();
         assertThat(b.getRequisitionId()).isNull();
+        assertThat(res.getIsDecrossed()).isTrue();
     }
 
     @Test

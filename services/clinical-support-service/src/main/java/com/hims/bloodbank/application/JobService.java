@@ -1,9 +1,11 @@
 package com.hims.bloodbank.application;
 
 import com.hims.bloodbank.domain.model.BloodBag;
+import com.hims.bloodbank.domain.model.BloodCrossmatchResult;
 import com.hims.bloodbank.domain.model.BloodDonor;
 import com.hims.bloodbank.domain.model.BloodRequisition;
 import com.hims.bloodbank.domain.repository.BloodBagRepository;
+import com.hims.bloodbank.domain.repository.BloodCrossmatchResultRepository;
 import com.hims.bloodbank.domain.repository.BloodDonorRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionDetailRepository;
 import com.hims.bloodbank.domain.repository.BloodRequisitionRepository;
@@ -29,6 +31,7 @@ import java.util.Set;
  *
  * BR-BLD-002 (daily 00:00): crossmatched & unissued bags whose crossMatchedTestDate
  *   is >= 48h old are decrossed; affected requisitions recompute toward 1.
+ *   Cross-match results are marked isDecrossed=true (ported from legacy autoBloodBagDecrossUpdates).
  * BR-BLD-003 (daily 23:00): bags with expirydate = today become isbagexpired=true
  *   unless issued; crossmatched unissued expired bags also decross + requisition recalc.
  * BR-BLD-004: requisitions past requesteddate + orderValidationPeriod(h) without a
@@ -45,6 +48,7 @@ public class JobService {
     private final BloodRequisitionRepository requisitionRepository;
     private final BloodRequisitionDetailRepository detailRepository;
     private final BloodDonorRepository donorRepository;
+    private final BloodCrossmatchResultRepository crossmatchResultRepository;
     private final RequisitionService requisitionService;
     private final ClockHolder clocks;
     private final int defaultValidationHours;
@@ -53,6 +57,7 @@ public class JobService {
                       BloodRequisitionRepository requisitionRepository,
                       BloodRequisitionDetailRepository detailRepository,
                       BloodDonorRepository donorRepository,
+                      BloodCrossmatchResultRepository crossmatchResultRepository,
                       RequisitionService requisitionService,
                       ClockHolder clocks,
                       @Value("${app.bloodbank.order-validation-hours:72}") int defaultValidationHours) {
@@ -60,6 +65,7 @@ public class JobService {
         this.requisitionRepository = requisitionRepository;
         this.detailRepository = detailRepository;
         this.donorRepository = donorRepository;
+        this.crossmatchResultRepository = crossmatchResultRepository;
         this.requisitionService = requisitionService;
         this.clocks = clocks;
         this.defaultValidationHours = defaultValidationHours;
@@ -183,13 +189,27 @@ public class JobService {
         return summary;
     }
 
-    /** Decross a bag: crosSMatched=false, test date + link cleared (legacy reason=0 path). */
+    /**
+     * Decross a bag: crosSMatched=false, test date + link cleared.
+     * Ported from legacy autoBloodBagDecrossUpdates: marks crossmatch results as decrossed.
+     */
     private void decross(BloodBag b) {
+        Long bagId = b.getBagId();
         b.setCrossMatched(false);
         b.setCrossMatchedTestDate(null);
         b.setRequisitionId(null);
         b.setUpdatedBy(AUDIT_ACTOR_ID);
         b.setUpdatedDatetime(Timestamp.from(Instant.now()));
         bagRepository.save(b);
+
+        if (bagId != null) {
+            List<BloodCrossmatchResult> results = crossmatchResultRepository.findByBagIdAndIsDecrossedFalse(bagId);
+            for (BloodCrossmatchResult r : results) {
+                r.setIsDecrossed(true);
+                r.setUpdatedBy(AUDIT_ACTOR_ID);
+                r.setUpdatedDatetime(Timestamp.from(Instant.now()));
+                crossmatchResultRepository.save(r);
+            }
+        }
     }
 }
