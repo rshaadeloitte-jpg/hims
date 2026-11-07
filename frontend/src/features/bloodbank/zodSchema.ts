@@ -2,16 +2,7 @@ import { z } from "zod";
 
 export const donorSchema = z.object({
   name: z.string().min(1, "Name required"),
-  age: z.coerce.number().int().positive("Age required"),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]),
   bloodGroup: z.string().min(1, "Blood group required"),
-  phone: z.string().optional().or(z.literal("")),
-  weight: z.coerce.number().positive("Weight must be positive").optional().or(z.literal(NaN)),
-  pulse: z.coerce.number().int().positive("Pulse required").optional().or(z.literal(NaN)),
-  bpSystolic: z.coerce.number().int().positive("BP systolic required").optional().or(z.literal(NaN)),
-  bpDiastolic: z.coerce.number().int().positive("BP diastolic required").optional().or(z.literal(NaN)),
-  hemoglobin: z.coerce.number().positive("Hemoglobin required").optional().or(z.literal(NaN)),
-  lastDonationAt: z.string().optional().or(z.literal("")),
 });
 
 export type DonorForm = z.infer<typeof donorSchema>;
