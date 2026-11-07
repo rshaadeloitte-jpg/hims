@@ -8,6 +8,7 @@ import com.hims.pharmacy.domain.model.ItemSaleDetail;
 import com.hims.pharmacy.domain.repository.ItemSaleDetailRepository;
 import com.hims.pharmacy.domain.repository.ItemSaleRepository;
 import jakarta.persistence.EntityManager;
+import org.springframework.dao.DataIntegrityViolationException;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,7 +154,15 @@ public class ItemSaleService {
         sale.setDispensed(false);
         sale.setAddedBy(AUDIT_ACTOR_ID);
         sale.setAddedDatetime(nowTs);
-        saleRepository.save(sale);
+        try {
+            saleRepository.saveAndFlush(sale);
+        } catch (DataIntegrityViolationException e) {
+            if (isPrescriptionUniqueViolation(e)) {
+                throw new InvalidSaleRequestException("PH_PRESCRIPTION_HAS_SALE",
+                        "Prescription " + prescriptionId + " already has item sale");
+            }
+            throw e;
+        }
 
         // Pre-dispense gates: allergies & interactions
         allergyService.checkDispense(patientId, lines);
@@ -306,6 +315,11 @@ public class ItemSaleService {
     }
 
     @Transactional(readOnly = true)
+    public List<ItemStockClient.BatchAvailabilityView> availableBatches(long itemId) {
+        return stockClient.availableBatches(pharmacyStoreId, itemId);
+    }
+
+    @Transactional(readOnly = true)
     public List<ItemSale> list(Short status, Long patientId, Long prescriptionId) {
         List<ItemSale> sales = saleRepository.search(status, patientId, prescriptionId);
         for (ItemSale s : sales) {
@@ -333,6 +347,23 @@ public class ItemSaleService {
             case 3 -> "FULLY_DISPENSED";
             default -> String.valueOf(s);
         };
+    }
+
+    private static boolean isPrescriptionUniqueViolation(DataIntegrityViolationException e) {
+        Throwable cause = e;
+        while (cause != null) {
+            if (cause instanceof org.hibernate.exception.ConstraintViolationException cve) {
+                if (cve.getConstraintName() != null && cve.getConstraintName().toLowerCase().contains("uq_t_itemsale_prescription")) {
+                    return true;
+                }
+            }
+            String msg = cause.getMessage();
+            if (msg != null && msg.toLowerCase().contains("uq_t_itemsale_prescription")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     private Long nextId(String sequenceName) {

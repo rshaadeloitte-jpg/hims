@@ -101,7 +101,16 @@ class ItemSaleServiceTest {
 
         when(saleRepository.save(any())).thenAnswer(inv -> {
             ItemSale s = inv.getArgument(0);
-            salesById.put(s.getSaleId(), s);
+            if (s != null) {
+                salesById.put(s.getSaleId(), s);
+            }
+            return s;
+        });
+        when(saleRepository.saveAndFlush(any())).thenAnswer(inv -> {
+            ItemSale s = inv.getArgument(0);
+            if (s != null) {
+                salesById.put(s.getSaleId(), s);
+            }
             return s;
         });
         when(saleRepository.findById(anyLong()))
@@ -461,6 +470,29 @@ class ItemSaleServiceTest {
                 .extracting(e -> ((InvalidSaleRequestException) e).getErrorCode())
                 .isEqualTo("PH_PRESCRIPTION_HAS_SALE");
         assertThat(salesById).hasSize(before);
+    }
+
+    @Test
+    void create_uniqueViolationOnPrescriptionIndex_mapsToHasSale() {
+        when(saleRepository.saveAndFlush(any())).thenThrow(
+                new org.springframework.dao.DataIntegrityViolationException(
+                        "duplicate key value violates unique constraint \"uq_t_itemsale_prescription\""));
+
+        assertThatThrownBy(() -> service.create(11L, 555L, List.of(line(501, 2))))
+                .isInstanceOf(InvalidSaleRequestException.class)
+                .extracting(e -> ((InvalidSaleRequestException) e).getErrorCode())
+                .isEqualTo("PH_PRESCRIPTION_HAS_SALE");
+    }
+
+    @Test
+    void create_otherIntegrityViolation_isRethrown() {
+        when(saleRepository.saveAndFlush(any())).thenThrow(
+                new org.springframework.dao.DataIntegrityViolationException(
+                        "insert or update violates foreign key constraint \"fk_patient\""));
+
+        assertThatThrownBy(() -> service.create(11L, 555L, List.of(line(501, 2))))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
+                .hasMessageContaining("fk_patient");
     }
 
     @Test

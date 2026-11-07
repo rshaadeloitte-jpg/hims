@@ -17,6 +17,7 @@ export interface PrescriptionItem {
   qty: number | string;
   dose: string;
   frequency: string;
+  pendingQty?: number;
 }
 
 export interface DispensePayload {
@@ -25,6 +26,23 @@ export interface DispensePayload {
     itemId: number;
     dispensedQuantity: number;
   }[];
+}
+
+export interface AvailableBatch {
+  batchId: number | null;
+  batchCode: string | null;
+  expiryDate: string | null;
+  availableQty: number;
+  mrp: number | null;
+  purchaseRate: number | null;
+  vatPercentage: number | null;
+  vatAmount: number | null;
+  discountOnSale: number | null;
+  conversionFactor: number | null;
+  freezeRecall: boolean | null;
+  itemId: number | null;
+  itemName: string | null;
+  itemCode: string | null;
 }
 
 export interface ItemSaleDetail {

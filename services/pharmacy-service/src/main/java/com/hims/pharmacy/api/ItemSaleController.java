@@ -1,6 +1,7 @@
 package com.hims.pharmacy.api;
 
 import com.hims.pharmacy.application.ItemSaleService;
+import com.hims.pharmacy.application.ItemStockClient;
 import com.hims.pharmacy.application.exceptions.InvalidSaleRequestException;
 import com.hims.pharmacy.domain.model.ItemSale;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,6 +63,12 @@ public class ItemSaleController {
                                @RequestParam(required = false) Long patientId,
                                @RequestParam(required = false) Long prescriptionId) {
         return service.list(status == null ? null : parseStatus(status), patientId, prescriptionId);
+    }
+
+    @GetMapping("/available-batches")
+    @Operation(summary = "Available FEFO batches for an item in the pharmacy store")
+    public List<ItemStockClient.BatchAvailabilityView> availableBatches(@RequestParam Long itemId) {
+        return service.availableBatches(itemId);
     }
 
     @PostMapping("/{id}/dispense")

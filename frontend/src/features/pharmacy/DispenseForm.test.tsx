@@ -296,4 +296,173 @@ describe("DispenseForm", () => {
 
     await screen.findByText(/Fractional quantities are not supported/);
   });
+
+  test("allocates FEFO across two batches", async () => {
+    const batches = [
+      {
+        batchId: 101,
+        batchCode: "BATCH-A",
+        expiryDate: "2026-12-31",
+        availableQty: 3,
+      },
+      {
+        batchId: 102,
+        batchCode: "BATCH-B",
+        expiryDate: "2027-06-30",
+        availableQty: 4,
+      },
+    ];
+    setupFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/v1/item-sales") && url.includes("prescriptionId=") && method === "GET") {
+        return { status: 200, body: [] };
+      }
+      if (url.includes("/api/v1/item-sales/available-batches") && method === "GET") {
+        return { status: 200, body: batches };
+      }
+      return { status: 200, body: [] };
+    });
+
+    renderForm();
+    await screen.findByTestId("batch-qty-1-101");
+    expect(screen.getByTestId("batch-qty-1-101")).toHaveValue(3);
+    expect(screen.getByTestId("batch-qty-1-102")).toHaveValue(2);
+  });
+
+  test("allocation edit stays within availableQty", async () => {
+    const batches = [
+      {
+        batchId: 101,
+        batchCode: "BATCH-A",
+        expiryDate: "2026-12-31",
+        availableQty: 3,
+      },
+      {
+        batchId: 102,
+        batchCode: "BATCH-B",
+        expiryDate: "2027-06-30",
+        availableQty: 4,
+      },
+    ];
+    setupFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/v1/item-sales") && url.includes("prescriptionId=") && method === "GET") {
+        return { status: 200, body: [] };
+      }
+      if (url.includes("/api/v1/item-sales/available-batches") && method === "GET") {
+        return { status: 200, body: batches };
+      }
+      return { status: 200, body: [] };
+    });
+
+    renderForm();
+    await screen.findByTestId("batch-qty-1-101");
+
+    // Edit allocation above availableQty (available is 3, set to 5)
+    fireEvent.change(screen.getByTestId("batch-qty-1-101"), { target: { value: "5" } });
+    fireEvent.click(screen.getByTestId("confirm-dispense"));
+
+    await screen.findByText(/Allocation must be <= available quantity/);
+
+    // Edit allocation back within availableQty (set to 2)
+    fireEvent.change(screen.getByTestId("batch-qty-1-101"), { target: { value: "2" } });
+    expect(screen.getByTestId("batch-qty-1-101")).toHaveValue(2);
+  });
+
+  test("insufficient stock blocks confirm with message", async () => {
+    const batches = [
+      {
+        batchId: 101,
+        batchCode: "BATCH-A",
+        expiryDate: "2026-12-31",
+        availableQty: 2,
+      },
+    ];
+    setupFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/v1/item-sales") && url.includes("prescriptionId=") && method === "GET") {
+        return { status: 200, body: [] };
+      }
+      if (url.includes("/api/v1/item-sales/available-batches") && method === "GET") {
+        return { status: 200, body: batches };
+      }
+      return { status: 200, body: [] };
+    });
+
+    renderForm();
+    await screen.findByTestId("batch-qty-1-101");
+    fireEvent.click(screen.getByTestId("confirm-dispense"));
+
+    await screen.findByText("Insufficient stock: only 2 available of 5 requested");
+    const creates = fetchMock.mock.calls.filter(([u, i]) => String(u) === "/api/v1/item-sales" && (i?.method ?? "GET") === "POST");
+    expect(creates.length).toBe(0);
+  });
+
+  test("create body has one line per batch with batchId", async () => {
+    const batches = [
+      {
+        batchId: 101,
+        batchCode: "BATCH-A",
+        expiryDate: "2026-12-31",
+        availableQty: 3,
+      },
+      {
+        batchId: 102,
+        batchCode: "BATCH-B",
+        expiryDate: "2027-06-30",
+        availableQty: 4,
+      },
+    ];
+    setupFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/v1/item-sales") && url.includes("prescriptionId=") && method === "GET") {
+        return { status: 200, body: [] };
+      }
+      if (url.includes("/api/v1/item-sales/available-batches") && method === "GET") {
+        return { status: 200, body: batches };
+      }
+      if (url === "/api/v1/item-sales" && method === "POST") {
+        return { status: 201, body: makeSale() };
+      }
+      if (url === "/api/v1/item-sales/1/dispense" && method === "POST") {
+        return { status: 200, body: makeSale({ statusCode: 3, dispensed: true }) };
+      }
+      return { status: 200, body: [] };
+    });
+
+    renderForm();
+    await screen.findByTestId("batch-qty-1-101");
+    fireEvent.click(screen.getByTestId("confirm-dispense"));
+
+    await screen.findByText(/Dispensed successfully/);
+
+    const createCall = fetchMock.mock.calls.find(([u, i]) => String(u) === "/api/v1/item-sales" && (i?.method ?? "GET") === "POST");
+    expect(createCall).toBeTruthy();
+    const body = JSON.parse(String(createCall![1]?.body));
+    expect(body.lines).toEqual([
+      { itemId: 5001, qty: 3, batchId: "101" },
+      { itemId: 5001, qty: 2, batchId: "102" },
+    ]);
+  });
+
+  test("resume shows each line's batch", async () => {
+    const existingSale = makeSale({
+      saleId: 42,
+      details: [
+        saleDetail({ saleId: 42, lineNo: 1, itemId: 5001, batchId: "BATCH-101", pendingQty: 3 }),
+        saleDetail({ saleId: 42, lineNo: 2, itemId: 5002, batchId: "BATCH-102", pendingQty: 2 }),
+      ],
+    });
+    setupFetch((url, init) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/api/v1/item-sales") && url.includes("prescriptionId=") && method === "GET") {
+        return { status: 200, body: [existingSale] };
+      }
+      return { status: 200, body: [] };
+    });
+
+    renderForm();
+    await screen.findByText("Batch BATCH-101");
+    expect(screen.getByText("Batch BATCH-102")).toBeInTheDocument();
+  });
 });

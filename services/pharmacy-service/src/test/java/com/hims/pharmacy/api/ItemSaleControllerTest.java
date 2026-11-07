@@ -1,6 +1,7 @@
 package com.hims.pharmacy.api;
 
 import com.hims.pharmacy.application.ItemSaleService;
+import com.hims.pharmacy.application.ItemStockClient;
 import com.hims.pharmacy.application.exceptions.IllegalSaleStateException;
 import com.hims.pharmacy.application.exceptions.InvalidSaleRequestException;
 import com.hims.pharmacy.application.exceptions.SaleNotFoundException;
@@ -181,5 +182,29 @@ class ItemSaleControllerTest {
                         .content("{\"lines\":[{\"lineNo\":1,\"qty\":1}]}"))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.errorCode").value("STOCK_SERVICE_UNAVAILABLE"));
+    }
+
+    @Test
+    void availableBatches_returnsFefoListForItem() throws Exception {
+        ItemStockClient.BatchAvailabilityView batch = new ItemStockClient.BatchAvailabilityView(
+                101L, "BATCH-A", java.sql.Date.valueOf("2026-12-31"),
+                new java.math.BigDecimal("15.00"),
+                new java.math.BigDecimal("20.00"),
+                new java.math.BigDecimal("10.00"),
+                new java.math.BigDecimal("5.00"),
+                new java.math.BigDecimal("1.00"),
+                new java.math.BigDecimal("0.00"),
+                new java.math.BigDecimal("1.00"),
+                false, 501L, "Paracetamol", "MED-001");
+        when(itemSaleService.availableBatches(501L)).thenReturn(List.of(batch));
+
+        mockMvc.perform(get("/api/v1/item-sales/available-batches")
+                        .with(csrf()).with(user("devops").roles("DEV"))
+                        .param("itemId", "501"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].batchId").value(101))
+                .andExpect(jsonPath("$[0].batchCode").value("BATCH-A"))
+                .andExpect(jsonPath("$[0].expiryDate").value("2026-12-31"))
+                .andExpect(jsonPath("$[0].availableQty").value(15.00));
     }
 }

@@ -8,7 +8,10 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -122,6 +125,89 @@ public class ItemStockClient {
         }
     }
 
+    /**
+     * Fetch FEFO batch availability for one item in the pharmacy store from
+     * item-service. Mirrors services/item-service BatchAvailabilityView field
+     * for field. Item-service errors map to StockIssueException (502).
+     */
+    public List<BatchAvailabilityView> availableBatches(long storeId, long itemId) {
+        try {
+            String body = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/stock/available-batches")
+                            .queryParam("storeId", storeId)
+                            .queryParam("itemId", itemId)
+                            .build())
+                    .retrieve()
+                    .body(String.class);
+            if (body == null || body.isBlank()) {
+                return List.of();
+            }
+            JsonNode node = mapper.readTree(body);
+            if (node.has("status") && "ERROR".equals(node.get("status").asText())) {
+                throw new StockIssueException("item-service rejected available-batches: "
+                        + node.path("message").asText("(no message)"));
+            }
+            List<BatchAvailabilityView> result = new ArrayList<>();
+            if (node.isArray()) {
+                for (JsonNode b : node) {
+                    result.add(new BatchAvailabilityView(
+                            longOrNull(b, "batchId"),
+                            textOrNull(b, "batchCode"),
+                            dateOrNull(b, "expiryDate"),
+                            decimalOrNull(b, "availableQty"),
+                            decimalOrNull(b, "mrp"),
+                            decimalOrNull(b, "purchaseRate"),
+                            decimalOrNull(b, "vatPercentage"),
+                            decimalOrNull(b, "vatAmount"),
+                            decimalOrNull(b, "discountOnSale"),
+                            decimalOrNull(b, "conversionFactor"),
+                            boolOrNull(b, "freezeRecall"),
+                            longOrNull(b, "itemId"),
+                            textOrNull(b, "itemName"),
+                            textOrNull(b, "itemCode")));
+                }
+            }
+            return result;
+        } catch (StockIssueException e) {
+            throw e;
+        } catch (RestClientException e) {
+            throw new StockIssueException("item-service available-batches call failed for item " + itemId, e);
+        } catch (Exception e) {
+            throw new StockIssueException("Unparseable item-service available-batches response for item " + itemId, e);
+        }
+    }
+
+    private static String textOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        return (v.isMissingNode() || v.isNull()) ? null : v.asText();
+    }
+
+    private static Long longOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        if (v.isMissingNode() || v.isNull()) return null;
+        return v.asLong();
+    }
+
+    private static BigDecimal decimalOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        if (v.isMissingNode() || v.isNull()) return null;
+        if (v.isNumber()) return v.decimalValue();
+        try { return new BigDecimal(v.asText()); } catch (Exception e) { return null; }
+    }
+
+    private static Boolean boolOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        if (v.isMissingNode() || v.isNull()) return null;
+        return v.asBoolean();
+    }
+
+    private static Date dateOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        if (v.isMissingNode() || v.isNull()) return null;
+        try { return Date.valueOf(v.asText()); } catch (Exception e) { return null; }
+    }
+
     /** Numeric batch reference when parseable, else null (documented mapping). */
     static Long parseBatchRef(String batchId) {
         if (batchId == null || batchId.isBlank()) {
@@ -133,6 +219,23 @@ public class ItemStockClient {
             return null;
         }
     }
+
+    /** Mirror of services/item-service BatchAvailabilityView (FEFO batch availability). */
+    public record BatchAvailabilityView(
+            Long batchId,
+            String batchCode,
+            Date expiryDate,
+            BigDecimal availableQty,
+            BigDecimal mrp,
+            BigDecimal purchaseRate,
+            BigDecimal vatPercentage,
+            BigDecimal vatAmount,
+            BigDecimal discountOnSale,
+            BigDecimal conversionFactor,
+            Boolean freezeRecall,
+            Long itemId,
+            String itemName,
+            String itemCode) {}
 
     /** Subset of the item-service ItemStockBalance this service needs. */
     public record BalanceView(long balanceId, long storeId, long itemId, String qtyInHand) {}

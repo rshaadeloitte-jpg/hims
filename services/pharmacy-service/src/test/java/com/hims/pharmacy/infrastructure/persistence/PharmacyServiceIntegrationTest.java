@@ -155,6 +155,27 @@ class PharmacyServiceIntegrationTest {
                 "t_prescription_dispense", "t_prescription_dispense_detail",
                 "t_drug_intervention", "t_ward_picklist", "outbox");
         assertThat(outboxRepository.count()).isZero();
+
+        List<String> indexes = jdbc.queryForList(
+                "SELECT indexname FROM pg_indexes WHERE schemaname = 'ihms_pharmacy' AND tablename = 't_itemsale'",
+                String.class);
+        assertThat(indexes).contains("uq_t_itemsale_prescription");
+    }
+
+    @Test
+    void v4_prescriptionUniqueIndex_exists_andSecondSaleRejectedWithCode() {
+        List<String> indexes = jdbc.queryForList(
+                "SELECT indexname FROM pg_indexes WHERE schemaname = 'ihms_pharmacy' AND tablename = 't_itemsale'",
+                String.class);
+        assertThat(indexes).contains("uq_t_itemsale_prescription");
+
+        ItemSale first = saleService.create(508L, 888L, List.of(new ItemSaleService.LineInput(501L, null, 1)));
+        assertThat(first.getSaleId()).isPositive();
+
+        assertThatThrownBy(() -> saleService.create(508L, 888L, List.of(new ItemSaleService.LineInput(501L, null, 1))))
+                .isInstanceOf(InvalidSaleRequestException.class)
+                .extracting(e -> ((InvalidSaleRequestException) e).getErrorCode())
+                .isEqualTo("PH_PRESCRIPTION_HAS_SALE");
     }
 
     @Test

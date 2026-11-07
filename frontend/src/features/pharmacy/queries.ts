@@ -7,6 +7,7 @@ import type {
   ItemSale,
   SaleReturn,
   Intervention,
+  AvailableBatch,
 } from "./types";
 
 const PHARMACY_BASE: string = import.meta.env.VITE_PHARMACY_API_BASE ?? "";
@@ -95,6 +96,17 @@ export function useItemSale(id: number) {
     queryKey: pharmacyQueryKeys.sale(id),
     queryFn: () => pharmacyJson<ItemSale>(`${PHARMACY_BASE}/api/v1/item-sales/${id}`),
     enabled: id > 0,
+  });
+}
+
+export function useAvailableBatches(itemId: number | null | undefined) {
+  return useQuery<AvailableBatch[]>({
+    queryKey: ["pharmacy", "available-batches", itemId ?? null],
+    queryFn: () =>
+      pharmacyJson<AvailableBatch[]>(
+        `${PHARMACY_BASE}/api/v1/item-sales/available-batches?itemId=${itemId}`,
+      ),
+    enabled: !!itemId && itemId > 0,
   });
 }
 
