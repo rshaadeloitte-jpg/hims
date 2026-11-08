@@ -89,6 +89,19 @@ class Mig011CleanMastersIntegrationTest {
 
 
     @Test
+    void v9LgdGeoTables_exist() {
+        List<String> tables = em.createNativeQuery("""
+                        SELECT table_name FROM information_schema.tables
+                        WHERE table_schema = 'ihms_master' AND table_name IN
+                        ('geo_sub_district','geo_village','geo_block','geo_block_village',
+                         'lgd_local_body','lgd_ward','lgd_ward_coverage','lgd_village_gram_panchayat')
+                        ORDER BY table_name""").getResultList();
+        assertThat(tables).containsExactlyInAnyOrder(
+                "geo_sub_district", "geo_village", "geo_block", "geo_block_village",
+                "lgd_local_body", "lgd_ward", "lgd_ward_coverage", "lgd_village_gram_panchayat");
+    }
+
+    @Test
     void doctor_createReadUpdateDelete_roundTrip() throws Exception {
         MasterEntityBase created = writeUseCase.create("doctor",
                 mapper.readTree("{\"firstName\":\"Anita\",\"lastName\":\"Sharma\",\"mobileNo\":\"9876500001\",\"emailId\":\"anita@example.org\",\"unitId\":5}"),
