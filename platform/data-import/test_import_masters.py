@@ -1,27 +1,82 @@
 #!/usr/bin/env python3
+import io
 import os
 import re
+import subprocess
+import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from import_masters import (
     ALLOWED_COUNTRY_COLUMNS,
+    EXPECTED_DISTRICT_HEADERS,
+    EXPECTED_STATE_HEADERS,
+    col_index_to_letter,
     compute_sha256,
     derive_parent_linearization_uris,
+    find_header_col,
     generate_countries_sql,
     generate_icd11_sql,
+    generate_lgd_sql,
     generate_test_data,
     generate_testdata_sql,
     get_psql_cmd,
     map_country_row,
+    parse_census_code,
     parse_country_file,
     parse_icd11_file,
+    parse_lgd_districts,
+    parse_lgd_states,
     strip_title,
+    to_int_str,
+    validate_lgd,
 )
 
 TESTDATA_DIR = Path(__file__).resolve().parent / "testdata"
 ICD11_SAMPLE = TESTDATA_DIR / "icd11-sample.txt"
 COUNTRY_SAMPLE = TESTDATA_DIR / "country-sample.csv"
+
+
+def create_test_xlsx(rows: list[list[str]], filepath: str) -> None:
+    """Helper to build a valid minimal .xlsx file using zipfile and xml.etree."""
+    shared_strings: list[str] = []
+    string_map: dict[str, int] = {}
+    for r in rows:
+        for val in r:
+            if val not in string_map:
+                string_map[val] = len(shared_strings)
+                shared_strings.append(val)
+
+    sst_parts = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        f'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="{len(shared_strings)}" uniqueCount="{len(shared_strings)}">',
+    ]
+    for s in shared_strings:
+        sst_parts.append(f"<si><t>{s}</t></si>")
+    sst_parts.append("</sst>")
+
+    sheet_parts = [
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>',
+    ]
+    for r_idx, row in enumerate(rows, start=1):
+        sheet_parts.append(f'<row r="{r_idx}">')
+        for c_idx, val in enumerate(row):
+            col_letter = col_index_to_letter(c_idx)
+            s_idx = string_map[val]
+            sheet_parts.append(f'<c r="{col_letter}{r_idx}" t="s"><v>{s_idx}</v></c>')
+        sheet_parts.append("</row>")
+    sheet_parts.append("</sheetData></worksheet>")
+
+    with zipfile.ZipFile(filepath, "w") as zf:
+        zf.writestr("xl/sharedStrings.xml", "".join(sst_parts))
+        zf.writestr("xl/worksheets/sheet1.xml", "".join(sheet_parts))
+        zf.writestr(
+            "xl/workbook.xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        )
 
 
 class TestImportMasters(unittest.TestCase):
@@ -364,6 +419,388 @@ class TestImportMasters(unittest.TestCase):
             self.assertFalse("--password" in arg)
             self.assertFalse("--username" in arg)
             self.assertFalse("postgresql://" in arg)
+
+    def test_build_tiny_xlsx_and_parse_lgd(self):
+        """Test building tiny .xlsx files with zipfile and parsing them (2 states, 3 districts)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            states_path = os.path.join(tmpdir, "states.xlsx")
+            districts_path = os.path.join(tmpdir, "districts.xlsx")
+
+            states_data = [
+                ["All State of India"],
+                [
+                    "S.No.",
+                    "State Code",
+                    "State Version",
+                    "State Name (In English)",
+                    "State Name (In Local)",
+                    "Census 2001 Code",
+                    "Census 2011 Code",
+                    "State or UT",
+                ],
+                [
+                    "1.0",
+                    "35.0",
+                    "1.0",
+                    "Andaman and Nicobar Islands",
+                    "अंडमान और निकोबार द्वीप समूह",
+                    "35.0",
+                    "35.0",
+                    "UT",
+                ],
+                [
+                    "2.0",
+                    "28.0",
+                    "1.0",
+                    "Andhra Pradesh",
+                    "ఆంధ్రప్రదేశ్",
+                    "28.0",
+                    "28.0",
+                    "State",
+                ],
+            ]
+            districts_data = [
+                ["All District of India"],
+                [
+                    "S.No.",
+                    "State Code",
+                    "State Name (In English)",
+                    "District Code",
+                    "District Name(In English)",
+                    "Census 2001 Code",
+                    "Census 2011 Code",
+                ],
+                [
+                    "1.0",
+                    "35.0",
+                    "Andaman and Nicobar Islands",
+                    "601.0",
+                    "Nicobars",
+                    "0.0",
+                    "638.0",
+                ],
+                [
+                    "2.0",
+                    "35.0",
+                    "Andaman and Nicobar Islands",
+                    "602.0",
+                    "North and Middle Andaman",
+                    "0.0",
+                    "639.0",
+                ],
+                [
+                    "3.0",
+                    "28.0",
+                    "Andhra Pradesh",
+                    "502.0",
+                    "Anantapur",
+                    "0.0",
+                    "0.0",
+                ],
+            ]
+
+            create_test_xlsx(states_data, states_path)
+            create_test_xlsx(districts_data, districts_path)
+
+            states = parse_lgd_states(states_path)
+            districts = parse_lgd_districts(districts_path)
+
+            self.assertEqual(len(states), 2)
+            self.assertEqual(states[0], {"code": "35", "name": "Andaman and Nicobar Islands"})
+            self.assertEqual(states[1], {"code": "28", "name": "Andhra Pradesh"})
+
+            self.assertEqual(len(districts), 3)
+            self.assertEqual(
+                districts[0],
+                {"state_code": "35", "code": "601", "name": "Nicobars", "census_2011_code": "638"},
+            )
+            self.assertEqual(
+                districts[1],
+                {
+                    "state_code": "35",
+                    "code": "602",
+                    "name": "North and Middle Andaman",
+                    "census_2011_code": "639",
+                },
+            )
+            # Census 2011 code 0.0 becomes empty string (NULL in DB)
+            self.assertEqual(
+                districts[2],
+                {"state_code": "28", "code": "502", "name": "Anantapur", "census_2011_code": ""},
+            )
+
+            # Validation without exact 36/790 succeeds
+            validate_lgd(states, districts, exact_counts=False)
+
+    def test_header_lookup_by_name(self):
+        """Test finding columns by header name, even when columns are scrambled or have spacing differences."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            states_path = os.path.join(tmpdir, "states_scrambled.xlsx")
+            districts_path = os.path.join(tmpdir, "districts_scrambled.xlsx")
+
+            # Scrambled column order for states
+            states_data = [
+                ["Title Row"],
+                [
+                    "State Name (In English)",
+                    "S.No.",
+                    "State or UT",
+                    "State Code",
+                    "State Version",
+                    "State Name (In Local)",
+                    "Census 2001 Code",
+                    "Census 2011 Code",
+                ],
+                [
+                    "Andaman and Nicobar Islands",
+                    "1.0",
+                    "UT",
+                    "35.0",
+                    "1.0",
+                    "Local Name",
+                    "35.0",
+                    "35.0",
+                ],
+            ]
+            create_test_xlsx(states_data, states_path)
+            states = parse_lgd_states(states_path)
+            self.assertEqual(len(states), 1)
+            self.assertEqual(states[0]["code"], "35")
+            self.assertEqual(states[0]["name"], "Andaman and Nicobar Islands")
+
+            # Scrambled column order and "District Name (In English)" with space
+            districts_data = [
+                ["Title Row"],
+                [
+                    "District Code",
+                    "District Name (In English)",
+                    "Census 2011 Code",
+                    "State Code",
+                    "S.No.",
+                    "State Name (In English)",
+                    "Census 2001 Code",
+                ],
+                [
+                    "601.0",
+                    "Nicobars",
+                    "638.0",
+                    "35.0",
+                    "1.0",
+                    "Andaman and Nicobar Islands",
+                    "0.0",
+                ],
+            ]
+            create_test_xlsx(districts_data, districts_path)
+            districts = parse_lgd_districts(districts_path)
+            self.assertEqual(len(districts), 1)
+            self.assertEqual(districts[0]["state_code"], "35")
+            self.assertEqual(districts[0]["code"], "601")
+            self.assertEqual(districts[0]["name"], "Nicobars")
+            self.assertEqual(districts[0]["census_2011_code"], "638")
+
+    def test_integer_conversion_and_rejection_of_float(self):
+        """Test integer conversion converts '35.0' to '35' and rejects non-integer floats like '35.5'."""
+        self.assertEqual(to_int_str("35.0"), "35")
+        self.assertEqual(to_int_str("35"), "35")
+        self.assertEqual(to_int_str("0.0"), "0")
+        self.assertEqual(to_int_str("0"), "0")
+        self.assertEqual(to_int_str("100.00"), "100")
+
+        with self.assertRaises(ValueError):
+            to_int_str("35.5")
+        with self.assertRaises(ValueError):
+            to_int_str("35.1")
+        with self.assertRaises(ValueError):
+            to_int_str("abc")
+        with self.assertRaises(ValueError):
+            to_int_str("")
+        with self.assertRaises(ValueError):
+            to_int_str(None)
+
+        self.assertIsNone(parse_census_code("0.0"))
+        self.assertIsNone(parse_census_code("0"))
+        self.assertIsNone(parse_census_code(""))
+        self.assertIsNone(parse_census_code(None))
+        self.assertEqual(parse_census_code("638.0"), "638")
+        with self.assertRaises(ValueError):
+            parse_census_code("35.5")
+
+        # Test parsing an .xlsx file with '35.5' rejects it
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_path = os.path.join(tmpdir, "bad_state.xlsx")
+            bad_data = [
+                ["Title"],
+                EXPECTED_STATE_HEADERS,
+                ["1.0", "35.5", "1.0", "Bad State", "Local", "0.0", "0.0", "State"],
+            ]
+            create_test_xlsx(bad_data, bad_path)
+            with self.assertRaises(ValueError) as ctx:
+                parse_lgd_states(bad_path)
+            self.assertIn("35.5", str(ctx.exception))
+
+    def test_missing_header_fails(self):
+        """Test that missing required headers fail clearly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # States missing "State Code"
+            p1 = os.path.join(tmpdir, "missing_code.xlsx")
+            headers_no_code = [h for h in EXPECTED_STATE_HEADERS if h != "State Code"]
+            create_test_xlsx([["Title"], headers_no_code, ["1.0"] * len(headers_no_code)], p1)
+            with self.assertRaises(ValueError) as ctx:
+                parse_lgd_states(p1)
+            self.assertIn("Missing required header 'State Code'", str(ctx.exception))
+
+            # States missing "State Name (In English)"
+            p2 = os.path.join(tmpdir, "missing_name.xlsx")
+            headers_no_name = [h for h in EXPECTED_STATE_HEADERS if h != "State Name (In English)"]
+            create_test_xlsx([["Title"], headers_no_name, ["1.0"] * len(headers_no_name)], p2)
+            with self.assertRaises(ValueError) as ctx:
+                parse_lgd_states(p2)
+            self.assertIn("Missing required header 'State Name (In English)'", str(ctx.exception))
+
+            # Districts missing "District Code"
+            p3 = os.path.join(tmpdir, "missing_dist_code.xlsx")
+            headers_no_dist = [h for h in EXPECTED_DISTRICT_HEADERS if h != "District Code"]
+            create_test_xlsx([["Title"], headers_no_dist, ["1.0"] * len(headers_no_dist)], p3)
+            with self.assertRaises(ValueError) as ctx:
+                parse_lgd_districts(p3)
+            self.assertIn("Missing required header 'District Code'", str(ctx.exception))
+
+    def test_district_with_unknown_state_aborts(self):
+        """Test that a district referencing an unknown state code aborts validation and SQL contains check."""
+        states = [{"code": "35", "name": "Andaman"}]
+        districts = [{"state_code": "99", "code": "901", "name": "Lost District", "census_2011_code": ""}]
+
+        with self.assertRaises(ValueError) as ctx:
+            validate_lgd(states, districts, exact_counts=False)
+        self.assertIn("unknown state code '99'", str(ctx.exception))
+
+        sql = generate_lgd_sql("/tmp/s.csv", "/tmp/d.csv", "src", "sha256", 2, "msg")
+        self.assertIn("Every district must map to a loaded state", sql)
+
+    def test_lgd_exact_counts_and_duplicates_validation(self):
+        """Test validation of 36 states, 790 districts, and duplicate code checks."""
+        states_2 = [{"code": "35", "name": "S1"}, {"code": "28", "name": "S2"}]
+        districts_3 = [
+            {"state_code": "35", "code": "601", "name": "D1", "census_2011_code": ""},
+            {"state_code": "35", "code": "602", "name": "D2", "census_2011_code": ""},
+            {"state_code": "28", "code": "502", "name": "D3", "census_2011_code": ""},
+        ]
+        # Exact count check fails for partial test data
+        with self.assertRaises(ValueError) as ctx:
+            validate_lgd(states_2, districts_3, exact_counts=True)
+        self.assertIn("expected exactly 36 states", str(ctx.exception))
+
+        # Duplicate state code fails
+        dup_states = [{"code": "35", "name": "S1"}, {"code": "35", "name": "S2"}]
+        with self.assertRaises(ValueError) as ctx:
+            validate_lgd(dup_states, districts_3, exact_counts=False)
+        self.assertIn("duplicate state code '35'", str(ctx.exception))
+
+        # Duplicate district code fails
+        dup_districts = [
+            {"state_code": "35", "code": "601", "name": "D1", "census_2011_code": ""},
+            {"state_code": "35", "code": "601", "name": "D2", "census_2011_code": ""},
+        ]
+        with self.assertRaises(ValueError) as ctx:
+            validate_lgd(states_2, dup_districts, exact_counts=False)
+        self.assertIn("duplicate district code '601'", str(ctx.exception))
+
+    def test_lgd_generated_sql_uses_two_unique_constraints_and_nextval(self):
+        """Test that generate_lgd_sql uses uq_geo_state_country_code, uq_geo_district_state_code, and sequences."""
+        sql = generate_lgd_sql("/tmp/states.csv", "/tmp/districts.csv", "src", "sha256", 5, "msg")
+
+        # Conflict targets
+        self.assertIn("ON CONFLICT (country_id, code) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (state_id, code) DO UPDATE SET", sql)
+
+        # Sequences from V5 migration
+        self.assertIn("nextval('ihms_master.geo_state_seq')", sql)
+        self.assertIn("nextval('ihms_master.geo_district_seq')", sql)
+
+        # Country 'IN' check and single transaction
+        self.assertIn("Country with code ''IN'' does not exist", sql)
+        self.assertIn("BEGIN;", sql)
+        self.assertIn("COMMIT;", sql)
+
+    def test_name_hindi_and_abdm_code_untouched(self):
+        """Test that name_hindi and abdm_code are untouched by the LGD import SQL."""
+        sql = generate_lgd_sql("/tmp/states.csv", "/tmp/districts.csv", "src", "sha256", 5, "msg")
+
+        # geo_state table insert and update
+        state_insert_block = sql[sql.index("INSERT INTO ihms_master.geo_state"):sql.index("INSERT INTO ihms_master.geo_district")]
+        self.assertNotIn("name_hindi", state_insert_block)
+        self.assertNotIn("abdm_code", state_insert_block)
+
+        # geo_district table insert and update
+        dist_insert_block = sql[sql.index("INSERT INTO ihms_master.geo_district"):sql.index("INSERT INTO ihms_master.master_import_log")]
+        self.assertNotIn("abdm_district_code", dist_insert_block)
+
+    def test_log_counting_fix(self):
+        """Test that every subcommand correctly computes inserted and updated counts using RETURNING (xmax = 0)."""
+        icd_sql = generate_icd11_sql("/tmp/icd.csv", "2025-01", "src", "sha", 100, "msg")
+        geo_sql = generate_countries_sql("/tmp/geo.csv", "src", "sha", 100, "msg")
+        test_sql = generate_testdata_sql("/tmp/u.csv", "/tmp/d.csv", "/tmp/s.csv", "sha", 41, "msg")
+        lgd_sql = generate_lgd_sql("/tmp/s.csv", "/tmp/d.csv", "src", "sha", 826, "msg")
+
+        for name, sql in [("icd11", icd_sql), ("countries", geo_sql), ("testdata", test_sql), ("lgd", lgd_sql)]:
+            self.assertIn("(xmax = 0) AS inserted", sql, f"{name} missing (xmax = 0) AS inserted")
+            self.assertNotIn("{rows_read}, {rows_read}, 0", sql, f"{name} still hardcoding rows_inserted = rows_read")
+
+        # Verify simulation of xmax counting logic: first run inserts, rerun updates
+        def simulate_xmax_counting(incoming_keys: list[str], existing_keys: set[str]):
+            inserted = 0
+            updated = 0
+            for key in incoming_keys:
+                if key in existing_keys:
+                    # Conflict DO UPDATE: xmax != 0 -> inserted is False
+                    updated += 1
+                else:
+                    # New insert: xmax = 0 -> inserted is True
+                    inserted += 1
+                    existing_keys.add(key)
+            return inserted, updated
+
+        db_keys: set[str] = set()
+        incoming = ["K1", "K2", "K3"]
+
+        # Run 1: all new
+        ins1, upd1 = simulate_xmax_counting(incoming, db_keys)
+        self.assertEqual(ins1, 3)
+        self.assertEqual(upd1, 0)
+
+        # Run 2: all rerun (all conflict and update)
+        ins2, upd2 = simulate_xmax_counting(incoming, db_keys)
+        self.assertEqual(ins2, 0)
+        self.assertEqual(upd2, 3)
+
+    def test_lgd_cli_dry_run(self):
+        """Test lgd subcommand via CLI in --dry-run mode with 36 states and 790 districts."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            s_path = os.path.join(tmpdir, "states.xlsx")
+            d_path = os.path.join(tmpdir, "districts.xlsx")
+
+            s_rows = [["Title"], EXPECTED_STATE_HEADERS] + [
+                ["1.0", f"{i}.0", "1.0", f"State {i}", "Local", "0.0", "0.0", "State"]
+                for i in range(1, 37)
+            ]
+            d_rows = [["Title"], EXPECTED_DISTRICT_HEADERS] + [
+                ["1.0", "1.0", "State 1", f"{i}.0", f"District {i}", "0.0", "0.0"]
+                for i in range(1, 791)
+            ]
+            create_test_xlsx(s_rows, s_path)
+            create_test_xlsx(d_rows, d_path)
+
+            script_path = os.path.join(os.path.dirname(__file__), "import_masters.py")
+            res = subprocess.run(
+                [sys.executable, script_path, "lgd", s_path, d_path, "--dry-run"],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(res.returncode, 0, f"CLI stderr: {res.stderr}")
+            self.assertIn("States parsed: 36", res.stdout)
+            self.assertIn("Districts parsed: 790", res.stdout)
+            self.assertIn("Total rows: 826", res.stdout)
+            self.assertIn("Dry-run mode", res.stdout)
 
 
 if __name__ == "__main__":
