@@ -84,7 +84,7 @@ CREATE TABLE ihms_master.lgd_ward (
     local_body_id BIGINT NOT NULL REFERENCES ihms_master.lgd_local_body (id),
     ward_category VARCHAR(3) NOT NULL CHECK (ward_category IN ('PRI','ULB')),
     code VARCHAR(32) NOT NULL,
-    ward_number VARCHAR(16),
+    ward_number VARCHAR(64),
     name VARCHAR(255) NOT NULL,
     name_local VARCHAR(255),
     CONSTRAINT pk_lgd_ward PRIMARY KEY (id),
@@ -98,9 +98,9 @@ CREATE TABLE ihms_master.lgd_ward_coverage (
     updated_by BIGINT, updated_datetime TIMESTAMP(3), synchronized BOOLEAN NOT NULL DEFAULT FALSE,
     ward_id BIGINT NOT NULL REFERENCES ihms_master.lgd_ward (id),
     district_id BIGINT NOT NULL REFERENCES ihms_master.geo_district (id),
-    sub_district_id BIGINT NOT NULL REFERENCES ihms_master.geo_sub_district (id),
+    sub_district_id BIGINT REFERENCES ihms_master.geo_sub_district (id),
     CONSTRAINT pk_lgd_ward_coverage PRIMARY KEY (id),
-    CONSTRAINT uq_lgd_ward_coverage_pair UNIQUE (ward_id, district_id, sub_district_id)
+    CONSTRAINT uq_lgd_ward_coverage_pair UNIQUE NULLS NOT DISTINCT (ward_id, district_id, sub_district_id)
 );
 
 CREATE TABLE ihms_master.lgd_village_gram_panchayat (

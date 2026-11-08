@@ -13,12 +13,14 @@ from import_masters import (
     ALLOWED_COUNTRY_COLUMNS,
     EXPECTED_DISTRICT_HEADERS,
     EXPECTED_STATE_HEADERS,
+    check_lgd_hierarchy_orphans,
     col_index_to_letter,
     compute_sha256,
     derive_parent_linearization_uris,
     find_header_col,
     generate_countries_sql,
     generate_icd11_sql,
+    generate_lgd_hierarchy_sql,
     generate_lgd_sql,
     generate_test_data,
     generate_testdata_sql,
@@ -29,6 +31,7 @@ from import_masters import (
     parse_icd11_file,
     parse_lgd_districts,
     parse_lgd_states,
+    process_lgd_hierarchy_state,
     strip_title,
     to_int_str,
     validate_lgd,
@@ -37,6 +40,9 @@ from import_masters import (
 TESTDATA_DIR = Path(__file__).resolve().parent / "testdata"
 ICD11_SAMPLE = TESTDATA_DIR / "icd11-sample.txt"
 COUNTRY_SAMPLE = TESTDATA_DIR / "country-sample.csv"
+LGD_TESTDATA_DIR = TESTDATA_DIR / "lgd"
+CHANDIGARH_ZIP = LGD_TESTDATA_DIR / "chandigarh.zip"
+LAKSHADWEEP_ZIP = LGD_TESTDATA_DIR / "lakshadweep.zip"
 
 
 def create_test_xlsx(rows: list[list[str]], filepath: str) -> None:
@@ -801,6 +807,272 @@ class TestImportMasters(unittest.TestCase):
             self.assertIn("Districts parsed: 790", res.stdout)
             self.assertIn("Total rows: 826", res.stdout)
             self.assertIn("Dry-run mode", res.stdout)
+
+
+class TestLgdHierarchyImport(unittest.TestCase):
+    """Test suite for LGD full hierarchy database load subcommand and SQL generator."""
+
+    def setUp(self):
+        self.dummy_paths = {
+            "geo_district": "/tmp/dummy_district.csv",
+            "geo_sub_district": "/tmp/dummy_subdistrict.csv",
+            "geo_block": "/tmp/dummy_block.csv",
+            "geo_village": "/tmp/dummy_village.csv",
+            "lgd_local_body": "/tmp/dummy_localbody.csv",
+            "lgd_ward": "/tmp/dummy_ward.csv",
+            "lgd_ward_coverage": "/tmp/dummy_coverage.csv",
+            "geo_block_village": "/tmp/dummy_block_village.csv",
+            "lgd_village_gp": "/tmp/dummy_village_gp.csv",
+        }
+        self.dummy_counts = {
+            kind: {"read": 10, "skipped": 0, "inserted": 10, "updated": 0}
+            for kind in [
+                "districtofSpecificState",
+                "subDistrictofSpecificState",
+                "villageofSpecificState",
+                "priLbSpecificState",
+                "ulbSpecificState",
+                "tlbSpecificState",
+                "uLBWardforStateWithCov",
+                "uLBWardforState",
+                "priWards",
+                "villageGramPanchayatMapping",
+                "blockofspecificState",
+                "allBlockStateWithCoveredVillage",
+            ]
+        }
+
+    def test_transaction_per_state(self):
+        """Verify that generate_lgd_hierarchy_sql wraps each state in a single transaction."""
+        sql = generate_lgd_hierarchy_sql(
+            state_code=4,
+            state_name="Chandigarh",
+            csv_paths=self.dummy_paths,
+            file_sha256="dummy_sha256",
+            counts=self.dummy_counts,
+            source_url="chandigarh.zip",
+        )
+        self.assertTrue(sql.strip().startswith("BEGIN;"))
+        self.assertTrue(sql.strip().endswith("COMMIT;"))
+        self.assertEqual(sql.count("BEGIN;"), 1)
+        self.assertEqual(sql.count("COMMIT;"), 1)
+
+    def test_on_conflict_targets_match_v9_constraints(self):
+        """Verify that all 9 tables have ON CONFLICT targets matching real V9 & V5 constraints."""
+        sql = generate_lgd_hierarchy_sql(
+            state_code=31,
+            state_name="Lakshadweep",
+            csv_paths=self.dummy_paths,
+            file_sha256="dummy_sha256",
+            counts=self.dummy_counts,
+            source_url="lakshadweep.zip",
+        )
+        # Unique constraints from V5 & V9 migrations
+        self.assertIn("ON CONFLICT (state_id, code) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (district_id, code) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (code) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (ward_id, district_id, sub_district_id) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (block_id, village_id) DO UPDATE SET", sql)
+        self.assertIn("ON CONFLICT (village_id, local_body_id) DO UPDATE SET", sql)
+
+        # Sequences from V5 & V9 migrations
+        self.assertIn("nextval('ihms_master.geo_district_seq')", sql)
+        self.assertIn("nextval('ihms_master.geo_sub_district_seq')", sql)
+        self.assertIn("nextval('ihms_master.geo_block_seq')", sql)
+        self.assertIn("nextval('ihms_master.geo_village_seq')", sql)
+        self.assertIn("nextval('ihms_master.lgd_local_body_seq')", sql)
+        self.assertIn("nextval('ihms_master.lgd_ward_seq')", sql)
+        self.assertIn("nextval('ihms_master.lgd_ward_coverage_seq')", sql)
+        self.assertIn("nextval('ihms_master.geo_block_village_seq')", sql)
+        self.assertIn("nextval('ihms_master.lgd_village_gram_panchayat_seq')", sql)
+
+    def test_nulls_not_distinct_and_blank_district_skip(self):
+        """Verify NULLS NOT DISTINCT in V9 migration and blank district skipping in coverage."""
+        v9_path = Path(__file__).resolve().parents[2] / "services" / "reference-service" / "src" / "main" / "resources" / "db" / "migration" / "V9__lgd_geo_local_bodies.sql"
+        v9_sql = v9_path.read_text(encoding="utf-8")
+
+        self.assertIn("UNIQUE NULLS NOT DISTINCT (ward_id, district_id, sub_district_id)", v9_sql)
+        self.assertIn("sub_district_id BIGINT REFERENCES ihms_master.geo_sub_district (id)", v9_sql)
+        self.assertIn("ward_number VARCHAR(64)", v9_sql)
+
+        # In Python check_lgd_hierarchy_orphans, rows with blank district are skipped
+        raw_rows = {
+            "districtofSpecificState": [{"district_code": "44"}],
+            "subDistrictofSpecificState": [{"district_code": "44", "subdistrict_code": "277"}],
+            "ulbSpecificState": [{"localbody_code": "276386"}],
+            "uLBWardforState": [{"local_body_code": "276386", "ward_code": "1302552"}],
+            "uLBWardforStateWithCov": [
+                {"ward_code": "1302552", "district_code": "44", "subdistrict_code": "277"},
+                {"ward_code": "1302552", "district_code": "", "subdistrict_code": "277"},  # blank district
+                {"ward_code": "1302552", "district_code": "   ", "subdistrict_code": "277"},  # whitespace district
+            ],
+        }
+        valid_rows, skip_counts, colliding_wards, _ = check_lgd_hierarchy_orphans(4, raw_rows)
+        self.assertEqual(len(valid_rows["uLBWardforStateWithCov"]), 1)
+        self.assertEqual(skip_counts["uLBWardforStateWithCov"], 2)
+
+        # In generated SQL, coverage staging filters out blank districts
+        sql = generate_lgd_hierarchy_sql(4, "Chandigarh", self.dummy_paths, "sha", self.dummy_counts)
+        self.assertIn("WHERE district_code IS NOT NULL AND district_code <> ''", sql)
+        self.assertIn("ON CONFLICT (ward_id, district_id, sub_district_id)", sql)
+
+    def test_orphan_threshold_rollback(self):
+        """Verify rollback when orphans exceed 0.5% and skip when within threshold."""
+        # Case 1: 1 orphan out of 100 rows = 1% > 0.5% -> rollback (RuntimeError)
+        raw_100 = {
+            "districtofSpecificState": [{"district_code": "D1"}],
+            "subDistrictofSpecificState": [
+                {"district_code": "D1", "subdistrict_code": f"SD{i}"} for i in range(1, 100)
+            ] + [{"district_code": "MISSING_D", "subdistrict_code": "SD100"}],
+        }
+        with self.assertRaises(RuntimeError) as ctx:
+            check_lgd_hierarchy_orphans(4, raw_100)
+        self.assertIn("exceed 0.5% threshold", str(ctx.exception))
+
+        # Case 2: 1 orphan out of 500 rows = 0.2% <= 0.5% -> no exception, skipped count = 1
+        raw_500 = {
+            "districtofSpecificState": [{"district_code": "D1"}],
+            "subDistrictofSpecificState": [
+                {"district_code": "D1", "subdistrict_code": f"SD{i}"} for i in range(1, 500)
+            ] + [{"district_code": "MISSING_D", "subdistrict_code": "SD500"}],
+        }
+        valid_rows, skip_counts, _, _ = check_lgd_hierarchy_orphans(4, raw_500)
+        self.assertEqual(len(valid_rows["subDistrictofSpecificState"]), 499)
+        self.assertEqual(skip_counts["subDistrictofSpecificState"], 1)
+
+        # SQL DO block contains threshold check logic
+        sql = generate_lgd_hierarchy_sql(4, "Chandigarh", self.dummy_paths, "sha", self.dummy_counts)
+        self.assertIn("> 0.005", sql)
+        self.assertIn("exceed 0.5", sql)
+
+    def test_ward_code_collision_handling(self):
+        """Verify collision across PRI and ULB ward codes is an orphan-class error and not overwritten."""
+        # 1 collision in 250 rows = 0.4% <= 0.5% threshold
+        pri_wards = [{"local_body_code": "LB1", "ward_code": f"PRI_W_{i}", "ward_name_en": f"PRI Ward {i}"} for i in range(1, 250)]
+        pri_wards.append({"local_body_code": "LB1", "ward_code": "COLLIDE_W1", "ward_name_en": "Colliding PRI Ward"})
+
+        ulb_wards = [{"local_body_code": "LB2", "ward_code": f"ULB_W_{i}", "ward_name": f"ULB Ward {i}"} for i in range(1, 250)]
+        ulb_wards.append({"local_body_code": "LB2", "ward_code": "COLLIDE_W1", "ward_name": "Colliding ULB Ward"})
+
+        raw_rows = {
+            "priLbSpecificState": [{"localbody_code": "LB1"}],
+            "ulbSpecificState": [{"localbody_code": "LB2"}],
+            "priWards": pri_wards,
+            "uLBWardforState": ulb_wards,
+        }
+        valid_rows, skip_counts, colliding_wards, _ = check_lgd_hierarchy_orphans(4, raw_rows)
+        self.assertIn("COLLIDE_W1", colliding_wards)
+        self.assertEqual(skip_counts["priWards"], 1)
+        self.assertEqual(skip_counts["uLBWardforState"], 1)
+        self.assertEqual(len(valid_rows["priWards"]), 249)
+        self.assertEqual(len(valid_rows["uLBWardforState"]), 249)
+        self.assertNotIn("COLLIDE_W1", [r["ward_code"] for r in valid_rows["priWards"]])
+        self.assertNotIn("COLLIDE_W1", [r["ward_code"] for r in valid_rows["uLBWardforState"]])
+
+        # In SQL, lgd_ward ON CONFLICT has category check to prevent cross-category overwrite
+        sql = generate_lgd_hierarchy_sql(4, "Chandigarh", self.dummy_paths, "sha", self.dummy_counts)
+        self.assertIn("WHERE lgd_ward.ward_category = EXCLUDED.ward_category", sql)
+
+    def test_inserted_and_updated_counting(self):
+        """Verify that RETURNING (xmax = 0) and master_import_log counting are in the generated SQL."""
+        sql = generate_lgd_hierarchy_sql(4, "Chandigarh", self.dummy_paths, "sha", self.dummy_counts)
+
+        # RETURNING (xmax = 0) AS inserted for all upserts
+        self.assertEqual(sql.count("(xmax = 0) AS inserted"), 12)
+        self.assertIn("COUNT(*) FILTER (WHERE inserted)", sql)
+        self.assertIn("COUNT(*) FILTER (WHERE NOT inserted)", sql)
+
+        # master_import_log insert with read, inserted, updated, and skipped
+        self.assertIn("INSERT INTO ihms_master.master_import_log", sql)
+        self.assertIn("skipped=", sql)
+        self.assertIn("sha", sql)
+
+    def test_no_credentials_in_arguments(self):
+        """Verify that psql execution uses environment credentials only, with none in arguments."""
+        cmd = get_psql_cmd()
+        self.assertEqual(cmd, ["psql", "-v", "ON_ERROR_STOP=1"])
+        for arg in cmd:
+            self.assertFalse(arg.startswith(("-U", "-W", "-h", "-p", "--user", "--password", "--host", "--port")))
+
+    def test_dry_run_writes_nothing(self):
+        """Verify that CLI lgd-hierarchy in --dry-run mode executes 0 INSERT statements."""
+        script_path = os.path.join(os.path.dirname(__file__), "import_masters.py")
+        res = subprocess.run(
+            [sys.executable, script_path, "lgd-hierarchy", str(LGD_TESTDATA_DIR), "--dry-run"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res.returncode, 0, f"stderr: {res.stderr}")
+        self.assertIn("DRY-RUN", res.stdout)
+        self.assertIn("LGD HIERARCHY IMPORT SUMMARY: Chandigarh", res.stdout)
+        self.assertIn("LGD HIERARCHY IMPORT SUMMARY: Lakshadweep", res.stdout)
+        self.assertIn("Elapsed Time:", res.stdout)
+        self.assertNotIn("INSERT INTO", res.stdout)
+
+    def test_state_filter_and_order_by_size(self):
+        """Verify --state filter works and directory processing orders states by size ascending."""
+        script_path = os.path.join(os.path.dirname(__file__), "import_masters.py")
+
+        # Test --state 4 (Chandigarh only)
+        res4 = subprocess.run(
+            [sys.executable, script_path, "lgd-hierarchy", str(LGD_TESTDATA_DIR), "--state", "4", "--dry-run"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res4.returncode, 0)
+        self.assertIn("Chandigarh", res4.stdout)
+        self.assertNotIn("Lakshadweep", res4.stdout)
+
+        # Test --state 31 (Lakshadweep only)
+        res31 = subprocess.run(
+            [sys.executable, script_path, "lgd-hierarchy", str(LGD_TESTDATA_DIR), "--state", "31", "--dry-run"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res31.returncode, 0)
+        self.assertIn("Lakshadweep", res31.stdout)
+        self.assertNotIn("Chandigarh", res31.stdout)
+
+        # Test order: Chandigarh (~18KB) before Lakshadweep (~20KB)
+        res_all = subprocess.run(
+            [sys.executable, script_path, "lgd-hierarchy", str(LGD_TESTDATA_DIR), "--dry-run"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(res_all.returncode, 0)
+        pos_ch = res_all.stdout.find("Chandigarh")
+        pos_lk = res_all.stdout.find("Lakshadweep")
+        self.assertGreater(pos_ch, -1)
+        self.assertGreater(pos_lk, -1)
+        self.assertLess(pos_ch, pos_lk, "Chandigarh must be processed before Lakshadweep (ordered by size)")
+
+    def test_sample_zips_full_parse_and_counts(self):
+        """Verify dry-run parse on sample zips produces exact expected row counts and 0 skips."""
+        counts_ch, code_ch, name_ch, sha_ch = process_lgd_hierarchy_state(str(CHANDIGARH_ZIP), dry_run=True)
+        self.assertEqual(code_ch, 4)
+        self.assertEqual(name_ch, "Chandigarh")
+        self.assertEqual(counts_ch["districtofSpecificState"]["read"], 1)
+        self.assertEqual(counts_ch["subDistrictofSpecificState"]["read"], 1)
+        self.assertEqual(counts_ch["ulbSpecificState"]["read"], 1)
+        self.assertEqual(counts_ch["uLBWardforStateWithCov"]["read"], 35)
+        self.assertEqual(counts_ch["uLBWardforState"]["read"], 35)
+        self.assertEqual(counts_ch["blockofspecificState"]["read"], 1)
+        for k in counts_ch:
+            self.assertEqual(counts_ch[k]["skipped"], 0, f"Chandigarh {k} had unexpected skips")
+
+        counts_lk, code_lk, name_lk, sha_lk = process_lgd_hierarchy_state(str(LAKSHADWEEP_ZIP), dry_run=True)
+        self.assertEqual(code_lk, 31)
+        self.assertEqual(name_lk, "Lakshadweep")
+        self.assertEqual(counts_lk["districtofSpecificState"]["read"], 1)
+        self.assertEqual(counts_lk["subDistrictofSpecificState"]["read"], 10)
+        self.assertEqual(counts_lk["villageofSpecificState"]["read"], 27)
+        self.assertEqual(counts_lk["priLbSpecificState"]["read"], 11)
+        self.assertEqual(counts_lk["priWards"]["read"], 1)
+        self.assertEqual(counts_lk["villageGramPanchayatMapping"]["read"], 27)
+        self.assertEqual(counts_lk["blockofspecificState"]["read"], 10)
+        self.assertEqual(counts_lk["allBlockStateWithCoveredVillage"]["read"], 10)
+        for k in counts_lk:
+            self.assertEqual(counts_lk[k]["skipped"], 0, f"Lakshadweep {k} had unexpected skips")
 
 
 if __name__ == "__main__":
