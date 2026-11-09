@@ -9,6 +9,9 @@ import com.hims.bcma.domain.repository.BCMAExceptionRepository;
 import com.hims.bcma.domain.repository.IVPEventRepository;
 import com.hims.bcma.domain.repository.MedicationScanRepository;
 import com.hims.bcma.domain.repository.MedicationStockRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,5 +107,15 @@ public class BcmaModuleService {
         if (s == null) return null;
         return new PatientDrugMatch(s.getPatientId(), s.getDrugIen(), s.getDrugName(),
                 s.getVerified(), s.getVerificationStatus(), "Found", s.getScanId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationScan> getScans(Long patientId, Integer limit) {
+        int max = (limit == null || limit <= 0) ? 100 : Math.min(limit, 500);
+        Pageable pageable = PageRequest.of(0, max, Sort.by(Sort.Order.desc("scanTime"), Sort.Order.desc("scanId")));
+        if (patientId != null) {
+            return scanRepo.findByPatientId(patientId, pageable);
+        }
+        return scanRepo.findAll(pageable).getContent();
     }
 }

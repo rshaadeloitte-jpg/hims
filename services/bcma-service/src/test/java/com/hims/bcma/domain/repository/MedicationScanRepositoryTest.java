@@ -42,4 +42,27 @@ class MedicationScanRepositoryTest {
         repo.save(s);
         assertFalse(repo.findByPatientId(3L).isEmpty());
     }
+
+    @Test
+    void findByPatientIdWithPageableOrdersNewestFirst() {
+        Instant now = Instant.now();
+        MedicationScan older = new MedicationScan();
+        older.setScanId(201L); older.setPatientId(99L); older.setDrugIen("D1");
+        older.setScanTime(Timestamp.from(now.minusSeconds(60)));
+        repo.save(older);
+
+        MedicationScan newer = new MedicationScan();
+        newer.setScanId(202L); newer.setPatientId(99L); newer.setDrugIen("D2");
+        newer.setScanTime(Timestamp.from(now));
+        repo.save(newer);
+
+        org.springframework.data.domain.Pageable p = org.springframework.data.domain.PageRequest.of(
+                0, 10, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.desc("scanTime"),
+                        org.springframework.data.domain.Sort.Order.desc("scanId")));
+        java.util.List<MedicationScan> list = repo.findByPatientId(99L, p);
+        assertEquals(2, list.size());
+        assertEquals(202L, list.get(0).getScanId());
+        assertEquals(201L, list.get(1).getScanId());
+    }
 }

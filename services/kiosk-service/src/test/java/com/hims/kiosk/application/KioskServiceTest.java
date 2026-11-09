@@ -27,12 +27,19 @@ class KioskServiceTest {
     @Mock private com.hims.kiosk.domain.repository.KioskAppointmentRepository apptRepo;
     @Mock private com.hims.kiosk.domain.repository.KioskQueueRepository queueRepo;
     @Mock private com.hims.kiosk.domain.repository.KioskLabResultRepository labRepo;
+    @Mock private com.hims.kiosk.domain.repository.KioskDepartmentRepository deptRepo;
+    @Mock(strictness = Mock.Strictness.LENIENT) private jakarta.persistence.EntityManager em;
+    @Mock(strictness = Mock.Strictness.LENIENT) private jakarta.persistence.Query seqQuery;
 
     private KioskService service;
 
     @BeforeEach
     void setUp() {
-        service = new KioskService(regRepo, apptRepo, queueRepo, labRepo);
+        service = new KioskService(regRepo, apptRepo, queueRepo, labRepo, deptRepo);
+        java.util.concurrent.atomic.AtomicLong seq = new java.util.concurrent.atomic.AtomicLong();
+        when(em.createNativeQuery(any(String.class))).thenReturn(seqQuery);
+        when(seqQuery.getSingleResult()).thenAnswer(inv -> seq.incrementAndGet());
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "em", em);
     }
 
     @Test
@@ -77,5 +84,17 @@ class KioskServiceTest {
     void listAppointments_delegatesToRepo() {
         service.listAppointments(LocalDate.now());
         // verify delegation via mock (no exception = pass)
+    }
+
+    @Test
+    void listActiveDepartments_delegatesToDeptRepo() {
+        com.hims.kiosk.domain.model.KioskDepartment d1 =
+                new com.hims.kiosk.domain.model.KioskDepartment(1L, "Cardiology", true);
+        com.hims.kiosk.domain.model.KioskDepartment d2 =
+                new com.hims.kiosk.domain.model.KioskDepartment(2L, "Neurology", true);
+        when(deptRepo.findByActiveTrueOrderByNameAsc()).thenReturn(java.util.List.of(d1, d2));
+
+        java.util.List<com.hims.kiosk.domain.model.KioskDepartment> result = service.listActiveDepartments();
+        assertThat(result).containsExactly(d1, d2);
     }
 }

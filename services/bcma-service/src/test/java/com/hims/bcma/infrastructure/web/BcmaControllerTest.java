@@ -61,4 +61,30 @@ class BcmaControllerTest {
         ResponseEntity<PatientDrugMatch> res = controller.getScan(999L);
         assertEquals(404, res.getStatusCode().value());
     }
+
+    @Test
+    void getScansReturnsOkWithPatientIdAndLimit() {
+        MedicationScan scan = new MedicationScan();
+        scan.setScanId(501L);
+        scan.setPatientId(12L);
+        when(service.getScans(12L, 50)).thenReturn(List.of(scan));
+
+        ResponseEntity<List<MedicationScan>> res = controller.getScans(12L, 50);
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        assertEquals(1, res.getBody().size());
+        assertEquals(501L, res.getBody().get(0).getScanId());
+        verify(service).getScans(12L, 50);
+    }
+
+    @Test
+    void getScansReturnsOkWithDefaultLimitAndNullPatient() {
+        when(service.getScans(null, 100)).thenReturn(Collections.emptyList());
+
+        ResponseEntity<List<MedicationScan>> res = controller.getScans(null, 100);
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        assertTrue(res.getBody().isEmpty());
+        verify(service).getScans(null, 100);
+    }
 }

@@ -15,6 +15,7 @@ class KioskRegistrationRepositoryTest {
     void saveAndFindByToken() {
         KioskRegistration r = new KioskRegistration();
         r.setId(99L); r.setPatientName("T"); r.setContactPhone("9"); r.setRegistrationToken("TK");
+        r.setRegistrationDate(java.time.LocalDate.now());
         r.setStatus(true);
         repo.save(r);
         Optional<KioskRegistration> found = repo.findByRegistrationToken("TK");
