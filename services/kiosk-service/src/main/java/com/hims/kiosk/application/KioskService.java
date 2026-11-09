@@ -27,6 +27,7 @@ public class KioskService {
     private final KioskAppointmentRepository apptRepo;
     private final KioskQueueRepository queueRepo;
     private final KioskLabResultRepository labRepo;
+    private final KioskDepartmentRepository deptRepo;
     private final ObjectMapper mapper = new ObjectMapper();
 
     @PersistenceContext private EntityManager em;
@@ -34,11 +35,13 @@ public class KioskService {
     public KioskService(KioskRegistrationRepository regRepo,
                         KioskAppointmentRepository apptRepo,
                         KioskQueueRepository queueRepo,
-                        KioskLabResultRepository labRepo) {
+                        KioskLabResultRepository labRepo,
+                        KioskDepartmentRepository deptRepo) {
         this.regRepo = regRepo;
         this.apptRepo = apptRepo;
         this.queueRepo = queueRepo;
         this.labRepo = labRepo;
+        this.deptRepo = deptRepo;
     }
 
     // ---------------- Self-registration ----------------
@@ -139,6 +142,11 @@ public class KioskService {
         m.put("called", queueRepo.countByQueueDateAndStatusTrueAndQueueStatus(today, (short) 2));
         m.put("completed", queueRepo.countByQueueDateAndStatusTrueAndQueueStatus(today, (short) 3));
         return m;
+    }
+
+    // ---------------- Departments ----------------
+    public List<KioskDepartment> listActiveDepartments() {
+        return deptRepo.findByActiveTrueOrderByNameAsc();
     }
 
     // ---------------- Helpers ----------------

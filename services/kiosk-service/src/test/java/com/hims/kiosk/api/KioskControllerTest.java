@@ -2,6 +2,7 @@ package com.hims.kiosk.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.kiosk.application.KioskService;
+import com.hims.kiosk.domain.model.KioskDepartment;
 import com.hims.kiosk.domain.model.KioskRegistration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +11,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,7 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest({KioskRegistrationController.class, KioskAppointmentController.class,
-        KioskQueueController.class, KioskLabResultController.class})
+        KioskQueueController.class, KioskLabResultController.class,
+        KioskDepartmentController.class})
 class KioskControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockBean private KioskService service;
@@ -53,5 +57,20 @@ class KioskControllerTest {
         mockMvc.perform(get("/api/v1/kiosk/queue/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.waiting").value(3));
+    }
+
+    @Test
+    void departments_returnsActiveOrderedList() throws Exception {
+        KioskDepartment d1 = new KioskDepartment(1L, "Cardiology", true);
+        KioskDepartment d2 = new KioskDepartment(2L, "Neurology", true);
+        when(service.listActiveDepartments()).thenReturn(List.of(d1, d2));
+
+        mockMvc.perform(get("/api/v1/kiosk/departments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("Cardiology"))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].name").value("Neurology"));
     }
 }
