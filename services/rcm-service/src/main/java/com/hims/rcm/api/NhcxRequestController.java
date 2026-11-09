@@ -5,6 +5,7 @@ import com.hims.rcm.domain.model.NhcxRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -60,6 +61,31 @@ public class NhcxRequestController {
                                   @RequestParam(required = false) String status) {
         return service.list(kind == null ? null : NhcxService.parseKind(kind),
                 status == null ? null : NhcxService.parseStatus(status));
+    }
+
+    @GetMapping("/api/v1/claims")
+    @Operation(summary = "List claims", description = "Claim-kind (3) NHCX requests, newest first. Optional ?patientId= and ?status= (0..5 or name incl. APPROVED/REJECTED) filters.")
+    public List<NhcxRequest> listClaims(@RequestParam(required = false) Long patientId,
+                                        @RequestParam(required = false) String status) {
+        return service.listClaims(patientId, status == null ? null : NhcxService.parseStatus(status));
+    }
+
+    @GetMapping("/api/v1/claims/{id}")
+    @Operation(summary = "Get one claim by request id", description = "404 if missing or if the request is not a claim kind (3).")
+    public NhcxRequest getClaim(@PathVariable long id) {
+        return service.getClaim(id);
+    }
+
+    @PatchMapping("/api/v1/claims/{id}/approve")
+    @Operation(summary = "Approve a claim", description = "Only from a non-final status (INITIATED/SENT/ACKNOWLEDGED). Already final (COMPLETED/APPROVED/REJECTED) -> 409 RCM_ILLEGAL_TRANSITION. 404 if not a claim.")
+    public NhcxRequest approveClaim(@PathVariable long id) {
+        return service.approveClaim(id);
+    }
+
+    @PatchMapping("/api/v1/claims/{id}/reject")
+    @Operation(summary = "Reject a claim", description = "Only from a non-final status (INITIATED/SENT/ACKNOWLEDGED). Already final (COMPLETED/APPROVED/REJECTED) -> 409 RCM_ILLEGAL_TRANSITION. 404 if not a claim.")
+    public NhcxRequest rejectClaim(@PathVariable long id) {
+        return service.rejectClaim(id);
     }
 
     public record CreatePreAuthRequest(Long patientId, Long admissionId, Map<String, Object> payload) {}

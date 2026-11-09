@@ -20,6 +20,8 @@ public final class NhcxStatus {
     public static final short SENT = 1;
     public static final short ACKNOWLEDGED = 2;
     public static final short COMPLETED = 3;   // terminal (COMPLETED/ERROR per source)
+    public static final short APPROVED = 4;    // claim decision: approved (final)
+    public static final short REJECTED = 5;    // claim decision: rejected (final)
 
     private NhcxStatus() {}
 
@@ -29,7 +31,11 @@ public final class NhcxStatus {
     }
 
     public static boolean isValid(short s) {
-        return s >= INITIATED && s <= COMPLETED;
+        return s >= INITIATED && s <= REJECTED;
+    }
+
+    public static boolean isClaimFinal(short s) {
+        return s == COMPLETED || s == APPROVED || s == REJECTED;
     }
 
     public static String name(short s) {
@@ -38,6 +44,8 @@ public final class NhcxStatus {
             case SENT -> "SENT";
             case ACKNOWLEDGED -> "ACKNOWLEDGED";
             case COMPLETED -> "COMPLETED";
+            case APPROVED -> "APPROVED";
+            case REJECTED -> "REJECTED";
             default -> String.valueOf(s);
         };
     }

@@ -3,6 +3,7 @@ package com.hims.rcm.api;
 import com.hims.rcm.application.NhcxService;
 import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
+import com.hims.rcm.application.exceptions.TidConflictException;
 import com.hims.rcm.configuration.SecurityConfig;
 import com.hims.rcm.configuration.JwtConfig;
 import com.hims.rcm.domain.model.NhcxRequest;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -60,6 +62,12 @@ class NhcxRequestControllerTest {
         return r;
     }
 
+    private static NhcxRequest claim(long id, short status, String correlationId) {
+        NhcxRequest r = request(id, NhcxRequest.KIND_CLAIM_SUBMIT, status, correlationId);
+        r.setBillId(9001L);
+        return r;
+    }
+
     @Test
     void endpoints_requireAuth_defaultDeny() throws Exception {
         mockMvc.perform(get("/api/v1/nhcx")).andExpect(status().isUnauthorized());
@@ -71,6 +79,14 @@ class NhcxRequestControllerTest {
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(put("/api/v1/nhcx/some-correlation/callback").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":2}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/claims")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/claims/1")).andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/v1/claims/1/approve").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/v1/claims/1/reject").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -185,5 +201,97 @@ class NhcxRequestControllerTest {
                         .param("kind", "3").param("status", "SENT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].correlationId").value("corr-l1"));
+    }
+
+    // ------------------------------------------------------------------ claims
+
+    @Test
+    void listClaims_returnsClaimList_newestFirst() throws Exception {
+        when(nhcxService.listClaims(any(), any()))
+                .thenReturn(List.of(claim(32L, NhcxStatus.INITIATED, "corr-c32"), claim(31L, NhcxStatus.INITIATED, "corr-c31")));
+
+        mockMvc.perform(get("/api/v1/claims").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].requestId").value(32))
+                .andExpect(jsonPath("$[1].requestId").value(31));
+    }
+
+    @Test
+    void listClaims_filtersByPatientAndStatus() throws Exception {
+        when(nhcxService.listClaims(eq(505L), eq(NhcxStatus.APPROVED)))
+                .thenReturn(List.of(claim(40L, NhcxStatus.APPROVED, "corr-approved")));
+
+        mockMvc.perform(get("/api/v1/claims").with(csrf()).with(user("devops").roles("DEV"))
+                        .param("patientId", "505").param("status", "APPROVED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].statusCode").value((int) NhcxStatus.APPROVED));
+    }
+
+    @Test
+    void getClaim_found_returnsClaim() throws Exception {
+        when(nhcxService.getClaim(32L)).thenReturn(claim(32L, NhcxStatus.INITIATED, "corr-c32"));
+
+        mockMvc.perform(get("/api/v1/claims/32").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestId").value(32))
+                .andExpect(jsonPath("$.kind").value(3));
+    }
+
+    @Test
+    void getClaim_missing_mapsTo404() throws Exception {
+        when(nhcxService.getClaim(404L))
+                .thenThrow(new RcmNotFoundException("NOT_FOUND", "Claim not found: 404"));
+
+        mockMvc.perform(get("/api/v1/claims/404").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
+    }
+
+    @Test
+    void getClaim_notAClaim_mapsTo404() throws Exception {
+        when(nhcxService.getClaim(20L))
+                .thenThrow(new RcmNotFoundException("NOT_FOUND", "Claim not found: 20"));
+
+        mockMvc.perform(get("/api/v1/claims/20").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("NOT_FOUND"));
+    }
+
+    @Test
+    void approveClaim_fromPending_returnsApproved() throws Exception {
+        when(nhcxService.approveClaim(32L)).thenReturn(claim(32L, NhcxStatus.APPROVED, "corr-c32"));
+
+        mockMvc.perform(patch("/api/v1/claims/32/approve").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode").value((int) NhcxStatus.APPROVED));
+    }
+
+    @Test
+    void rejectClaim_fromPending_returnsRejected() throws Exception {
+        when(nhcxService.rejectClaim(33L)).thenReturn(claim(33L, NhcxStatus.REJECTED, "corr-c33"));
+
+        mockMvc.perform(patch("/api/v1/claims/33/reject").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode").value((int) NhcxStatus.REJECTED));
+    }
+
+    @Test
+    void reject_afterApprove_mapsTo409() throws Exception {
+        when(nhcxService.rejectClaim(32L))
+                .thenThrow(new TidConflictException("RCM_ILLEGAL_TRANSITION", "Claim 32 already in final status APPROVED — cannot move to REJECTED"));
+
+        mockMvc.perform(patch("/api/v1/claims/32/reject").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("RCM_ILLEGAL_TRANSITION"));
+    }
+
+    @Test
+    void approve_afterReject_mapsTo409() throws Exception {
+        when(nhcxService.approveClaim(33L))
+                .thenThrow(new TidConflictException("RCM_ILLEGAL_TRANSITION", "Claim 33 already in final status REJECTED — cannot move to APPROVED"));
+
+        mockMvc.perform(patch("/api/v1/claims/33/approve").with(csrf()).with(user("devops").roles("DEV")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("RCM_ILLEGAL_TRANSITION"));
     }
 }

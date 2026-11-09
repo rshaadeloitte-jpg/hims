@@ -2,6 +2,7 @@ package com.hims.rcm.application;
 
 import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
+import com.hims.rcm.application.exceptions.TidConflictException;
 import com.hims.rcm.domain.model.AdmissionTid;
 import com.hims.rcm.domain.model.EligibilityCheck;
 import com.hims.rcm.domain.model.NhcxRequestDetail;
@@ -338,6 +339,10 @@ class NhcxServiceTest {
         assertThat(NhcxService.parseStatus("0")).isEqualTo((short) 0);
         assertThat(NhcxService.parseStatus("acknowledged")).isEqualTo((short) NhcxStatus.ACKNOWLEDGED);
         assertThat(NhcxService.parseStatus("COMPLETED")).isEqualTo((short) NhcxStatus.COMPLETED);
+        assertThat(NhcxService.parseStatus("approved")).isEqualTo(NhcxStatus.APPROVED);
+        assertThat(NhcxService.parseStatus("REJECTED")).isEqualTo(NhcxStatus.REJECTED);
+        assertThat(NhcxService.parseStatus("4")).isEqualTo(NhcxStatus.APPROVED);
+        assertThat(NhcxService.parseStatus("5")).isEqualTo(NhcxStatus.REJECTED);
         assertThatThrownBy(() -> NhcxService.parseStatus("9"))
                 .isInstanceOf(InvalidRcmRequestException.class);
         assertThatThrownBy(() -> NhcxService.parseStatus("WEIRD"))
@@ -352,6 +357,132 @@ class NhcxServiceTest {
                 .isEqualTo((short) NhcxRequest.KIND_COVERAGE_ELIGIBILITY);
         assertThatThrownBy(() -> NhcxService.parseKind("0"))
                 .isInstanceOf(InvalidRcmRequestException.class);
+    }
+
+    // ------------------------------------------------------------- claims
+
+    @Test
+    void listClaims_returnsOnlyClaimKind_newestFirst() {
+        NhcxRequest older = claimRequest(300L, 505L, NhcxStatus.INITIATED);
+        NhcxRequest newer = claimRequest(301L, 505L, NhcxStatus.INITIATED);
+        when(requestRepository.findClaims(any(), any())).thenReturn(List.of(newer, older));
+
+        List<NhcxRequest> result = service.listClaims(null, null);
+
+        assertThat(result).extracting(NhcxRequest::getRequestId).containsExactly(301L, 300L);
+        verify(requestRepository).findClaims(null, null);
+    }
+
+    @Test
+    void listClaims_filtersByPatientAndStatus() {
+        NhcxRequest r = claimRequest(400L, 505L, NhcxStatus.APPROVED);
+        when(requestRepository.findClaims(505L, NhcxStatus.APPROVED)).thenReturn(List.of(r));
+
+        List<NhcxRequest> result = service.listClaims(505L, NhcxStatus.APPROVED);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPatientId()).isEqualTo(505L);
+        assertThat(result.get(0).getStatusCode()).isEqualTo(NhcxStatus.APPROVED);
+    }
+
+    @Test
+    void getClaim_found_returnsClaimWithDetails() {
+        NhcxRequest c = claimRequest(310L, 505L, NhcxStatus.INITIATED);
+        when(requestRepository.findById(310L)).thenReturn(Optional.of(c));
+
+        NhcxRequest result = service.getClaim(310L);
+
+        assertThat(result.getRequestId()).isEqualTo(310L);
+        assertThat(result.getKind()).isEqualTo(NhcxRequest.KIND_CLAIM_SUBMIT);
+    }
+
+    @Test
+    void getClaim_missing_mapsTo404() {
+        when(requestRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getClaim(999L))
+                .isInstanceOf(RcmNotFoundException.class)
+                .extracting(e -> ((RcmNotFoundException) e).getErrorCode())
+                .isEqualTo("NOT_FOUND");
+    }
+
+    @Test
+    void getClaim_notAClaim_mapsTo404() {
+        NhcxRequest pre = correlatedRequest("corr-pre", NhcxStatus.INITIATED);
+        pre.setKind(NhcxRequest.KIND_PRE_AUTH);
+        when(requestRepository.findById(pre.getRequestId())).thenReturn(Optional.of(pre));
+
+        assertThatThrownBy(() -> service.getClaim(pre.getRequestId()))
+                .isInstanceOf(RcmNotFoundException.class)
+                .hasMessageContaining("Claim not found");
+    }
+
+    @Test
+    void approveClaim_fromInitiated_movesToApproved() {
+        NhcxRequest c = claimRequest(320L, 505L, NhcxStatus.INITIATED);
+        when(requestRepository.findById(320L)).thenReturn(Optional.of(c));
+
+        NhcxRequest approved = service.approveClaim(320L);
+
+        assertThat(approved.getStatusCode()).isEqualTo(NhcxStatus.APPROVED);
+    }
+
+    @Test
+    void rejectClaim_fromInitiated_movesToRejected() {
+        NhcxRequest c = claimRequest(321L, 505L, NhcxStatus.INITIATED);
+        when(requestRepository.findById(321L)).thenReturn(Optional.of(c));
+
+        NhcxRequest rejected = service.rejectClaim(321L);
+
+        assertThat(rejected.getStatusCode()).isEqualTo(NhcxStatus.REJECTED);
+    }
+
+    @Test
+    void approveClaim_alreadyFinal_mapsTo409() {
+        NhcxRequest c = claimRequest(330L, 505L, NhcxStatus.APPROVED);
+        when(requestRepository.findById(330L)).thenReturn(Optional.of(c));
+
+        assertThatThrownBy(() -> service.approveClaim(330L))
+                .isInstanceOf(TidConflictException.class)
+                .extracting(e -> ((TidConflictException) e).getErrorCode())
+                .isEqualTo("RCM_ILLEGAL_TRANSITION");
+    }
+
+    @Test
+    void reject_afterApprove_mapsTo409() {
+        NhcxRequest c = claimRequest(340L, 505L, NhcxStatus.INITIATED);
+        when(requestRepository.findById(340L)).thenReturn(Optional.of(c));
+        // first approve
+        service.approveClaim(340L);
+        // now status is APPROVED — second findById should return the updated one
+        NhcxRequest updated = c;
+        when(requestRepository.findById(340L)).thenReturn(Optional.of(updated));
+
+        assertThatThrownBy(() -> service.rejectClaim(340L))
+                .isInstanceOf(TidConflictException.class)
+                .extracting(e -> ((TidConflictException) e).getErrorCode())
+                .isEqualTo("RCM_ILLEGAL_TRANSITION");
+    }
+
+    @Test
+    void reject_alreadyCompleted_mapsTo409() {
+        NhcxRequest c = claimRequest(350L, 505L, NhcxStatus.COMPLETED);
+        when(requestRepository.findById(350L)).thenReturn(Optional.of(c));
+
+        assertThatThrownBy(() -> service.rejectClaim(350L))
+                .isInstanceOf(TidConflictException.class);
+    }
+
+    @Test
+    void decide_nonClaimKind_mapsTo404() {
+        NhcxRequest pre = correlatedRequest("corr-pre2", NhcxStatus.INITIATED);
+        pre.setKind(NhcxRequest.KIND_PRE_AUTH);
+        when(requestRepository.findById(pre.getRequestId())).thenReturn(Optional.of(pre));
+
+        assertThatThrownBy(() -> service.approveClaim(pre.getRequestId()))
+                .isInstanceOf(RcmNotFoundException.class);
+        assertThatThrownBy(() -> service.rejectClaim(pre.getRequestId()))
+                .isInstanceOf(RcmNotFoundException.class);
     }
 
     // ------------------------------------------------------------- event policy
@@ -394,5 +525,17 @@ class NhcxServiceTest {
         request.setCorrelationId(correlationId);
         request.setRequestPayload("{\"kind\":\"PRE_AUTH\"}");
         return request;
+    }
+
+    private NhcxRequest claimRequest(long id, long patientId, short status) {
+        NhcxRequest r = new NhcxRequest();
+        r.setRequestId(id);
+        r.setKind(NhcxRequest.KIND_CLAIM_SUBMIT);
+        r.setPatientId(patientId);
+        r.setBillId(9001L);
+        r.setStatusCode(status);
+        r.setCorrelationId("corr-" + id);
+        r.setRequestPayload("{\"kind\":3}");
+        return r;
     }
 }

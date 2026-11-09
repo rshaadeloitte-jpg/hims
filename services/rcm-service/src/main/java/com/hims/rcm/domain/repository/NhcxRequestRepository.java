@@ -18,4 +18,15 @@ public interface NhcxRequestRepository extends JpaRepository<NhcxRequest, Long> 
             """)
     List<NhcxRequest> search(@org.springframework.data.repository.query.Param("kind") Short kind,
                              @org.springframework.data.repository.query.Param("status") Short status);
+
+    /** Claim-only list: kind is fixed to CLAIM_SUBMIT (3), optional patientId + status filter, newest first. */
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT r FROM NhcxRequest r
+            WHERE r.kind = 3
+              AND (:patientId IS NULL OR r.patientId = :patientId)
+              AND (:status IS NULL OR r.statusCode = :status)
+            ORDER BY r.requestId DESC
+            """)
+    List<NhcxRequest> findClaims(@org.springframework.data.repository.query.Param("patientId") Long patientId,
+                                 @org.springframework.data.repository.query.Param("status") Short status);
 }

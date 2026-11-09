@@ -3,6 +3,7 @@ package com.hims.rcm.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.rcm.application.exceptions.InvalidRcmRequestException;
 import com.hims.rcm.application.exceptions.RcmNotFoundException;
+import com.hims.rcm.application.exceptions.TidConflictException;
 import com.hims.rcm.domain.model.EligibilityCheck;
 import com.hims.rcm.domain.model.NhcxRequest;
 import com.hims.rcm.domain.model.NhcxRequestDetail;
@@ -230,7 +231,7 @@ public class NhcxService {
             throw new InvalidRcmRequestException("BEXA003",
                     "correlationId must be a non-blank id of at most " + MAX_CORRELATION_LENGTH + " characters");
         }
-        if (status == null || !NhcxStatus.isValid(status)) {
+        if (status == null || status < NhcxStatus.INITIATED || status > NhcxStatus.COMPLETED) {
             throw new InvalidRcmRequestException("BEXA003",
                     "status must be one of 0=INITIATED 1=SENT 2=ACKNOWLEDGED 3=COMPLETED");
         }
@@ -279,6 +280,61 @@ public class NhcxService {
         return requests;
     }
 
+    // ------------------------------------------------------------------ claims
+
+    @Transactional(readOnly = true)
+    public List<NhcxRequest> listClaims(Long patientId, Short status) {
+        List<NhcxRequest> requests = requestRepository.findClaims(patientId, status);
+        for (NhcxRequest r : requests) {
+            r.setDetails(detailsOf(r.getRequestId()));
+        }
+        return requests;
+    }
+
+    @Transactional(readOnly = true)
+    public NhcxRequest getClaim(long requestId) {
+        NhcxRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RcmNotFoundException("NOT_FOUND",
+                        "NHCX request not found: " + requestId));
+        if (request.getKind() == null || request.getKind() != NhcxRequest.KIND_CLAIM_SUBMIT) {
+            throw new RcmNotFoundException("NOT_FOUND",
+                    "Claim not found: " + requestId);
+        }
+        request.setDetails(detailsOf(requestId));
+        return request;
+    }
+
+    @Transactional
+    public NhcxRequest approveClaim(long requestId) {
+        return decideClaim(requestId, NhcxStatus.APPROVED);
+    }
+
+    @Transactional
+    public NhcxRequest rejectClaim(long requestId) {
+        return decideClaim(requestId, NhcxStatus.REJECTED);
+    }
+
+    private NhcxRequest decideClaim(long requestId, short target) {
+        NhcxRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RcmNotFoundException("NOT_FOUND",
+                        "Claim not found: " + requestId));
+        if (request.getKind() == null || request.getKind() != NhcxRequest.KIND_CLAIM_SUBMIT) {
+            throw new RcmNotFoundException("NOT_FOUND",
+                    "Claim not found: " + requestId);
+        }
+        short current = request.getStatusCode();
+        if (NhcxStatus.isClaimFinal(current)) {
+            throw new TidConflictException("RCM_ILLEGAL_TRANSITION",
+                    "Claim " + requestId + " already in final status "
+                            + NhcxStatus.name(current) + " — cannot move to " + NhcxStatus.name(target));
+        }
+        request.setStatusCode(target);
+        stampUpdated(request, now());
+        requestRepository.save(request);
+        log.info("Claim {} decided {} -> {}", requestId, NhcxStatus.name(current), NhcxStatus.name(target));
+        return getClaim(requestId);
+    }
+
     // -------------------------------------------------------------------- helpers
 
     private NhcxRequest newRequest(short kind, Long patientId, Long billId, Long admissionId,
@@ -300,13 +356,13 @@ public class NhcxService {
         return detailRepository.findByRequestIdOrderByLineNoAsc(requestId);
     }
 
-    /** Status filter parser: numeric (0..3) or name (INITIATED, SENT, ACKNOWLEDGED, COMPLETED). */
+    /** Status filter parser: numeric (0..5) or name (INITIATED, SENT, ACKNOWLEDGED, COMPLETED, APPROVED, REJECTED). */
     public static Short parseStatus(String raw) {
         try {
             short s = Short.parseShort(raw.trim());
             if (!NhcxStatus.isValid(s)) {
                 throw new InvalidRcmRequestException("BEXA003",
-                        "Unknown status: " + raw + " (valid 0..3)");
+                        "Unknown status: " + raw + " (valid 0..5)");
             }
             return s;
         } catch (NumberFormatException ignored) {
@@ -317,6 +373,8 @@ public class NhcxService {
             case "SENT" -> NhcxStatus.SENT;
             case "ACKNOWLEDGED" -> NhcxStatus.ACKNOWLEDGED;
             case "COMPLETED" -> NhcxStatus.COMPLETED;
+            case "APPROVED" -> NhcxStatus.APPROVED;
+            case "REJECTED" -> NhcxStatus.REJECTED;
             default -> throw new InvalidRcmRequestException("BEXA003", "Unknown status: " + raw);
         };
     }
