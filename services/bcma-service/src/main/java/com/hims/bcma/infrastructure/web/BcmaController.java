@@ -57,6 +57,13 @@ public class BcmaController {
         return ResponseEntity.ok(service.getStockByMedication(drugIen, wardId));
     }
 
+    @GetMapping("/scan")
+    public ResponseEntity<List<MedicationScan>> getScans(
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false, defaultValue = "100") Integer limit) {
+        return ResponseEntity.ok(service.getScans(patientId, limit));
+    }
+
     @GetMapping("/scan/{scanId}")
     public ResponseEntity<PatientDrugMatch> getScan(@PathVariable Long scanId) {
         PatientDrugMatch m = service.getScanResult(scanId);

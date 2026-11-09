@@ -134,4 +134,64 @@ class BcmaModuleServiceTest {
         when(scanRepo.findByScanId(888L)).thenReturn(Optional.empty());
         assertNull(service.getScanResult(888L));
     }
+
+    @Test
+    void getScansWithPatientIdDelegatesToRepoWithPageable() {
+        MedicationScan s = new MedicationScan();
+        s.setScanId(101L);
+        s.setPatientId(55L);
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        when(scanRepo.findByPatientId(eq(55L), captor.capture())).thenReturn(List.of(s));
+
+        List<MedicationScan> result = service.getScans(55L, 20);
+        assertEquals(1, result.size());
+        assertEquals(101L, result.get(0).getScanId());
+
+        org.springframework.data.domain.Pageable p = captor.getValue();
+        assertEquals(20, p.getPageSize());
+        assertEquals(0, p.getPageNumber());
+        assertTrue(p.getSort().getOrderFor("scanTime").isDescending());
+    }
+
+    @Test
+    void getScansWithoutPatientIdDelegatesToFindAll() {
+        MedicationScan s = new MedicationScan();
+        s.setScanId(202L);
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        org.springframework.data.domain.Page<MedicationScan> page =
+                new org.springframework.data.domain.PageImpl<>(List.of(s));
+        when(scanRepo.findAll(captor.capture())).thenReturn(page);
+
+        List<MedicationScan> result = service.getScans(null, null);
+        assertEquals(1, result.size());
+        assertEquals(202L, result.get(0).getScanId());
+
+        org.springframework.data.domain.Pageable p = captor.getValue();
+        assertEquals(100, p.getPageSize());
+    }
+
+    @Test
+    void getScansCapsMaxLimitTo500() {
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        when(scanRepo.findByPatientId(eq(1L), captor.capture())).thenReturn(Collections.emptyList());
+
+        service.getScans(1L, 9999);
+        assertEquals(500, captor.getValue().getPageSize());
+    }
+
+    @Test
+    void getScansDefaultsLimitWhenZeroOrNegative() {
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        when(scanRepo.findByPatientId(eq(1L), captor.capture())).thenReturn(Collections.emptyList());
+
+        service.getScans(1L, -5);
+        assertEquals(100, captor.getValue().getPageSize());
+
+        service.getScans(1L, 0);
+        assertEquals(100, captor.getValue().getPageSize());
+    }
 }
