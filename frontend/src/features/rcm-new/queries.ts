@@ -51,7 +51,7 @@ export interface ChiranjeeviScheme {
 }
 
 export function useClaims() {
-  return useQuery({ queryKey: ["rcm-claims"], queryFn: () => rcmJson<Claim[]>(`${RCM_BASE}/v1/claims`), enabled: false });
+  return useQuery({ queryKey: ["rcm-claims"], queryFn: () => rcmJson<Claim[]>(`${RCM_BASE}/v1/claims`) });
 }
 
 export function useSubmitClaim() {
@@ -67,7 +67,7 @@ export function useClaimDetail(claimId: number) {
   return useQuery({
     queryKey: ["rcm-claim", claimId],
     queryFn: () => rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}`),
-    enabled: false,
+    enabled: claimId > 0,
   });
 }
 
@@ -76,7 +76,10 @@ export function useApproveClaim() {
   return useMutation({
     mutationFn: (claimId: number) =>
       rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}/approve`, { method: "PATCH" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rcm-claims"] }),
+    onSuccess: (_data, claimId) => {
+      qc.invalidateQueries({ queryKey: ["rcm-claims"] });
+      qc.invalidateQueries({ queryKey: ["rcm-claim", claimId] });
+    },
   });
 }
 
@@ -85,7 +88,10 @@ export function useRejectClaim() {
   return useMutation({
     mutationFn: (claimId: number) =>
       rcmJson<Claim>(`${RCM_BASE}/v1/claims/${claimId}/reject`, { method: "PATCH" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rcm-claims"] }),
+    onSuccess: (_data, claimId) => {
+      qc.invalidateQueries({ queryKey: ["rcm-claims"] });
+      qc.invalidateQueries({ queryKey: ["rcm-claim", claimId] });
+    },
   });
 }
 
