@@ -2,11 +2,11 @@ spring:
   application:
     name: patient-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_patient,ihms_pmrd
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 15
       pool-name: patient-cp
   jpa:
     hibernate:
@@ -16,13 +16,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_patient
         globally_quoted_identifiers: true
   flyway:
-    default-schema: ihms_patient
-    create-schemas: true           # history table needs ihms_grievance before V1 executes
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
@@ -40,9 +36,15 @@ app:
     topic:
       patient-registration: ${PATIENT_REGISTRATION_TOPIC:ihms.patient.registration}
       dlq: ${PATIENT_DLQ_TOPIC:dlt.ihms.patient.registration}
+      appointment-encounter: ${APPOINTMENT_ENCOUNTER_TOPIC:ihms.appointment.encounter}
+      appointment-dlq: ${APPOINTMENT_DLQ_TOPIC:dlt.ihms.appointment.encounter}
   outbox:
     poll-interval-ms: 5000
     max-attempts: 5
+  jobs:
+    encounter-close:
+      enabled: ${ENCOUNTER_CLOSE_ENABLED:true}
+      cron: "${ENCOUNTER_CLOSE_CRON:0 30 1 * * *}"
 
 server:
   port: ${SERVER_PORT:8090}
@@ -62,7 +64,7 @@ management:
 info:
   app:
     name: patient-service
-    description: iHMS Grievance & Feedback service (S20) - Wave 2 MIG-020, ticket lifecycle REST (no outbox - GrievanceRaised rejected phase 1)
+    description: iHMS Patient service - bundles patient and pmrd
     version: 0.1.0
 
 logging:

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "jsy_form_data")
+@Table(name = "jsy_form_data", schema = "ihms_pmrd")
 public class JsyFormData {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

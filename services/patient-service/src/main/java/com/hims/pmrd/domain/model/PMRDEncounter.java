@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "pmrd_encounter")
+@Table(name = "pmrd_encounter", schema = "ihms_pmrd")
 public class PMRDEncounter {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

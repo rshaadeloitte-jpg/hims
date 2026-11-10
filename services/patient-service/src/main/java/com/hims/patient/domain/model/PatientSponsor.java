@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 /** Clean target of T_PATIENTSPONSOR (sponsor/scheme linkage — RGHS/Chiranjeevi etc.). */
 @Entity
-@Table(name = "patient_sponsor")
+@Table(name = "patient_sponsor", schema = "ihms_patient")
 public class PatientSponsor extends PatientBase {
 
     @Id

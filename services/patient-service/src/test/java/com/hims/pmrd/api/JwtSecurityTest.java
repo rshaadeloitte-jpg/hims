@@ -2,8 +2,8 @@ package com.hims.pmrd.api;
 
 import com.hims.pmrd.api.PMRDController;
 import com.hims.pmrd.application.PMRDService;
-import com.hims.pmrd.configuration.JwtConfig;
-import com.hims.pmrd.configuration.SecurityConfig;
+import com.hims.patient.configuration.JwtConfig;
+import com.hims.patient.configuration.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

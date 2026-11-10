@@ -12,7 +12,7 @@ import java.time.LocalDate;
 
 /** Clean target of T_REGISTRATION (kickoff demographic subset). One row = one MRN. */
 @Entity
-@Table(name = "patient_registration")
+@Table(name = "patient_registration", schema = "ihms_patient")
 public class PatientRegistration extends PatientBase {
 
     @Id

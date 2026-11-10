@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(classes = com.hims.patient.PatientServiceApplication.class)
 public class PMRDModuleTest {
     @Test
     public void contextLoads() { assertTrue(true); }

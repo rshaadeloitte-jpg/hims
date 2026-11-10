@@ -3,8 +3,8 @@ package com.hims.pmrd.domain.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "patient_document")
+@Entity(name = "PmrdPatientDocument")
+@Table(name = "patient_document", schema = "ihms_pmrd")
 public class PatientDocument {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
