@@ -2,11 +2,11 @@ spring:
   application:
     name: interop-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_interop,ihms_govt,ihms_aasmaan,ihms_abha
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 25
       pool-name: interop-cp
   jpa:
     hibernate:
@@ -16,13 +16,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_interop
         globally_quoted_identifiers: true
   flyway:
-    default-schema: ihms_interop
-    create-schemas: true           # history table needs ihms_interop before V1 executes
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
 
 server:
   port: ${SERVER_PORT:8105}
@@ -46,7 +42,7 @@ app:
 info:
   app:
     name: interop-service
-    description: iHMS Interop & Notifications service (Catalog #25) - Wave-6 tranche 6 (GAP-REGISTER-6 WP-T1); HIS outbound/inbound queues, ABDM request queue (correlation-id unique, idempotent callbacks), WhatsApp forward-only status machine, EHR job details. Internal event-relay ingress models the future Kafka consumer. Emits NOTHING - external gateways are contract-stubbed dispatchers (comment-only).
+    description: iHMS Interop service - bundles interop, govt, aasmaan, abha
     version: 0.1.0-SNAPSHOT
 
 logging:

@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_abha_consent")
+@Table(name = "t_abha_consent", schema = "ihms_interop")
 public class AbhaConsent extends InteropBase {
     public static final short STATUS_GRANTED = 1;
     public static final short STATUS_REVOKED = 2;

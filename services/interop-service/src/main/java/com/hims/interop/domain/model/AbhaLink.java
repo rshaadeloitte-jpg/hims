@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_abha_link")
+@Table(name = "t_abha_link", schema = "ihms_interop")
 public class AbhaLink extends InteropBase {
     public static final short STATUS_PENDING_VERIFY = 1;
     public static final short STATUS_VERIFIED = 2;

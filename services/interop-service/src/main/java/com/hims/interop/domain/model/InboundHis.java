@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  * dispatcher (comment-only).
  */
 @Entity
-@Table(name = "t_inbound_his")
+@Table(name = "t_inbound_his", schema = "ihms_interop")
 public class InboundHis extends InteropBase {
 
     public static final short STATUS_RECEIVED = 0;

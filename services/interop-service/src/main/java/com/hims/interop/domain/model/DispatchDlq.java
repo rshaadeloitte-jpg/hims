@@ -16,7 +16,7 @@ import java.sql.Timestamp;
  * durable landing so no message is silently lost.
  */
 @Entity
-@Table(name = "t_dispatch_dlq")
+@Table(name = "t_dispatch_dlq", schema = "ihms_interop")
 public class DispatchDlq extends InteropBase {
 
     public static final String SOURCE_OUTBOUND_HIS = "t_outbound_his";

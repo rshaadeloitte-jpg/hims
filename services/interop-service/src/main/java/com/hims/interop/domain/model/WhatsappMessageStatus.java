@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  * (replaces legacy T_WHATSAPPMESSAGESTATUS).
  */
 @Entity
-@Table(name = "t_whatsapp_message_status")
+@Table(name = "t_whatsapp_message_status", schema = "ihms_interop")
 public class WhatsappMessageStatus extends InteropBase {
 
     @Id

@@ -8,7 +8,7 @@ import org.hibernate.type.SqlTypes;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_phr_push")
+@Table(name = "t_phr_push", schema = "ihms_interop")
 public class PhrPush extends InteropBase {
     public static final short STATUS_PENDING = 1;
     public static final short STATUS_PUSHED = 2;

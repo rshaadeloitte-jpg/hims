@@ -21,8 +21,8 @@ import java.util.UUID;
  * service EMITS NOTHING — it is a consumer/relay, not a producer. Nothing writes
  * here; tests assert it stays EMPTY through EVERY flow (negative outbox assertion).
  */
-@Entity
-@Table(name = "outbox")
+@Entity(name = "InteropOutboxEvent")
+@Table(name = "outbox", schema = "ihms_interop")
 public class OutboxEvent {
 
     public enum OutboxStatus {
