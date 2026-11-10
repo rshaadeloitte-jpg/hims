@@ -15,7 +15,7 @@ import jakarta.persistence.Table;
  * {@code isrelease} governs allocation (BR-IPD-003 gate at admission → BERB005).
  */
 @Entity
-@Table(name = "m_bed_status_master")
+@Table(name = "m_bed_status_master", schema = "ihms_adt")
 public class BedStatusMaster {
 
     @Id

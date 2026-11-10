@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  * PENDING -> CLEARED only (never reverts; a re-clearance is idempotent).
  */
 @Entity
-@Table(name = "r_clearance_checklist")
+@Table(name = "r_clearance_checklist", schema = "ihms_adt")
 public class ClearanceChecklistItem {
 
     public enum ClrStatus { PENDING, CLEARED }

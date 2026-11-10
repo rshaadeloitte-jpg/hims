@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
  * Claims are atomic CAS: UPDATE m_bed SET occupied=true WHERE bed_id=? AND occupied=false.
  */
 @Entity
-@Table(name = "m_bed")
+@Table(name = "m_bed", schema = "ihms_adt")
 public class Bed extends AdtBase {
 
     @Id
