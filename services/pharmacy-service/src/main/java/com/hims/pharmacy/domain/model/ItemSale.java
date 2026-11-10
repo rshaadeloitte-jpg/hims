@@ -24,7 +24,7 @@ import java.util.List;
  * later slice adds it to the request (register-faithful, nothing invented).
  */
 @Entity
-@Table(name = "t_itemsale")
+@Table(name = "t_itemsale", schema = "ihms_pharmacy")
 public class ItemSale extends PharmacyBase {
 
     public static final short STATUS_PENDING = 1;

@@ -44,12 +44,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- NOTE (documented deviation from the ordering-service template): no
-             spring-kafka dependency. This service emits NO events this tranche
-             (DispensingCompleted is PROPOSED per GAP-REGISTER-5 WP-R2 / KAFKA
-             multi-consumer rule) so there is nothing for a relay to publish.
-             The outbox TABLE + entity + repository are still provisioned and the
-             integration test asserts it stays EMPTY. -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -78,6 +76,11 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

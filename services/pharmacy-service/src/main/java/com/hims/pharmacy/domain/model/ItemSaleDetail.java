@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
  */
 @Entity
 @IdClass(ItemSaleDetailKey.class)
-@Table(name = "t_item_sale_detail")
+@Table(name = "t_item_sale_detail", schema = "ihms_pharmacy")
 public class ItemSaleDetail extends PharmacyBase {
 
     @Id

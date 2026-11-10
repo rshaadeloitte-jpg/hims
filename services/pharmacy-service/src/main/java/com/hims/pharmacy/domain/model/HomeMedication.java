@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_home_medication")
+@Table(name = "t_home_medication", schema = "ihms_pharmacy")
 public class HomeMedication extends PharmacyBase {
 
     @Id

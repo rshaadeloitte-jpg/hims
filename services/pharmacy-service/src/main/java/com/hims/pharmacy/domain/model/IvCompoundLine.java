@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Date;
 
 @Entity
-@Table(name = "t_iv_compound_line")
+@Table(name = "t_iv_compound_line", schema = "ihms_pharmacy")
 public class IvCompoundLine extends PharmacyBase {
 
     @Id

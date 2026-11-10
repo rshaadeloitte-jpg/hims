@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  * Severity gates pharmacist override on dispense (BR-PHAR-004).
  */
 @Entity
-@Table(name = "t_drug_allergy")
+@Table(name = "t_drug_allergy", schema = "ihms_pharmacy")
 public class DrugAllergy extends PharmacyBase {
 
     @Id
