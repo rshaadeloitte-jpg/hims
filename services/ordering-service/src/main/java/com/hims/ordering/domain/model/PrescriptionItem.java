@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 @Entity
 @IdClass(PrescriptionItemKey.class)
-@Table(name = "prescription_item")
+@Table(name = "prescription_item", schema = "ihms_ordering")
 public class PrescriptionItem extends PrescriptionBase {
 
     @Id

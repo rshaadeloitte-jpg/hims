@@ -23,7 +23,7 @@ import java.util.List;
  *                  OrderFailed compensation event emitted in the same tx
  */
 @Entity
-@Table(name = "clinical_order")
+@Table(name = "clinical_order", schema = "ihms_ordering")
 public class ClinicalOrder extends PrescriptionBase {
 
     public static final short STATUS_INITIATED = 1;
