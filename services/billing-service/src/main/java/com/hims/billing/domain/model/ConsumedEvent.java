@@ -17,7 +17,7 @@ import java.sql.Timestamp;
  * ordering-service BILLING_FAILED compensation.
  */
 @Entity
-@Table(name = "t_consumed_event")
+@Table(name = "t_consumed_event", schema = "ihms_billing")
 public class ConsumedEvent {
 
     public static final String STATUS_APPLIED = "APPLIED";

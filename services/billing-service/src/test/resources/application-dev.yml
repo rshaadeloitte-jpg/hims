@@ -29,10 +29,17 @@ spring:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 
 app:
+  billing:
+    base-url: http://localhost:8098
   kafka:
     topic:
       billing-events: ihms.billing.events
       dlq: dlt.ihms.billing.events
+      billing-dlq: dlt.ihms.billing.events
+      payment-events: ihms.payment.events
+      payment-dlq: dlt.ihms.payment.events
+      rcm-events: ihms.rcm.events
+      rcm-dlq: dlt.ihms.rcm.events
   outbox:
     poll-interval-ms: 5000
     max-attempts: 5

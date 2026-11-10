@@ -13,7 +13,7 @@ import java.math.BigDecimal;
  * Stores visit-type-based charges for doctors (OPD/IPD visit fees).
  */
 @Entity
-@Table(name = "t_visit_charge")
+@Table(name = "t_visit_charge", schema = "ihms_billing")
 public class VisitCharge extends BillingBase {
 
     @Id

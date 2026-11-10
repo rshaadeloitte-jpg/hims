@@ -13,7 +13,7 @@ import java.math.BigDecimal;
  * is_billed=false at insert (DoctorShare accrual consumes E-07 later).
  */
 @Entity
-@Table(name = "t_doctor_share")
+@Table(name = "t_doctor_share", schema = "ihms_billing")
 public class DoctorShare extends BillingBase {
 
     @Id
