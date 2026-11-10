@@ -19,7 +19,7 @@ import java.util.Objects;
  * compatible with queue-service counters.
  */
 @Entity
-@Table(name = "daily_encounter_counter")
+@Table(name = "daily_encounter_counter", schema = "ihms_appointment")
 @IdClass(DailyEncounterCounter.CounterId.class)
 public class DailyEncounterCounter {
 

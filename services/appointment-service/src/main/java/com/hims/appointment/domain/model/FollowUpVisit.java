@@ -17,7 +17,7 @@ import java.sql.Timestamp;
  * Recurrence via recurrenceRule (RRULE subset, e.g., FREQ=WEEKLY;COUNT=4;BYDAY=MO)
  */
 @Entity
-@Table(name = "t_follow_up_visit")
+@Table(name = "t_follow_up_visit", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)

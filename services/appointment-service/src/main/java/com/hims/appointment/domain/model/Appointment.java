@@ -24,7 +24,7 @@ import java.time.LocalTime;
  * kiosk/queue compatibility; resolution rules in {@link LegacyVisitStatus}.
  */
 @Entity
-@Table(name = "appointment")
+@Table(name = "appointment", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)
