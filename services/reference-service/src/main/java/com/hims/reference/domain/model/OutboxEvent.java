@@ -20,8 +20,8 @@ import java.util.UUID;
  * eventId, eventType, version, occurredAt, producerService, entityId, partitionKey,
  * payload, idempotencyKey.
  */
-@Entity
-@Table(name = "outbox")
+@Entity(name = "ReferenceOutboxEvent")
+@Table(name = "outbox", schema = "ihms_master")
 public class OutboxEvent {
 
     public enum OutboxStatus {

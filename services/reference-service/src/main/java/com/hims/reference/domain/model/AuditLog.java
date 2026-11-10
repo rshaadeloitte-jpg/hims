@@ -9,7 +9,7 @@ import org.hibernate.type.SqlTypes;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "audit_log")
+@Table(name = "audit_log", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),

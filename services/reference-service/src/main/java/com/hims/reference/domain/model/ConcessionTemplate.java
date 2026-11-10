@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "concession_template")
+@Table(name = "concession_template", schema = "ihms_master")
 public class ConcessionTemplate extends MasterEntityBase {
     public static final short STATUS_ACTIVE = 1;
     public static final short STATUS_INACTIVE = 2;

@@ -11,7 +11,7 @@ import java.util.Date;
  * they ARE the JSON contract (legacy Jackson field-visibility serialization).
  */
 @Entity
-@Table(name = "M_UNITMASTER")
+@Table(name = "M_UNITMASTER", schema = "ihms_master")
 public class UnitMaster extends MasterEntityBase {
 
     @Column(name = "CODE")

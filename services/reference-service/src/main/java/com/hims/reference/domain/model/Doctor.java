@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
  * iam_user_id is a logical reference to the IAM user (MIG-004, D-2) — no cross-schema FK.
  */
 @Entity
-@Table(name = "doctor")
+@Table(name = "doctor", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),

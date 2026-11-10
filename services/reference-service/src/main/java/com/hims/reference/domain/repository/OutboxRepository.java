@@ -14,7 +14,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     /** Events still due for dispatch: PENDING/FAILED below attempt cap, oldest first. */
     @Query("""
-            SELECT e FROM OutboxEvent e
+            SELECT e FROM ReferenceOutboxEvent e
             WHERE e.status IN (com.hims.reference.domain.model.OutboxEvent.OutboxStatus.PENDING,
                                com.hims.reference.domain.model.OutboxEvent.OutboxStatus.FAILED)
               AND e.attempts < :maxAttempts
@@ -25,7 +25,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
     /** Compare-and-set claim so concurrent relays cannot double-publish. */
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE ReferenceOutboxEvent e
             SET e.attempts = :attempts
             WHERE e.id = :id
               AND e.status IN (com.hims.reference.domain.model.OutboxEvent.OutboxStatus.PENDING,
@@ -35,7 +35,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE ReferenceOutboxEvent e
             SET e.status = com.hims.reference.domain.model.OutboxEvent.OutboxStatus.PUBLISHED,
                 e.publishedAt = :publishedAt
             WHERE e.id = :id
@@ -44,7 +44,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE ReferenceOutboxEvent e
             SET e.status = :status
             WHERE e.id = :id
             """)
