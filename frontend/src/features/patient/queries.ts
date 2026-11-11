@@ -189,7 +189,7 @@ export function toPatientPayload(input: Record<string, unknown>): Record<string,
   return out;
 }
 
-export function useRegisterPatient() {
+export function useRegisterPatient(options?: { onSuccess?: (data: PatientDetail) => void }) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -197,7 +197,10 @@ export function useRegisterPatient() {
         method: "POST",
         body: JSON.stringify(toPatientPayload(payload)),
       }).then((p) => normalizePatient(p)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["patients"] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["patients"] });
+      options?.onSuccess?.(data);
+    },
   });
 }
 

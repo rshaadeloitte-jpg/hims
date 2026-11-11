@@ -1,9 +1,37 @@
+import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, SimpleGrid, Textarea, VStack, Text } from "@chakra-ui/react";
 import { FormField, HimsSelect, TextInput } from "../../components/ui";
 import { patientRegistrationSchema, type PatientRegistrationValues } from "./zodSchema";
 import { useRegisterPatient } from "./queries";
+
+const DEFAULT_FORM_VALUES: PatientRegistrationValues = {
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  fatherName: "",
+  motherName: "",
+  mobileNo: "",
+  emergencyContact: "",
+  email: "",
+  genderId: undefined,
+  dateOfBirth: "",
+  bloodGroup: "",
+  maritalStatus: "",
+  address: "",
+  city: "",
+  state: "",
+  pincode: "",
+  abhaAddress: "",
+  aadhaarNumber: "",
+  unitId: undefined,
+  mlc: { isMlc: false, mlcNumber: "", mlcFirNumber: "", mlcPoliceStation: "", mlcNotes: "" },
+  motherChildLink: { isChildPatient: false, motherPatientId: undefined, motherMrn: "", birthWeightGrams: undefined, gestationalAgeWeeks: undefined },
+  covidTracking: { covidVaccinationStatus: undefined, lastCovidVaccineDate: "", covidInfectionHistory: false, lastCovidInfectionDate: "" },
+  photo: { photoFileId: "", photoCapturedAt: "", photoDataUrl: "" },
+};
 
 /**
  * M02 Patient Registration form (Registration Form, G-1). Wraps react-hook-form
@@ -12,26 +40,35 @@ import { useRegisterPatient } from "./queries";
  * forward every defined field and let the server handle nulls.
  */
 export function PatientRegistrationForm({ onCreated }: { onCreated?: (id: number) => void }) {
+  const [createdPatient, setCreatedPatient] = useState<{
+    id: number;
+    mrNo: string;
+    fullName: string;
+  } | null>(null);
+
   const mutation = useRegisterPatient();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    clearErrors,
   } = useForm<PatientRegistrationValues>({
     resolver: zodResolver(patientRegistrationSchema),
-    defaultValues: {
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      mobileNo: "",
-      abhaAddress: "",
-      address: "",
-      email: "",
-      emergencyContact: "",
-      bloodGroup: "",
-    },
+    defaultValues: DEFAULT_FORM_VALUES,
   });
+
+  const handleRegisterAnother = useCallback(() => {
+    setCreatedPatient(null);
+    reset(DEFAULT_FORM_VALUES, {
+      keepErrors: false,
+      keepDirty: false,
+      keepTouched: false,
+      keepValues: false,
+      keepDefaultValues: false,
+    });
+    clearErrors();
+  }, [reset, clearErrors]);
 
   const onSubmit = handleSubmit(async (values) => {
     const payload: Record<string, unknown> = {};
@@ -53,9 +90,73 @@ export function PatientRegistrationForm({ onCreated }: { onCreated?: (id: number
     if (values.unitId != null) payload.unitId = values.unitId;
     if (values.emergencyContact) payload.emergencyContactPhone = values.emergencyContact;
     const created = await mutation.mutateAsync(payload);
-    onCreated?.(created.patientId);
-    reset();
+    const pid = created.patientId || created.id || 0;
+    const mrNo = created.mrNo || created.mrno || "—";
+    const fullName = [
+      created.firstName || values.firstName,
+      created.middleName || values.middleName,
+      created.lastName || values.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") || "Patient";
+    setCreatedPatient({ id: pid, mrNo, fullName });
+    onCreated?.(pid);
   });
+
+  if (createdPatient) {
+    return (
+      <VStack
+        align="stretch"
+        gap={4}
+        p={6}
+        borderWidth="1px"
+        borderColor="gray.200"
+        borderRadius="md"
+        bg="white"
+        textAlign="center"
+        aria-label="registration-success"
+      >
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#16a34a", margin: 0 }}>
+          ✓ Patient Registered Successfully
+        </h1>
+        <Text color="gray.600">
+          Patient record has been created in the master index.
+        </Text>
+
+        <VStack
+          align="stretch"
+          gap={2}
+          p={4}
+          bg="gray.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="gray.200"
+          textAlign="left"
+        >
+          <Text fontSize="sm" color="gray.600">
+            <strong>Name:</strong> <span data-testid="registered-patient-name">{createdPatient.fullName}</span>
+          </Text>
+          <Text fontSize="sm" color="gray.600">
+            <strong>MRN:</strong> <span data-testid="registered-patient-mrn" style={{ fontFamily: "monospace", color: "#2563eb" }}>{createdPatient.mrNo}</span>
+          </Text>
+          <Text fontSize="sm" color="gray.600">
+            <strong>Patient ID:</strong> <span data-testid="registered-patient-id">{createdPatient.id}</span>
+          </Text>
+        </VStack>
+
+        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+          <Button type="button" variant="secondary" onClick={handleRegisterAnother}>
+            Register Another Patient
+          </Button>
+          <Link to={`/patients/${createdPatient.id}`} style={{ textDecoration: "none" }}>
+            <Button type="button" variant="primary" width="100%">
+              Go to Patient Profile
+            </Button>
+          </Link>
+        </SimpleGrid>
+      </VStack>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} aria-label="patient-registration">
