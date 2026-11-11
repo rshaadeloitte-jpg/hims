@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  * One row appended per accepted transition.
  */
 @Entity
-@Table(name = "t_eaushadhi_sync_status")
+@Table(name = "t_eaushadhi_sync_status", schema = "ihms_interop")
 public class EAushadhiSyncStatus extends InteropBase {
 
     @Id

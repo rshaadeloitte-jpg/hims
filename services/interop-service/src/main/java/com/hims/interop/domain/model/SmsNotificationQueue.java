@@ -20,7 +20,7 @@ import java.util.List;
  * (comment-only per register WP-T1).
  */
 @Entity
-@Table(name = "t_sms_notification_queue")
+@Table(name = "t_sms_notification_queue", schema = "ihms_interop")
 public class SmsNotificationQueue extends InteropBase {
 
     public static final short STATUS_QUEUED = 0;

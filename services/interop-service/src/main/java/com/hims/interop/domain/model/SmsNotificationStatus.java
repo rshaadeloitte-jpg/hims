@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 
 /** SMS status-history row: one per accepted transition of an SMS message. */
 @Entity
-@Table(name = "t_sms_notification_status")
+@Table(name = "t_sms_notification_status", schema = "ihms_interop")
 public class SmsNotificationStatus extends InteropBase {
 
     @Id

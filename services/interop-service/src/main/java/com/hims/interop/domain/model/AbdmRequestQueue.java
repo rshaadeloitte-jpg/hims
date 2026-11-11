@@ -19,7 +19,7 @@ import org.hibernate.type.SqlTypes;
  * range — endpoints 0 and 3 are catalog-evidenced.
  */
 @Entity
-@Table(name = "t_abdm_request_queue")
+@Table(name = "t_abdm_request_queue", schema = "ihms_interop")
 public class AbdmRequestQueue extends InteropBase {
 
     /** ABDM Milestone 1 (ABHA create/verify/link — 07 §ABDM). */

@@ -32,7 +32,12 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/error").permitAll()
+                                "/error",
+                                "/api/fhir/**",
+                                "/api/hpr/**",
+                                "/api/eaushadhi/**",
+                                "/api/ehr/**",
+                                "/api/whatsapp/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.jwtAuthenticationConverter(JwtConfig.jwtAuthenticationConverter())))

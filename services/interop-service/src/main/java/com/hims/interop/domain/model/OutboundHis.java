@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
  * status machine 0=PENDING 1=SENT 2=FAILED 3=DEAD is modeled only.
  */
 @Entity
-@Table(name = "t_outbound_his")
+@Table(name = "t_outbound_his", schema = "ihms_interop")
 public class OutboundHis extends InteropBase {
 
     public static final short STATUS_PENDING = 0;

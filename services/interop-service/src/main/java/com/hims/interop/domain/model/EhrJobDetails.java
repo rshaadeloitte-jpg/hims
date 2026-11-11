@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
  * Status SMALLINT 0..3: 0=QUEUED 1=RUNNING 2=DONE 3=FAILED.
  */
 @Entity
-@Table(name = "t_ehr_job_details")
+@Table(name = "t_ehr_job_details", schema = "ihms_interop")
 public class EhrJobDetails extends InteropBase {
 
     public static final short STATUS_QUEUED = 0;
