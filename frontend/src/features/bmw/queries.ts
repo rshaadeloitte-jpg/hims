@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/client";
-import type {
-  BagStatusUpdate,
-  DecomposeFormValues,
-  FirmInfo,
-  HandoverFormValues,
-  Store,
-  WasteBagDetail,
-  WasteListFilterValues,
-  WasteRequestValues,
-  WasteSummary,
+import {
+  STATUS_ID,
+  type BagStatusUpdate,
+  type DecomposeFormValues,
+  type FirmInfo,
+  type HandoverFormValues,
+  type Store,
+  type WasteBagDetail,
+  type WasteListFilterValues,
+  type WasteRequestStatus,
+  type WasteRequestValues,
+  type WasteSummary,
 } from "./zodSchema";
 
 /**
@@ -65,15 +67,22 @@ export const wasteQueryKeys = {
 };
 
 // ---- Summary counts ----------------------------------------------------------
-export function useWasteSummary(unitId: number, storeId: number, from: string, to: string) {
+export function useWasteSummary(_unitId?: number, _storeId?: number, _from?: string, _to?: string) {
   return useQuery<WasteSummary>({
     queryKey: wasteQueryKeys.summary,
-    queryFn: () =>
-      bmwJson<WasteSummary>(`${BMW_BASE}/api/v1/biomedical-waste/counts`, {
-        method: "POST",
-        body: JSON.stringify({ unitId, storeId, fromDate: from, toDate: to }),
-      }),
-    enabled: Boolean(unitId && storeId && from && to),
+    queryFn: async () => {
+      const data = await bmwJson<Record<string, number>>(
+        `${BMW_BASE}/api/v1/biomedical-waste/counts`,
+      );
+      return {
+        totalCount: data.TOTAL ?? 0,
+        pendingCount: data.PENDING ?? 0,
+        acceptedCount: data.ACCEPTED ?? 0,
+        handOveredCount: data.HANDOVERED ?? 0,
+        receivedCount: data.RECEIVED ?? 0,
+        completedCount: data.COMPLETED ?? 0,
+      };
+    },
     staleTime: 60_000,
   });
 }
@@ -105,28 +114,31 @@ export function useWasteList(filter: WasteListFilterValues) {
     queryKey: wasteQueryKeys.list(filter),
     queryFn: async () => {
       const params = new URLSearchParams();
-      params.set("page", String(filter.page ?? 0));
-      params.set("count", String(filter.size ?? 25));
-      if (filter.search) params.set("search", filter.search);
-      const body: Record<string, unknown> = {
-        unitId: filter.storeId, // unitId resolved from session in real app
-      };
-      // category → requestStatus id
-      if (filter.category) {
-        // server expects category name (pending/accepted/handovered/received/completed)
+      const resolvedUnitId = filter.unitId ?? filter.storeId;
+      if (resolvedUnitId != null) {
+        params.set("unitId", String(resolvedUnitId));
       }
-      if (filter.fromDate) body.fromDate = filter.fromDate;
-      if (filter.toDate) body.toDate = filter.toDate;
-      if (filter.storeId) (body as any).storeId = filter.storeId;
-      if (filter.fromStoreId) (body as any).fromStoreId = filter.fromStoreId;
-      const resp = await bmwJson<unknown[]>(
-        `${BMW_BASE}/api/v1/biomedical-waste?${params}`,
-        { method: "POST", body: JSON.stringify(body) },
+      if (filter.category) {
+        const catKey = filter.category.toUpperCase();
+        if (catKey in STATUS_ID) {
+          params.set("requestStatus", String(STATUS_ID[catKey as WasteRequestStatus]));
+        }
+      }
+      if (filter.search && filter.search.trim()) {
+        params.set("search", filter.search.trim());
+      }
+      const queryString = params.toString() ? `?${params}` : "";
+      const resp = await bmwJson<WasteRequestRow[]>(
+        `${BMW_BASE}/api/v1/biomedical-waste${queryString}`,
       );
-      // The legacy backend returns a bare array; derive total from length.
+      const rawItems = Array.isArray(resp) ? resp : [];
+      const items: WasteRequestRow[] = rawItems.map((item: any) => ({
+        ...item,
+        date: item.date ?? (item.requestDate ? String(item.requestDate) : undefined),
+      }));
       return {
-        items: resp as unknown as WasteRequestRow[],
-        total: resp.length,
+        items,
+        total: items.length,
         page: filter.page ?? 0,
         size: filter.size ?? 25,
       };

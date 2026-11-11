@@ -76,6 +76,18 @@ describe("MasterListPage", () => {
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Inactive")).toBeInTheDocument();
 
+    // Query path check: verifies list loads without searchFld for unitmaster
+    expect(api.listScoped).toHaveBeenCalledWith(
+      "unitmaster",
+      expect.objectContaining({
+        unitId: 1,
+        search: undefined,
+        searchFld: undefined,
+        page: 0,
+        count: 10,
+      }),
+    );
+
     // Pagination controls honour the legacy offset semantics.
     expect(screen.getByText("Page 1")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Prev/ })).toBeDisabled();
