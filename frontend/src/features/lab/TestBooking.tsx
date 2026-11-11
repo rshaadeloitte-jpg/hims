@@ -59,7 +59,7 @@ export function TestBooking({ patientId, encounterId, onBooked }: TestBookingPro
       });
       
       setSelectedTests(new Set());
-      onBooked?.(order.orderId);
+      onBooked?.(order.bookingId ?? order.orderId ?? 0);
     } catch (err) {
       console.error('Failed to create order:', err);
     }

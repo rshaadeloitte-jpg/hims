@@ -1,7 +1,13 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useLabOrders, useLabOrder, useCreateLabOrder } from '../queries';
+import {
+  useLabOrders,
+  useLabOrder,
+  useCreateLabOrder,
+  getLabOrderStatusLabel,
+  LAB_ORDER_STATUS_MAP,
+} from '../queries';
 
 function wrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -125,5 +131,76 @@ describe('useCreateLabOrder', () => {
       })
     );
     expect(result.current.data?.orderId).toBe(100);
+  });
+});
+
+describe('useLabOrders with PathOrderBooking shape', () => {
+  it('fetches PathOrderBooking rows with numeric status and bookingId', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          bookingId: 10,
+          bookingNo: 'LAB-10',
+          patientId: 505,
+          encounterId: 7777,
+          bookingStatus: 1,
+          isOutSourced: false,
+          addedDatetime: '2024-01-01T10:30:00Z',
+          finalizedAt: null,
+          isCritical: false,
+          details: [
+            {
+              detailId: 21,
+              bookingId: 10,
+              testCode: 'CBC',
+              testName: 'Complete Blood Count',
+              detailStatus: 1,
+            },
+          ],
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useLabOrders(), { wrapper: wrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data).toHaveLength(1);
+    const item = result.current.data?.[0];
+    expect(item?.bookingId).toBe(10);
+    expect(item?.bookingNo).toBe('LAB-10');
+    expect(item?.patientId).toBe(505);
+    expect(item?.bookingStatus).toBe(1);
+    expect(item?.addedDatetime).toBe('2024-01-01T10:30:00Z');
+  });
+});
+
+describe('getLabOrderStatusLabel', () => {
+  it('maps numeric status correctly', () => {
+    expect(LAB_ORDER_STATUS_MAP[1]).toBe('ORDERED');
+    expect(getLabOrderStatusLabel(1)).toBe('ORDERED');
+    expect(getLabOrderStatusLabel(2)).toBe('SAMPLE_COLLECTED');
+    expect(getLabOrderStatusLabel(3)).toBe('IN_PROGRESS');
+    expect(getLabOrderStatusLabel(4)).toBe('FINALIZED');
+    expect(getLabOrderStatusLabel(5)).toBe('CANCELLED');
+  });
+
+  it('handles numeric strings', () => {
+    expect(getLabOrderStatusLabel('1')).toBe('ORDERED');
+    expect(getLabOrderStatusLabel('4')).toBe('FINALIZED');
+  });
+
+  it('preserves valid string status labels', () => {
+    expect(getLabOrderStatusLabel('ORDERED')).toBe('ORDERED');
+    expect(getLabOrderStatusLabel('SAMPLE_COLLECTED')).toBe('SAMPLE_COLLECTED');
+  });
+
+  it('handles null, undefined, and boolean values safely', () => {
+    expect(getLabOrderStatusLabel(null)).toBe('—');
+    expect(getLabOrderStatusLabel(undefined)).toBe('—');
+    expect(getLabOrderStatusLabel(true)).toBe('—');
+    expect(getLabOrderStatusLabel(false)).toBe('—');
   });
 });
