@@ -88,7 +88,7 @@ class PatientControllerTest {
 
     @Test
     void searchAndGet_contract() throws Exception {
-        Mockito.when(service.search(null, "111122223333", null)).thenReturn(java.util.List.of(patient(9L)));
+        Mockito.when(service.search(null, null, null, "111122223333", null)).thenReturn(java.util.List.of(patient(9L)));
         mockMvc.perform(get("/api/v1/patients/search?aadhaar=111122223333")
                         .with(SecurityMockMvcRequestPostProcessors.user("devops")))
                 .andExpect(status().isOk())

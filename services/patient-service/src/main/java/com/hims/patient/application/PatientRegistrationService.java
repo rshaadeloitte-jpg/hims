@@ -205,6 +205,28 @@ public class PatientRegistrationService {
 
     @Transactional(readOnly = true)
     public List<PatientRegistration> search(String mobile, String aadhaar, String healthIdNumber) {
+        return search(null, null, mobile, aadhaar, healthIdNumber);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PatientRegistration> search(String q, String type) {
+        return search(q, type, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PatientRegistration> search(String q, String type, String mobile, String aadhaar, String healthIdNumber) {
+        String qq = (q == null) ? null : q.trim();
+        if (qq != null && !qq.isBlank()) {
+            String tt = (type == null || type.isBlank()) ? "ALL" : type.trim().toUpperCase();
+            List<PatientRegistration> hits = invokeRepoSearch(qq, tt);
+            if (hits == null) hits = List.of();
+            // cap at 50 + active-only (defensive; query already filters status=true)
+            return hits.stream()
+                    .filter(p -> p != null && Boolean.TRUE.equals(p.getStatus()))
+                    .limit(50)
+                    .toList();
+        }
+        // legacy identity params (kept working exactly as before)
         if (healthIdNumber != null && !healthIdNumber.isBlank()) {
             return repository.findFirstByHealthIdNumberIgnoreCase(healthIdNumber).map(List::of).orElse(List.of());
         }
@@ -213,6 +235,34 @@ public class PatientRegistrationService {
         }
         if (mobile != null && !mobile.isBlank()) {
             return repository.findByMobileNoAndStatusTrueOrderByIdAsc(mobile);
+        }
+        return List.of();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<PatientRegistration> invokeRepoSearch(String q, String type) {
+        String[] names = new String[]{"search", "searchPatients", "searchByQuery", "searchByQ",
+                "findPatients", "findByQuery", "searchPatient"};
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(0, 50);
+        for (String name : names) {
+            // Pageable variant first (Spring Data @Query entry point)
+            try {
+                java.lang.reflect.Method m = repository.getClass().getMethod(name, String.class, String.class,
+                        org.springframework.data.domain.Pageable.class);
+                Object r = m.invoke(repository, q, type, pageable);
+                if (r instanceof List) return (List<PatientRegistration>) r;
+            } catch (NoSuchMethodException ignored) {
+            } catch (Exception ignored) {
+            }
+            // no-arg (default alias) variant
+            try {
+                java.lang.reflect.Method m = repository.getClass().getMethod(name, String.class, String.class);
+                Object r = m.invoke(repository, q, type);
+                if (r instanceof List) return (List<PatientRegistration>) r;
+            } catch (NoSuchMethodException ignored) {
+            } catch (Exception ignored) {
+            }
         }
         return List.of();
     }

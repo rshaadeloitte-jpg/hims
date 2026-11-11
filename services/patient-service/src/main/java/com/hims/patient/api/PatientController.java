@@ -58,11 +58,15 @@ public class PatientController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search by identity", description = "healthIdNumber (exact) or aadhaar (exact) or mobileNo.")
-    public List<PatientRegistration> search(@RequestParam(required = false) String mobile,
+    @Operation(summary = "Search by identity",
+            description = "q + type (ALL/NAME/MRN/MOBILE/AADHAAR/ABHA) across name, MRN, mobile, Aadhaar, ABHA; "
+                    + "or legacy mobile/aadhaar/healthIdNumber.")
+    public List<PatientRegistration> search(@RequestParam(required = false) String q,
+                                            @RequestParam(required = false) String type,
+                                            @RequestParam(required = false) String mobile,
                                             @RequestParam(required = false) String aadhaar,
                                             @RequestParam(required = false) String healthIdNumber) {
-        return service.search(mobile, aadhaar, healthIdNumber);
+        return service.search(q, type, mobile, aadhaar, healthIdNumber);
     }
 
     @GetMapping
