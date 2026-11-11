@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 /** Clean target of M_AREAMASTER (AGT-02 D-6 global scope, V5). MIG-011 follow-up. */
 @Entity
-@Table(name = "geo_area")
+@Table(name = "geo_area", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),

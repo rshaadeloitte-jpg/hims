@@ -16,7 +16,7 @@ import java.util.UUID;
 
 /** Transactional outbox row (IMP-DEC-004); envelope per KAFKA-EVENT-CATALOG E-01. */
 @Entity
-@Table(name = "outbox")
+@Table(name = "outbox", schema = "ihms_patient")
 public class OutboxEvent {
 
     public enum OutboxStatus {

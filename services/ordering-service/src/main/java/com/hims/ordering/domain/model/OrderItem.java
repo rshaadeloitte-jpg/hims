@@ -17,7 +17,7 @@ import java.math.BigDecimal;
  */
 @Entity
 @IdClass(OrderItemKey.class)
-@Table(name = "order_item")
+@Table(name = "order_item", schema = "ihms_ordering")
 public class OrderItem extends PrescriptionBase {
 
     @Id

@@ -21,7 +21,7 @@ import java.util.List;
  * step values: PENDING -> SUCCEEDED | FAILED; SUCCEEDED/FAILED -> COMPENSATED
  */
 @Entity
-@Table(name = "saga_state")
+@Table(name = "saga_state", schema = "ihms_ordering")
 public class SagaState extends PrescriptionBase {
 
     public static final String IN_PROGRESS = "IN_PROGRESS";

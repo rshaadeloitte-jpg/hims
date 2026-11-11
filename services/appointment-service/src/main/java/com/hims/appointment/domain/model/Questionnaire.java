@@ -16,7 +16,7 @@ import java.sql.Timestamp;
  * moduleType: 'PRE_CONSULT' | 'CLINICIAN_REVIEW'
  */
 @Entity
-@Table(name = "t_questionnaire")
+@Table(name = "t_questionnaire", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)

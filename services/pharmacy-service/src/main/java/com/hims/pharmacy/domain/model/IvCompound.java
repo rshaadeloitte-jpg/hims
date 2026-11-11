@@ -8,7 +8,7 @@ import java.sql.Timestamp;
  * Status: 1=PENDING 2=COMPOUNDED 3=VERIFIED 4=ADMINISTERED 5=CANCELLED
  */
 @Entity
-@Table(name = "t_iv_compound")
+@Table(name = "t_iv_compound", schema = "ihms_pharmacy")
 public class IvCompound extends PharmacyBase {
 
     public static final short STATUS_PENDING = 1;

@@ -15,8 +15,8 @@ import java.sql.Timestamp;
 import java.util.UUID;
 
 /** Transactional outbox row (IMP-DEC-004); envelope per KAFKA-EVENT-CATALOG (E-07). */
-@Entity
-@Table(name = "outbox")
+@Entity(name = "BillingOutboxEvent")
+@Table(name = "outbox", schema = "ihms_billing")
 public class OutboxEvent {
 
     public enum OutboxStatus {

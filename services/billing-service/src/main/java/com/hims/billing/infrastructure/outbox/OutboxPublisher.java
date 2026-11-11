@@ -36,7 +36,7 @@ public class OutboxPublisher {
                            KafkaTemplate<Object, Object> kafkaTemplate,
                            ObjectMapper objectMapper,
                            @Value("${app.kafka.topic.billing-events}") String topic,
-                           @Value("${app.kafka.topic.dlq}") String dlqTopic,
+                           @Value("${app.kafka.topic.billing-dlq:${app.kafka.topic.dlq:dlt.ihms.billing.events}}") String dlqTopic,
                            @Value("${app.outbox.max-attempts:5}") int maxAttempts) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;

@@ -18,7 +18,7 @@ import java.time.LocalTime;
  * makes materialization idempotent.
  */
 @Entity
-@Table(name = "doctor_slot")
+@Table(name = "doctor_slot", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)

@@ -19,7 +19,7 @@ import jakarta.persistence.Table;
  * detail rows have isClosed=true.
  */
 @Entity
-@Table(name = "t_prescription_dispense")
+@Table(name = "t_prescription_dispense", schema = "ihms_pharmacy")
 public class PrescriptionDispense extends PharmacyBase {
 
     @Id

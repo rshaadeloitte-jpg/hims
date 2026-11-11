@@ -32,7 +32,7 @@ class M01SubFeaturesH2FlowTest {
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url",
-            () -> "jdbc:h2:mem:ihms_patient;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;INIT=CREATE SCHEMA IF NOT EXISTS \"ihms_patient\"");
+            () -> "jdbc:h2:mem:ihms_patient;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;INIT=CREATE SCHEMA IF NOT EXISTS \"ihms_patient\"\\;CREATE SCHEMA IF NOT EXISTS \"ihms_pmrd\"");
     }
 
     @Autowired EntityManager em;

@@ -2,11 +2,11 @@ spring:
   application:
     name: pharmacy-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_pharmacy,ihms_item
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 15
       pool-name: pharmacy-cp
   jpa:
     hibernate:
@@ -16,19 +16,19 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_pharmacy
         globally_quoted_identifiers: true
   flyway:
-    default-schema: ihms_pharmacy
-    create-schemas: true           # history table needs ihms_pharmacy before V1 executes
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-
-app:
-  item-service:
-    base-url: ${ITEM_SERVICE_URL:http://localhost:8082}   # single-writer stock API (D-1)
-  pharmacy:
-    store-id: ${PHARMACY_STORE_ID:1}                      # pharmacy dispensing store at item-service
+    enabled: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
 
 server:
   port: ${SERVER_PORT:8101}
@@ -48,13 +48,27 @@ management:
 info:
   app:
     name: pharmacy-service
-    description: iHMS Pharmacy & Dispensing service (S09) - Wave-5 tranche 5 (Catalog #9, GAP-REGISTER-5 WP-R2); item sales status 1=PENDING 2=PARTIALLY_DISPENSED 3=FULLY_DISPENSED; BR-PHAR-001/002 pinned by tests; stock borrowed from item-service per dispense (single-writer D-1); DispensingCompleted PROPOSED -> NO outbox emission
+    description: iHMS Pharmacy & Dispensing service (S09) - bundles item/inventory service
     version: 0.1.0-SNAPSHOT
 
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
 
+
+app:
+  item-service:
+    base-url: ${ITEM_SERVICE_URL:http://localhost:8082}   # single-writer stock API (D-1)
+  pharmacy:
+    store-id: ${PHARMACY_STORE_ID:1}                      # pharmacy dispensing store at item-service
+  kafka:
+    topic:
+      item-data-changed: ${ITEM_DATA_CHANGED_TOPIC:ihms.item.master-data-changed}
+      stock-movement: ${STOCK_MOVEMENT_TOPIC:ihms.item.stock-movement}
+      dlq: ${ITEM_DLQ_TOPIC:dlt.ihms.item.master-data-changed}
+  outbox:
+    poll-interval-ms: 5000
+    max-attempts: 3
 
 ihms:
   security:

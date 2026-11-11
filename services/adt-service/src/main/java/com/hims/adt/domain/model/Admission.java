@@ -17,7 +17,7 @@ import java.sql.Timestamp;
  * is_cancel=false AND discharge_date IS NULL.
  */
 @Entity
-@Table(name = "t_admission")
+@Table(name = "t_admission", schema = "ihms_adt")
 public class Admission extends AdtBase {
 
     @Id

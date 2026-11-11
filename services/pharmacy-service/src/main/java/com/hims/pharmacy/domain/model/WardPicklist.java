@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 
 /** Ward pick list row (register WP-R2): ward_id + sale_id + picked_at. */
 @Entity
-@Table(name = "t_ward_picklist")
+@Table(name = "t_ward_picklist", schema = "ihms_pharmacy")
 public class WardPicklist extends PharmacyBase {
 
     @Id

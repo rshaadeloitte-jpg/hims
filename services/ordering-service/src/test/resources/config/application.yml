@@ -1,3 +1,8 @@
+spring:
+  datasource:
+    hikari:
+      connection-init-sql: "SET search_path TO ihms_ordering,ihms_lab,ihms_rad"
+
 ihms:
   security:
     jwt:

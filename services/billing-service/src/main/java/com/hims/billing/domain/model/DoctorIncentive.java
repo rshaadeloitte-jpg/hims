@@ -13,7 +13,7 @@ import java.math.BigDecimal;
  * Stores doctor incentive amounts (fixed additions/deductions).
  */
 @Entity
-@Table(name = "t_doctor_incentive")
+@Table(name = "t_doctor_incentive", schema = "ihms_billing")
 public class DoctorIncentive extends BillingBase {
 
     @Id

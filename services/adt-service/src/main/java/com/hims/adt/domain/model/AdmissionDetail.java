@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  * MLC handling (legacy CIMS_ADDADMMLCDETAILS evidence): is_mlc=true requires an MLC number.
  */
 @Entity
-@Table(name = "t_admission_detail")
+@Table(name = "t_admission_detail", schema = "ihms_adt")
 public class AdmissionDetail {
 
     @Id

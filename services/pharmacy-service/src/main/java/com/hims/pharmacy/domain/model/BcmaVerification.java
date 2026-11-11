@@ -9,7 +9,7 @@ import java.sql.Timestamp;
  * scan event with override audit trail.
  */
 @Entity
-@Table(name = "t_bcma_verification")
+@Table(name = "t_bcma_verification", schema = "ihms_pharmacy")
 public class BcmaVerification extends PharmacyBase {
 
     @Id

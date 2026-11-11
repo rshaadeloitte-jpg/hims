@@ -2,3 +2,8 @@ ihms:
   security:
     jwt:
       secret: test-only-secret-key-0123456789abcdef0123456789abcdef
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

@@ -1,12 +1,14 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: adt-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_adt,ihms_nursing,ihms_ot,public
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 25
       pool-name: adt-cp
   jpa:
     hibernate:
@@ -16,13 +18,11 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_adt
         globally_quoted_identifiers: true
+        hbm2ddl:
+          create_namespaces: true
   flyway:
-    default-schema: ihms_adt
-    create-schemas: true           # history table needs ihms_adt before V1 executes
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
@@ -42,7 +42,14 @@ app:
       # BedTransferred keyed by patientId; BedStatusChanged keyed by bedId per the
       # KAFKA-EVENT-CATALOG §6 per-bed ordering rule)
       adt-events: ${ADT_EVENTS_TOPIC:ihms.adt.lifecycle}
+      adt-dlq: ${ADT_DLQ_TOPIC:dlt.ihms.adt.lifecycle}
       dlq: ${ADT_DLQ_TOPIC:dlt.ihms.adt.lifecycle}
+      # PROPOSED events VitalsRecorded / NurseTaskCompleted
+      nursing-events: ${NURSING_EVENTS_TOPIC:ihms.nursing.events}
+      nursing-dlq: ${NURSING_DLQ_TOPIC:dlt.ihms.nursing.events}
+      # OT events
+      ot-events: ${OT_EVENTS_TOPIC:ihms.ot.events}
+      ot-dlq: ${OT_DLQ_TOPIC:dlt.ihms.ot.events}
   outbox:
     poll-interval-ms: 5000
     max-attempts: 5
@@ -75,7 +82,7 @@ management:
 info:
   app:
     name: adt-service
-    description: iHMS ADT & Bed service (S03) - Wave-3 tranche 2 (Catalog #3); ward/bed-status/bed masters, admission (BR-IPD-001/002/003 CAS bed claim + auto-allocation), transfer, discharge (BR-DIS-003); outbox events to ihms.adt.lifecycle (PatientAdmitted/PatientDischarged/BedTransferred/BedStatusChanged)
+    description: iHMS ADT service — bundles adt, nursing, bcma, and ot services
     version: 0.1.0-SNAPSHOT
 
 logging:

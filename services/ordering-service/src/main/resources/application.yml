@@ -2,11 +2,11 @@ spring:
   application:
     name: ordering-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_ordering,ihms_lab,ihms_rad
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
       pool-name: ordering-cp
   jpa:
     hibernate:
@@ -16,13 +16,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_ordering
         globally_quoted_identifiers: true
   flyway:
-    default-schema: ihms_ordering
-    create-schemas: true           # history table needs ihms_ordering before V1 executes
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
@@ -39,7 +35,9 @@ app:
   kafka:
     topic:
       ordering-events: ${ORDERING_EVENTS_TOPIC:ihms.ordering.events}
-      dlq: ${ORDERING_DLQ_TOPIC:dlt.ihms.ordering.events}
+      ordering-dlq: ${ORDERING_DLQ_TOPIC:dlt.ihms.ordering.events}
+      lab-events: ${LAB_EVENTS_TOPIC:ihms.lab.events}
+      lab-dlq: ${LAB_DLQ_TOPIC:dlt.ihms.lab.events}
   outbox:
     poll-interval-ms: 5000
     max-attempts: 5
@@ -62,7 +60,7 @@ management:
 info:
   app:
     name: ordering-service
-    description: iHMS Ordering & Prescription service (S04, MIG-033) - saga replacement of the AddServiceOrder mega-txn; clinical_order+order_item+saga_state written atomically with OrderInitiated via the transactional outbox; downstream Billing/Lab/Rad/Nursing/Pharmacy confirm or fail steps and failures emit OrderFailed in the same tx; prescriptions header+lines with E-06 PrescriptionCreated on create ONLY
+    description: iHMS Ordering service - bundles ordering, lab, radiology
     version: 0.1.0-SNAPSHOT
 
 logging:

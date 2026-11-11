@@ -17,7 +17,7 @@ import java.util.List;
  * the queue row + status machine ARE the deliverable.
  */
 @Entity
-@Table(name = "t_eaushadhi_sync_queue")
+@Table(name = "t_eaushadhi_sync_queue", schema = "ihms_interop")
 public class EAushadhiSyncQueue extends InteropBase {
 
     public static final short STATUS_PENDING = 0;

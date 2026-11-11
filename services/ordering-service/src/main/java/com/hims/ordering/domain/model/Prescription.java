@@ -17,7 +17,7 @@ import java.util.List;
  *   2=COMPLETED is terminal (completion flow lands with a later slice — not exposed here).
  */
 @Entity
-@Table(name = "prescription")
+@Table(name = "prescription", schema = "ihms_ordering")
 public class Prescription extends PrescriptionBase {
 
     public static final short STATUS_ACTIVE = 1;

@@ -5,15 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.util.List;
 
+@Repository("orderingOutboxRepository")
 public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     /** Events still due for dispatch: PENDING/FAILED below attempt cap, oldest first. */
     @Query("""
-            SELECT e FROM OutboxEvent e
+            SELECT e FROM OrderingOutboxEvent e
             WHERE e.status IN (com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.PENDING,
                                com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.FAILED)
               AND e.attempts < :maxAttempts
@@ -24,7 +26,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
     /** Compare-and-set claim so concurrent relays cannot double-publish. */
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE OrderingOutboxEvent e
             SET e.attempts = :attempts
             WHERE e.id = :id
               AND e.status IN (com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.PENDING,
@@ -34,7 +36,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE OrderingOutboxEvent e
             SET e.status = com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.PUBLISHED,
                 e.publishedAt = :publishedAt
             WHERE e.id = :id
@@ -43,7 +45,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE OrderingOutboxEvent e
             SET e.status = com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.FAILED,
                 e.attempts = :attempts
             WHERE e.id = :id
@@ -52,7 +54,7 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     @Modifying(clearAutomatically = true)
     @Query("""
-            UPDATE OutboxEvent e
+            UPDATE OrderingOutboxEvent e
             SET e.status = com.hims.ordering.infrastructure.outbox.OutboxEvent.OutboxStatus.DLQ,
                 e.attempts = :attempts
             WHERE e.id = :id

@@ -7,7 +7,7 @@ import jakarta.persistence.Table;
 
 /** Document linkage (metadata only — blob storage is MIG-021 MinIO). */
 @Entity
-@Table(name = "patient_document")
+@Table(name = "patient_document", schema = "ihms_patient")
 public class PatientDocument extends PatientBase {
 
     @Id

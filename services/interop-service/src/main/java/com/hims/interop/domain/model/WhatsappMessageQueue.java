@@ -20,7 +20,7 @@ import java.util.List;
  * PUT .../status is the webhook emulation surface.
  */
 @Entity
-@Table(name = "t_whatsapp_message_queue")
+@Table(name = "t_whatsapp_message_queue", schema = "ihms_interop")
 public class WhatsappMessageQueue extends InteropBase {
 
     public static final short STATUS_QUEUED = 0;

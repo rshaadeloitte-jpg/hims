@@ -15,7 +15,7 @@ import java.sql.Timestamp;
  * ACTIVE -> CONSUMED (admission of the reserved patient) | CANCELLED | EXPIRED.
  */
 @Entity
-@Table(name = "t_bed_reservation")
+@Table(name = "t_bed_reservation", schema = "ihms_adt")
 public class BedReservation {
 
     public enum ResStatus { ACTIVE, CONSUMED, CANCELLED, EXPIRED }
