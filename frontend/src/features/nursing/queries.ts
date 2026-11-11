@@ -115,7 +115,7 @@ export interface Worklist {
 
 export const nursingQueryKeys = {
   carePlans: (admissionId?: number) => ["nursing", "care-plans", admissionId] as const,
-  handovers: () => ["nursing", "shift-handovers"] as const,
+  handovers: (admissionId?: number) => ["nursing", "shift-handovers", admissionId] as const,
   allocations: () => ["nursing", "nurse-allocations"] as const,
   incidents: () => ["nursing", "incidents"] as const,
   vitals: (patientId: number) => ["nursing", "vitals", patientId] as const,
@@ -135,6 +135,7 @@ export function useCarePlans(admissionId?: number) {
         : `${NURSING_BASE}/api/v1/care-plans`;
       return nrsJson<CarePlan[]>(url);
     },
+    enabled: !!admissionId,
   });
 }
 
@@ -158,10 +159,16 @@ export function useResolveCarePlan() {
 
 // ---- Shift handovers -------------------------------------------------------
 
-export function useShiftHandovers() {
+export function useShiftHandovers(admissionId?: number) {
   return useQuery<ShiftHandover[]>({
-    queryKey: nursingQueryKeys.handovers(),
-    queryFn: () => nrsJson<ShiftHandover[]>(`${NURSING_BASE}/api/v1/shift-handovers`),
+    queryKey: nursingQueryKeys.handovers(admissionId),
+    queryFn: () => {
+      const url = admissionId
+        ? `${NURSING_BASE}/api/v1/shift-handovers?admissionId=${admissionId}`
+        : `${NURSING_BASE}/api/v1/shift-handovers`;
+      return nrsJson<ShiftHandover[]>(url);
+    },
+    enabled: !!admissionId,
   });
 }
 

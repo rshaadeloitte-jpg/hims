@@ -7,7 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 export function BedBoardPage() {
-  const { data: census = [] } = useCensus();
+  const { data: census } = useCensus();
+  const censusWards = census?.wards ?? [];
   const { data: beds = [] } = useBeds();
   const { data: admissions = [] } = useAdmissions(undefined, true);
   const admit = useAdmit();
@@ -55,10 +56,10 @@ export function BedBoardPage() {
       <Table.Root size="sm" variant="line">
         <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Ward</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Total</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Occupied</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Free</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Cleaning</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Interim</Table.ColumnHeader></Table.Row></Table.Header>
         <Table.Body>
-          {census.map((c) => (
+          {censusWards.map((c) => (
             <Table.Row key={c.wardId}><Table.Cell>{c.wardName}</Table.Cell><Table.Cell>{c.totalBeds}</Table.Cell><Table.Cell>{c.occupied}</Table.Cell><Table.Cell>{c.free}</Table.Cell><Table.Cell>{c.cleaning}</Table.Cell><Table.Cell>{c.interimCount}</Table.Cell></Table.Row>
           ))}
-          {census.length === 0 && <Table.Row><Table.Cell colSpan={6}>No census data.</Table.Cell></Table.Row>}
+          {censusWards.length === 0 && <Table.Row><Table.Cell colSpan={6}>No census data.</Table.Cell></Table.Row>}
         </Table.Body>
       </Table.Root>
 

@@ -53,14 +53,24 @@ export interface Ward {
   isActive: boolean;
 }
 
-export interface Census {
+export interface CensusWard {
   wardId: number;
   wardName: string;
+  isCensus?: boolean;
   totalBeds: number;
   occupied: number;
   free: number;
   cleaning: number;
-  interimCount: number;
+  activeAdmissions?: number;
+  interimCount?: number;
+}
+
+export interface Census {
+  wards: CensusWard[];
+  totalActiveAdmissions?: number;
+  interimCount?: number;
+  generatedAt?: string;
+  [key: string]: unknown;
 }
 
 export interface AttendantPass {
@@ -193,9 +203,9 @@ export function useWards() {
 // ---- Census ----------------------------------------------------------------
 
 export function useCensus() {
-  return useQuery<Census[]>({
+  return useQuery<Census>({
     queryKey: adtQueryKeys.census(),
-    queryFn: () => adtJson<Census[]>(`${ADT_BASE}/api/v1/adt/census`),
+    queryFn: () => adtJson<Census>(`${ADT_BASE}/api/v1/adt/census`),
   });
 }
 
