@@ -18,23 +18,41 @@ async function queueJson<T>(url: string, options?: RequestInit): Promise<T> {
 // ---- Types -----------------------------------------------------------------
 
 export interface Counter {
+  id?: number;
+  code?: string;
+  name?: string;
+  departmentId?: number;
+  doctorId?: number;
+  status?: boolean;
+  addedBy?: number;
+  addedDatetime?: string;
+  updatedBy?: number;
+  updatedDatetime?: string;
+  synchronizedd?: boolean;
+  unitId?: number;
+
+  // Legacy/compatibility properties
   counterId: number;
   counterName: string;
-  departmentId?: number;
   cabinId?: number;
   isActive: boolean;
 }
 
 export interface QueueToken {
+  id?: number;
   tokenId: number;
   counterId: number;
   patientId: number;
   tokenNo: number;
+  departmentId?: number;
   priority: "NORMAL" | "EMERGENCY";
+  queueStatus?: number;
   status: number; // 1=WAITING 2=CALLED 3=COMPLETED 4=NO_SHOW
   createdAt: string;
   calledAt?: string;
   completedAt?: string;
+  queueDate?: string;
+  visitRef?: string;
 }
 
 export interface TokenDashboard {
@@ -99,7 +117,23 @@ export const queueQueryKeys = {
 export function useCounters() {
   return useQuery<Counter[]>({
     queryKey: queueQueryKeys.counters(),
-    queryFn: () => queueJson<Counter[]>(`${QUEUE_BASE}/api/v1/queue/counters`),
+    queryFn: async () => {
+      const data = await queueJson<Counter[]>(`${QUEUE_BASE}/api/v1/queue/counters`);
+      return (data || []).map((c) => {
+        const id = c.id ?? c.counterId ?? 0;
+        const code = c.code ?? "";
+        const name = c.name ?? c.counterName ?? "";
+        return {
+          ...c,
+          id,
+          code,
+          name,
+          counterId: c.counterId ?? id,
+          counterName: c.counterName ?? (code ? `${code} - ${name}` : name) ?? `Counter ${id}`,
+          isActive: c.isActive ?? c.status ?? true,
+        };
+      });
+    },
   });
 }
 
@@ -117,7 +151,31 @@ export function useCreateCounter() {
 export function useTokens() {
   return useQuery<QueueToken[]>({
     queryKey: queueQueryKeys.tokens(),
-    queryFn: () => queueJson<QueueToken[]>(`${QUEUE_BASE}/api/v1/queue/tokens`),
+    queryFn: async () => {
+      const data = await queueJson<QueueToken[]>(`${QUEUE_BASE}/api/v1/queue/tokens`);
+      return (data || []).map((t) => {
+        const id = t.id ?? t.tokenId ?? 0;
+        const qStatus =
+          typeof t.queueStatus === "number"
+            ? t.queueStatus
+            : typeof t.status === "number"
+              ? t.status
+              : 1;
+        return {
+          ...t,
+          id,
+          tokenId: t.tokenId ?? id,
+          counterId: t.counterId ?? 0,
+          queueStatus: qStatus,
+          status: qStatus,
+          priority:
+            (t.priority as unknown) === 2 || t.priority === "EMERGENCY"
+              ? "EMERGENCY"
+              : "NORMAL",
+          createdAt: t.createdAt ?? (t as { addedDatetime?: string }).addedDatetime ?? new Date().toISOString(),
+        };
+      });
+    },
   });
 }
 
@@ -132,8 +190,15 @@ export function useDepartmentTokens(departmentId: number) {
 export function useIssueToken() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      queueJson<QueueToken>(`${QUEUE_BASE}/api/v1/queue/tokens`, { method: "POST", body: JSON.stringify(payload) }),
+    mutationFn: (payload: Record<string, unknown>) => {
+      const body = { ...payload };
+      if (body.priority === "EMERGENCY") body.priority = 2;
+      else if (body.priority === "NORMAL") body.priority = 1;
+      return queueJson<QueueToken>(`${QUEUE_BASE}/api/v1/queue/tokens`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["queue", "tokens"] });
       void qc.invalidateQueries({ queryKey: ["queue", "dashboard"] });
