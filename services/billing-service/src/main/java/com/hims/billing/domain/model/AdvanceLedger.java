@@ -25,7 +25,7 @@ import java.sql.Timestamp;
  * RECEIPT entry to restore the balance.
  */
 @Entity
-@Table(name = "t_advance_ledger")
+@Table(name = "t_advance_ledger", schema = "ihms_billing")
 public class AdvanceLedger extends BillingBase {
 
     public static final String TYPE_RECEIPT = "RECEIPT";

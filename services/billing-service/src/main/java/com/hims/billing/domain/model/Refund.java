@@ -21,8 +21,8 @@ import java.sql.Timestamp;
  * restores the *BeforeFinalization snapshots and unbills doctor shares; the
  * refund row records the audit / receipt reversal.
  */
-@Entity
-@Table(name = "t_refund")
+@Entity(name = "BillingRefund")
+@Table(name = "t_refund", schema = "ihms_billing")
 public class Refund extends BillingBase {
 
     public static final String MODE_CASH = "CASH";

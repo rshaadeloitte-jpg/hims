@@ -21,7 +21,7 @@ import java.util.List;
  * post-saga and deliberately NOT implemented (register WP-11).
  */
 @Entity
-@Table(name = "t_charge")
+@Table(name = "t_charge", schema = "ihms_billing")
 public class Charge extends BillingBase {
 
     @Id

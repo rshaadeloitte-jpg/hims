@@ -19,7 +19,7 @@ import java.util.List;
  * BR-BILL-006: isSettled &lt;=&gt; balanceSelf &lt;= 0 AND balanceNonSelf &lt;= 0.
  */
 @Entity
-@Table(name = "t_bill")
+@Table(name = "t_bill", schema = "ihms_billing")
 public class Bill extends BillingBase {
 
     public static final String PLACEHOLDER_BILL_NO = "000000000000000";

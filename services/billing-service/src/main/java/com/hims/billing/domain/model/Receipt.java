@@ -25,7 +25,7 @@ import java.sql.Timestamp;
  * (or the receipt may be written after the bill settle call as the audit row).
  */
 @Entity
-@Table(name = "t_receipt")
+@Table(name = "t_receipt", schema = "ihms_billing")
 public class Receipt extends BillingBase {
 
     public static final String MODE_CASH = "CASH";
