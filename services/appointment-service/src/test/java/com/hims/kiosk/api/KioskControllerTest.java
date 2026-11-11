@@ -6,6 +6,7 @@ import com.hims.kiosk.domain.model.KioskDepartment;
 import com.hims.kiosk.domain.model.KioskRegistration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({KioskRegistrationController.class, KioskAppointmentController.class,
         KioskQueueController.class, KioskLabResultController.class,
         KioskDepartmentController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class KioskControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockBean private KioskService service;
