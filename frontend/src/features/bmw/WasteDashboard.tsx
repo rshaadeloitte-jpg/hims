@@ -62,6 +62,7 @@ export function WasteDashboard({
   const filter: WasteListFilterValues = useMemo(
     () =>
       wasteListFilterSchema.parse({
+        unitId,
         fromDate,
         toDate,
         category: category || undefined,
@@ -70,7 +71,7 @@ export function WasteDashboard({
         page,
         size: PAGE_SIZE,
       }),
-    [fromDate, toDate, category, storeId, search, page],
+    [unitId, fromDate, toDate, category, storeId, search, page],
   );
 
   const { data: summary } = useWasteSummary(unitId, storeId, fromDate, toDate);

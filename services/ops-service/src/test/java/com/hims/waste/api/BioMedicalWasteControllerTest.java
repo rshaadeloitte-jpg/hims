@@ -90,6 +90,25 @@ class BioMedicalWasteControllerTest {
     }
 
     @Test
+    void list_returnsRequestsWithFilters() throws Exception {
+        BioMedicalWaste r = new BioMedicalWaste();
+        r.setId(1L);
+        r.setRequisitionNo("IHMS/BW/26/00001");
+        r.setRequestStatus(WasteStatus.PENDING);
+        r.setUnitId(1L);
+        when(service.listRequests(eq(1L), eq(1L), eq("BW"))).thenReturn(List.of(r));
+
+        mockMvc.perform(get("/api/v1/biomedical-waste")
+                        .param("unitId", "1")
+                        .param("requestStatus", "1")
+                        .param("search", "BW")
+                        .with(user("devops").roles("DEV")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].requisitionNo").value("IHMS/BW/26/00001"))
+                .andExpect(jsonPath("$[0].requestStatus").value(1));
+    }
+
+    @Test
     void approve_delegatesToService() throws Exception {
         BioMedicalWaste r = new BioMedicalWaste();
         r.setId(1L);

@@ -140,6 +140,7 @@ export type WasteSummary = z.infer<typeof wasteSummarySchema>;
 
 /** Paginated list filter. */
 export const wasteListFilterSchema = z.object({
+  unitId: z.coerce.number().optional(),
   fromDate: z.string().optional(),
   toDate: z.string().optional(),
   category: z.enum(["", "pending", "accepted", "handovered", "received", "completed"]).optional(),

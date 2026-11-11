@@ -43,8 +43,8 @@ export function useMasterEntities() {
  * The wire page param is `pageIndex * pageSize` so the server-side
  * `offset = (page / count) * count` equals pageIndex * pageSize exactly.
  */
-export function useMasterList(state: MasterListState, meta: EntityMeta | null) {
-  const searchFld = state.searchFld ?? meta?.searchFields?.join(" ") ?? undefined;
+export function useMasterList(state: MasterListState, _meta?: EntityMeta | null) {
+  const searchFld = state.searchFld;
   return useQuery({
     queryKey: masterQueryKeys.list({ ...state, searchFld }),
     queryFn: async (): Promise<MasterRecord[]> => {
