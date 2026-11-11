@@ -39,7 +39,9 @@ async function patientUpload<T>(url: string, body: FormData): Promise<T> {
 
 export interface PatientSearchHit {
   patientId: number;
+  id?: number;
   mrNo: string;
+  mrno?: string;
   firstName: string;
   lastName?: string;
   mobileNo: string;
@@ -65,7 +67,9 @@ export interface PatientDocument {
 
 export interface PatientDetail {
   patientId: number;
+  id?: number;
   mrNo: string;
+  mrno?: string;
   firstName: string;
   lastName?: string;
   middleName?: string;
@@ -115,13 +119,20 @@ export const patientQueryKeys = {
 
 // ---- Search + detail -------------------------------------------------------
 
+function normalizePatient<T>(p: T): T {
+  const obj = (p ?? {}) as Record<string, unknown>;
+  const id = (obj.id ?? obj.patientId) as number | undefined;
+  const mrno = (obj.mrno ?? obj.mrNo) as string | undefined;
+  return { ...obj, id, patientId: id, mrno, mrNo: mrno } as T;
+}
+
 export function usePatientSearch(query: string, searchType: string = "ALL") {
   return useQuery<PatientSearchHit[]>({
     queryKey: patientQueryKeys.search(query, searchType),
     queryFn: () =>
       patientJson<PatientSearchHit[]>(
         `${PATIENT_BASE}/api/v1/patients/search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(searchType)}`,
-      ),
+      ).then((rows) => rows.map((r) => normalizePatient(r))),
     enabled: query.length >= 2,
     staleTime: 30_000,
   });
@@ -130,19 +141,62 @@ export function usePatientSearch(query: string, searchType: string = "ALL") {
 export function usePatientDetail(id: number) {
   return useQuery<PatientDetail>({
     queryKey: patientQueryKeys.detail(id),
-    queryFn: () => patientJson<PatientDetail>(`${PATIENT_BASE}/api/v1/patients/${id}`),
+    queryFn: () => patientJson<PatientDetail>(`${PATIENT_BASE}/api/v1/patients/${id}`).then((p) => normalizePatient(p)),
     enabled: id > 0,
   });
+}
+
+// Map frontend form field names to PatientRegistration entity field names and drop
+// empties so the backend never receives "" for optional fields. Server-owned
+// id/mrno are never forwarded.
+export function toPatientPayload(input: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const put = (key: string, value: unknown) => {
+    if (value === "" || value == null || value === false) return;
+    out[key] = value;
+  };
+
+  // frontend form fields -> entity fields
+  if ("firstName" in input) put("firstName", input.firstName);
+  if ("middleName" in input) put("middleName", input.middleName);
+  if ("lastName" in input) put("lastName", input.lastName);
+  if ("mobileNo" in input) put("mobileNo", input.mobileNo);
+  if ("email" in input) put("email", input.email);
+  if ("genderId" in input) put("gender", input.genderId);
+  if ("dateOfBirth" in input) put("dob", input.dateOfBirth);
+  if ("bloodGroup" in input) put("bloodGroup", input.bloodGroup);
+  if ("maritalStatus" in input) put("maritalStatus", input.maritalStatus);
+  if ("address" in input) put("addressLine1", input.address);
+  if ("city" in input) put("city", input.city);
+  if ("state" in input) put("state", input.state);
+  if ("pincode" in input) put("pincode", input.pincode);
+  if ("abhaAddress" in input) put("healthIdNumber", input.abhaAddress);
+  if ("aadhaarNumber" in input) put("aadhaarNo", input.aadhaarNumber);
+  if ("unitId" in input) put("unitId", input.unitId);
+  if ("emergencyContact" in input) put("emergencyContactPhone", input.emergencyContact);
+
+  // already entity-shaped keys pass through (do not forward nested/unknown sections)
+  const entityKeys = [
+    "firstName", "middleName", "lastName", "gender", "dob", "bloodGroup", "mobileNo",
+    "email", "addressLine1", "city", "state", "pincode", "maritalStatus",
+    "emergencyContactName", "emergencyContactPhone", "aadhaarNo", "vid", "janaadhaarId",
+    "healthId", "healthIdNumber", "unitId",
+  ];
+  for (const key of entityKeys) {
+    if (key in input) put(key, input[key]);
+  }
+
+  return out;
 }
 
 export function useRegisterPatient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      patientJson<PatientDetail>(`${PATIENT_BASE}/api/v1/patients`, {
+      patientJson<PatientDetail>(`${PATIENT_BASE}/api/v1/patients/register`, {
         method: "POST",
-        body: JSON.stringify(payload),
-      }),
+        body: JSON.stringify(toPatientPayload(payload)),
+      }).then((p) => normalizePatient(p)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["patients"] }),
   });
 }
@@ -153,8 +207,8 @@ export function useUpdatePatient(id: number) {
     mutationFn: (payload: Record<string, unknown>) =>
       patientJson<PatientDetail>(`${PATIENT_BASE}/api/v1/patients/${id}`, {
         method: "PUT",
-        body: JSON.stringify(payload),
-      }),
+        body: JSON.stringify(toPatientPayload(payload)),
+      }).then((p) => normalizePatient(p)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: patientQueryKeys.detail(id) });
       qc.invalidateQueries({ queryKey: ["patients"] });
