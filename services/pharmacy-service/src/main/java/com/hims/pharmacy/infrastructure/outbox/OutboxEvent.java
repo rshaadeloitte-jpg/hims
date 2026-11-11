@@ -26,8 +26,8 @@ import java.util.UUID;
  * test ASSERTS THE NEGATIVE (row count stays 0 across every flow) so any future
  * accidental emission fails CI.
  */
-@Entity
-@Table(name = "outbox")
+@Entity(name = "PharmacyOutboxEvent")
+@Table(name = "outbox", schema = "ihms_pharmacy")
 public class OutboxEvent {
 
     public enum OutboxStatus {

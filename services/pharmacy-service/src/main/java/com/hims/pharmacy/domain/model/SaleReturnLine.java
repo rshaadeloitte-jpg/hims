@@ -14,7 +14,7 @@ import java.util.Objects;
  * Per-line return quantity and refund. Composite key (return_id, line_no).
  */
 @Entity
-@Table(name = "t_sale_return_line")
+@Table(name = "t_sale_return_line", schema = "ihms_pharmacy")
 @IdClass(SaleReturnLine.Key.class)
 public class SaleReturnLine extends PharmacyBase {
 

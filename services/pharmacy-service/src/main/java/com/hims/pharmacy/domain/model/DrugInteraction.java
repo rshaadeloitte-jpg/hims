@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  * Acknowledged flag stores pharmacist override with timestamp.
  */
 @Entity
-@Table(name = "t_drug_interaction")
+@Table(name = "t_drug_interaction", schema = "ihms_pharmacy")
 public class DrugInteraction extends PharmacyBase {
 
     @Id

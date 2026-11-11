@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
  * (interventions can be recorded against any sale).
  */
 @Entity
-@Table(name = "t_drug_intervention")
+@Table(name = "t_drug_intervention", schema = "ihms_pharmacy")
 public class DrugIntervention extends PharmacyBase {
 
     @Id

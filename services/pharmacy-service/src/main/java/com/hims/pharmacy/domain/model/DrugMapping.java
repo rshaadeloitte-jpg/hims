@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_drug_mapping")
+@Table(name = "t_drug_mapping", schema = "ihms_pharmacy")
 public class DrugMapping extends PharmacyBase {
     @Id
     @Column(name = "mapping_id")

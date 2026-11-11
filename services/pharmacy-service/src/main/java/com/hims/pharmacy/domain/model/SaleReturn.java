@@ -16,7 +16,7 @@ import java.util.List;
  * Status code: 1=INITIATED 2=APPROVED 3=COMPLETED 4=REJECTED.
  */
 @Entity
-@Table(name = "t_sale_return")
+@Table(name = "t_sale_return", schema = "ihms_pharmacy")
 public class SaleReturn extends PharmacyBase {
 
     public static final short STATUS_INITIATED = 1;
