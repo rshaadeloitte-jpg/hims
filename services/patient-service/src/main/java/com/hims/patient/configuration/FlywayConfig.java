@@ -5,9 +5,11 @@ import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.orm.jpa.EntityManagerFactoryDependsOnPostProcessor;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "ihms.flyway.enabled", havingValue = "true", matchIfMissing = true)
 public class FlywayConfig {
 
     private static final String[] MODULES = {"patient", "pmrd"};
