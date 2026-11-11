@@ -21,7 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.hims.reference",
         "com.hims.search",
         "com.hims.file"
-})
+}, nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class)
 @EnableScheduling
 public class ReferenceServiceApplication {
 

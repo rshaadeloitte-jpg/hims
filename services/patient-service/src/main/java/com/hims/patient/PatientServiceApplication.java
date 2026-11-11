@@ -19,7 +19,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaRepositories(basePackages = {
         "com.hims.patient",
         "com.hims.pmrd"
-})
+}, nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class)
 @EnableScheduling
 public class PatientServiceApplication {
 

@@ -2,32 +2,6 @@ name: ihms
 # Default `docker compose up -d` starts only the core services (about 5GB).
 # Use `docker compose --profile full up -d` for the full stack (needs more than 16GB RAM).
 services:
-  aasmaan-service:
-    profiles: [full]
-    image: ihms-aasmaan-service:latest
-    container_name: ihms-aasmaan-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8112, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8112:8112']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  abha-service:
-    profiles: [full]
-    image: ihms-abha-service:latest
-    container_name: ihms-abha-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8111, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8111:8111']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
   adt-service:
     image: ihms-adt-service:latest
     container_name: ihms-adt-service
@@ -37,9 +11,9 @@ services:
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8092:8092']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   appointment-service:
     image: ihms-appointment-service:latest
     container_name: ihms-appointment-service
@@ -49,34 +23,21 @@ services:
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8091:8091']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  bcma-service:
-    profiles: [full]
-    image: ihms-bcma-service:latest
-    container_name: ihms-bcma-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8117, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8117:8117']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   billing-service:
     image: ihms-billing-service:latest
     container_name: ihms-billing-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
       SERVER_PORT: 8098, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
       DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
+      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", BILLING_BASE_URL: 'http://localhost:8098', JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8098:8098']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   ops-service:
     image: ihms-ops-service:latest
     container_name: ihms-ops-service
@@ -115,32 +76,6 @@ services:
     mem_limit: 768m
     cpus: '0.5'
     memswap_limit: 768m
-  file-service:
-    profiles: [full]
-    image: ihms-file-service:latest
-    container_name: ihms-file-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8095, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8095:8095']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  govt-service:
-    profiles: [full]
-    image: ihms-govt-service:latest
-    container_name: ihms-govt-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8108, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8108:8108']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
   iam:
     image: ihms-iam:latest
     container_name: ihms-iam
@@ -163,60 +98,9 @@ services:
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8105:8105']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  item-service:
-    image: ihms-item-service:latest
-    container_name: ihms-item-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8082, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8082:8082']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  kiosk-service:
-    profiles: [full]
-    image: ihms-kiosk-service:latest
-    container_name: ihms-kiosk-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8113, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8113:8113']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  lab-service:
-    profiles: [full]
-    image: ihms-lab-service:latest
-    container_name: ihms-lab-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8094, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8094:8094']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  nursing-service:
-    profiles: [full]
-    image: ihms-nursing-service:latest
-    container_name: ihms-nursing-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8093, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8093:8093']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   ordering-service:
     image: ihms-ordering-service:latest
     container_name: ihms-ordering-service
@@ -226,22 +110,9 @@ services:
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8097:8097']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  ot-service:
-    profiles: [full]
-    image: ihms-ot-service:latest
-    container_name: ihms-ot-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8115, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8115:8115']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   patient-service:
     image: ihms-patient-service:latest
     container_name: ihms-patient-service
@@ -251,22 +122,9 @@ services:
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8090:8090']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  payments-service:
-    profiles: [full]
-    image: ihms-payments-service:latest
-    container_name: ihms-payments-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8099, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", BILLING_BASE_URL: 'http://billing-service:8098', JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8099:8099']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   pharmacy-service:
     profiles: [full]
     image: ihms-pharmacy-service:latest
@@ -274,89 +132,24 @@ services:
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
       SERVER_PORT: 8101, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
       DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", ITEM_SERVICE_URL: 'http://item-service:8082', JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
+      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", ITEM_SERVICE_URL: 'http://localhost:8101', JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8101:8101']
     restart: unless-stopped
-    mem_limit: 640m
-    cpus: '0.5'
-    memswap_limit: 640m
-  pmrd-service:
-    profiles: [full]
-    image: ihms-pmrd-service:latest
-    container_name: ihms-pmrd-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8114, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8114:8114']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  queue-service:
-    image: ihms-queue-service:latest
-    container_name: ihms-queue-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8089, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8089:8089']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  radiology-service:
-    profiles: [full]
-    image: ihms-radiology-service:latest
-    container_name: ihms-radiology-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8116, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8116:8116']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  rcm-service:
-    profiles: [full]
-    image: ihms-rcm-service:latest
-    container_name: ihms-rcm-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8103, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
-      DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8103:8103']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   reference-service:
     image: ihms-reference-service:latest
     container_name: ihms-reference-service
     environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
       SERVER_PORT: 8081, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, DB_HOST: 10.68.61.102,
+      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, SOLR_BASE_URL: 'http://10.70.233.216:8983', SEARCH_BACKEND: solr, DB_HOST: 10.68.61.102,
       DB_PORT: '5432', DB_NAME: hims, DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
     ports: ['8081:8081']
     restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
-  search-service:
-    profiles: [full]
-    image: ihms-search-service:latest
-    container_name: ihms-search-service
-    environment: {SPRING_PROFILES_ACTIVE: dev, KAFKA_BOOTSTRAP: '10.70.233.218:9092',
-      SERVER_PORT: 8107, DEV_DB_HOST: 10.68.61.102, DEV_DB_PORT: '5432', DEV_DB_NAME: hims,
-      DEV_DB_USERNAME: postgres, DEV_DB_PASSWORD: TMSProduct1234, SOLR_BASE_URL: 'http://10.70.233.216:8983',
-      SEARCH_BACKEND: solr, DB_HOST: 10.68.61.102, DB_PORT: '5432', DB_NAME: hims,
-      DB_USERNAME: postgres, DB_PASSWORD: TMSProduct1234, IAM_JWT_SECRET: "${IAM_JWT_SECRET:-}", JAVA_TOOL_OPTIONS: '-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30'}
-    ports: ['8107:8107']
-    restart: unless-stopped
-    mem_limit: 512m
-    cpus: '0.5'
-    memswap_limit: 512m
+    mem_limit: 1024m
+    cpus: '1.0'
+    memswap_limit: 1024m
   api-gateway:
     build: {context: ./platform/gateway}
     image: ihms-api-gateway:latest
