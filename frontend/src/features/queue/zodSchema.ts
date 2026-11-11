@@ -6,7 +6,9 @@ const optionalNumber = z.preprocess((v) => (v === "" || v == null ? undefined : 
 
 /** Create counter (POST /api/v1/queue/counters). */
 export const counterSchema = z.object({
-  counterName: z.string().min(1, "Name is required"),
+  code: z.string().optional(),
+  name: z.string().optional(),
+  counterName: z.string().optional(),
   departmentId: optionalNumber,
   cabinId: optionalNumber,
 });
@@ -17,7 +19,8 @@ export type CounterValues = z.infer<typeof counterSchema>;
 export const tokenSchema = z.object({
   counterId: z.coerce.number().int().positive("Counter is required"),
   patientId: z.coerce.number().int().positive("Patient is required"),
-  priority: z.enum(["NORMAL", "EMERGENCY"]).default("NORMAL"),
+  departmentId: optionalNumber,
+  priority: z.union([z.enum(["NORMAL", "EMERGENCY"]), z.coerce.number()]).default("NORMAL"),
 });
 
 export type TokenValues = z.infer<typeof tokenSchema>;

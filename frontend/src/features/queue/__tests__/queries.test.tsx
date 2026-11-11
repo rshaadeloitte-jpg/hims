@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import {
   useCounters,
+  useCreateCounter,
   useTokens,
   useDashboard,
   useCabinBoard,
@@ -43,28 +44,53 @@ afterEach(() => {
 // ---- GET endpoints ---------------------------------------------------------
 
 describe("useCounters", () => {
-  it("fetches GET /api/v1/queue/counters", async () => {
+  it("fetches GET /api/v1/queue/counters with real fields", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true, status: 200,
-      json: async () => [{ counterId: 1, counterName: "OPD-1", isActive: true }],
+      json: async () => [{ id: 1, code: "C1", name: "OPD-1", departmentId: 10, status: true }],
     });
     const { result } = renderHook(() => useCounters(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/counters", expect.any(Object));
-    expect(result.current.data?.[0]?.counterName).toBe("OPD-1");
+    expect(result.current.data?.[0]?.id).toBe(1);
+    expect(result.current.data?.[0]?.code).toBe("C1");
+    expect(result.current.data?.[0]?.name).toBe("OPD-1");
+    expect(result.current.data?.[0]?.counterName).toBe("C1 - OPD-1");
+  });
+});
+
+describe("useCreateCounter", () => {
+  it("POSTs to /api/v1/queue/counters with code, name, and departmentId", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true, status: 201,
+      json: async () => ({ id: 1, code: "C1", name: "OPD-1", departmentId: 10, status: true }),
+    });
+    const { result } = renderHook(() => useCreateCounter(), { wrapper: wrapper() });
+    result.current.mutate({ code: "C1", name: "OPD-1", departmentId: 10 });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/queue/counters",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ code: "C1", name: "OPD-1", departmentId: 10 }),
+      }),
+    );
   });
 });
 
 describe("useTokens", () => {
-  it("fetches GET /api/v1/queue/tokens", async () => {
+  it("fetches GET /api/v1/queue/tokens with real fields", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true, status: 200,
-      json: async () => [{ tokenId: 1, tokenNo: 42, patientId: 7, status: 1, priority: "NORMAL", counterId: 1, createdAt: "2027-01-01T09:00:00Z" }],
+      json: async () => [{ id: 1, tokenNo: 42, patientId: 7, queueStatus: 1, priority: 1, counterId: 1, departmentId: 10, status: true }],
     });
     const { result } = renderHook(() => useTokens(), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith("/api/v1/queue/tokens", expect.any(Object));
     expect(result.current.data?.[0]?.tokenNo).toBe(42);
+    expect(result.current.data?.[0]?.id).toBe(1);
+    expect(result.current.data?.[0]?.queueStatus).toBe(1);
+    expect(result.current.data?.[0]?.status).toBe(1);
   });
 });
 
@@ -154,19 +180,19 @@ describe("useDepartmentTokens", () => {
 // ---- POST endpoints --------------------------------------------------------
 
 describe("useIssueToken", () => {
-  it("POSTs to /api/v1/queue/tokens", async () => {
+  it("POSTs to /api/v1/queue/tokens with mapped priority", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true, status: 201,
-      json: async () => ({ tokenId: 1, tokenNo: 1, patientId: 5, counterId: 1, priority: "NORMAL", status: 1, createdAt: "2027-01-01T09:00:00Z" }),
+      json: async () => ({ id: 1, tokenNo: 1, patientId: 5, counterId: 1, departmentId: 10, priority: 1, queueStatus: 1, createdAt: "2027-01-01T09:00:00Z" }),
     });
     const { result } = renderHook(() => useIssueToken(), { wrapper: wrapper() });
-    result.current.mutate({ counterId: 1, patientId: 5, priority: "NORMAL" });
+    result.current.mutate({ counterId: 1, patientId: 5, departmentId: 10, priority: "NORMAL" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/queue/tokens",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ counterId: 1, patientId: 5, priority: "NORMAL" }),
+        body: JSON.stringify({ counterId: 1, patientId: 5, departmentId: 10, priority: 1 }),
       }),
     );
   });
