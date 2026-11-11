@@ -251,19 +251,3 @@ export function useFieldWorkerStats() {
   });
 }
 
-// ---- Legacy field sync (existing hook) -------------------------------------
-
-export interface FieldRecord {
-  id: number;
-  fieldWorker: string;
-  village: string;
-  syncStatus: string;
-  syncedAt: string;
-}
-
-export function useFieldRecords() {
-  return useQuery({
-    queryKey: ["aasmaan-records"],
-    queryFn: () => aasmaanJson<FieldRecord[]>(`${AASMAAN_BASE}/v1/aasmaan/records`),
-  });
-}

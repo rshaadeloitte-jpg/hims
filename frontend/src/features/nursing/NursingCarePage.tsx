@@ -21,7 +21,7 @@ import { useForm } from "react-hook-form";
 export function NursingCarePage() {
   const [admissionId, setAdmissionId] = useState(0);
   const { data: carePlans = [] } = useCarePlans(admissionId || undefined);
-  const { data: handovers = [] } = useShiftHandovers();
+  const { data: handovers = [] } = useShiftHandovers(admissionId || undefined);
   const createPlan = useCreateCarePlan();
   const resolvePlan = useResolveCarePlan();
   const createHandover = useCreateShiftHandover();
