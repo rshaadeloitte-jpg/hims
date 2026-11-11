@@ -20,7 +20,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  * legacy BEXA003 code; identity collisions across slices reuse BERA011-style
  * codes where applicable; unknown ids map to NOT_FOUND.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.hims.appointment")
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);

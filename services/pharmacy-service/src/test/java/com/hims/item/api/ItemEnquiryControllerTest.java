@@ -5,6 +5,7 @@ import com.hims.item.application.ItemEnquiryService;
 import com.hims.item.application.ItemEnquiryView;
 import com.hims.pharmacy.configuration.SecurityConfig;
 import com.hims.pharmacy.configuration.JwtConfig;
+import com.hims.pharmacy.configuration.UnmappedPathAdvice;
 import com.hims.item.domain.model.ItemStockBalance;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ItemEnquiryController.class)
-@Import({SecurityConfig.class, JwtConfig.class})
+@Import({SecurityConfig.class, JwtConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class ItemEnquiryControllerTest {
 

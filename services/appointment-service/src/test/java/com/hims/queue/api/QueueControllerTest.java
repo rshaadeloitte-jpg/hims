@@ -2,11 +2,13 @@ package com.hims.queue.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.queue.application.QueueService;
-import com.hims.appointment.configuration.SecurityConfig;
 import com.hims.appointment.configuration.JwtConfig;
+import com.hims.appointment.configuration.SecurityConfig;
+import com.hims.appointment.configuration.UnmappedPathAdvice;
 import com.hims.queue.domain.model.QueueToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -21,7 +23,6 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** L1 — REST contract: default-deny 401, status codes, JSON shape, error envelope. */
 @WebMvcTest({QueueTokenController.class, QueueCounterController.class})
-@Import({SecurityConfig.class, JwtConfig.class})
+@Import({SecurityConfig.class, JwtConfig.class, UnmappedPathAdvice.class})
 @AutoConfigureMockMvc
 class QueueControllerTest {
 
