@@ -232,4 +232,14 @@ class PatientControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.patientId").value(9));
     }
+
+    @Test
+    void wrongHttpMethod_returns405() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/patients/search")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("devops")))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.status").value("ERROR"))
+                .andExpect(jsonPath("$.errorCode").value("METHOD_NOT_ALLOWED"));
+    }
+
 }
