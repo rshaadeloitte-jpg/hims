@@ -81,8 +81,8 @@ describe("AppointmentListPage", () => {
     });
   });
 
-  // Quick smoke: highlight query-param (post-create redirect) renders the banner
-  it("renders the highlighted-patient banner when ?highlight= is in the URL", async () => {
+  // Highlight query-param (post-create redirect) renders the banner with real patient data
+  it("renders the highlighted-patient banner with real data when ?highlight= is in the URL", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
@@ -93,9 +93,44 @@ describe("AppointmentListPage", () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    // The banner fetches patient 9001 — but the MSW handler returns 404 for that id.
-    // The query will eventually fail; we only assert that the banner does not crash
-    // and the page is rendered.
     expect(screen.getByRole("heading", { name: /appointments/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Just created appointment #9001/)).toBeInTheDocument();
+      expect(screen.getAllByText("Asha Verma").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("MRN-7001").length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("handles plain array API responses and correctly maps fields and filters", async () => {
+    render(wrap());
+    // Both seeded appointments should be rendered from the plain array
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+      expect(screen.getByText("Ravi Kumar")).toBeInTheDocument();
+    });
+
+    // Token numbers from tokenNo / tokenNumber
+    expect(screen.getByText("OPD-1")).toBeInTheDocument();
+
+    // Filter to Walk-in
+    fireEvent.click(screen.getByRole("button", { name: "Walk-in" }));
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+      expect(screen.queryByText("Ravi Kumar")).not.toBeInTheDocument();
+    });
+
+    // Filter to Pending (apptStatus 1)
+    fireEvent.click(screen.getByRole("button", { name: "Pending" }));
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+      expect(screen.queryByText("Ravi Kumar")).not.toBeInTheDocument();
+    });
+
+    // Filter to Checked-In (apptStatus 2)
+    fireEvent.click(screen.getByRole("button", { name: "Checked-In" }));
+    await waitFor(() => {
+      expect(screen.queryByText("Asha Verma")).not.toBeInTheDocument();
+      expect(screen.getByText("Ravi Kumar")).toBeInTheDocument();
+    });
   });
 });

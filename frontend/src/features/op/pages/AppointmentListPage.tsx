@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@chakra-ui/react";
 import {
+  normalizeAppointment,
+  useAppointment,
   useAppointmentList,
   useCancelAppointment,
   useCheckInAppointment,
@@ -41,27 +43,31 @@ const STATUS_FILTERS: { key: StatusFilter; label: string; predicate: (a: Appoint
   {
     key: "pending",
     label: "Pending",
-    predicate: (a) => a.status === 1,
+    predicate: (a) => (a.apptStatus ?? a.status) === 1,
   },
   {
     key: "checkedIn",
     label: "Checked-In",
-    predicate: (a) => a.status === 2,
+    predicate: (a) => (a.apptStatus ?? a.status) === 2,
   },
   {
     key: "noShow",
     label: "No-Show",
-    predicate: (a) => a.status === 6,
+    predicate: (a) => (a.apptStatus ?? a.status) === 6,
   },
   {
     key: "walkIn",
     label: "Walk-in",
-    predicate: (a) => a.source === "WALK_IN",
+    predicate: (a) =>
+      a.source === "WALK_IN" ||
+      (typeof a.visitType === "string" && a.visitType.toUpperCase() === "WALK_IN"),
   },
   {
     key: "emergency",
     label: "Emergency",
-    predicate: (a) => a.source === "EMERGENCY",
+    predicate: (a) =>
+      a.source === "EMERGENCY" ||
+      (typeof a.visitType === "string" && a.visitType.toUpperCase() === "EMERGENCY"),
   },
 ];
 
@@ -70,31 +76,54 @@ export function AppointmentListPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<StatusFilter>((searchParams.get("filter") as StatusFilter) || "all");
   const [page, setPage] = useState<number>(Number(searchParams.get("page") || "0") || 0);
-  const [date] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [highlight, _setHighlight] = useState<number | null>(
-    searchParams.get("highlight") ? Number(searchParams.get("highlight")) : null,
+  const [date] = useState<string>(searchParams.get("date") || new Date().toISOString().slice(0, 10));
+  const highlightParam = searchParams.get("highlight");
+  const [highlight] = useState<number | null>(
+    highlightParam ? Number(highlightParam) : null,
   );
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState<string>("");
   const [showCancel, setShowCancel] = useState<boolean>(false);
   const [showReschedule, setShowReschedule] = useState<boolean>(false);
   const [rescheduleReason, setRescheduleReason] = useState<string>("");
-  const { patient: highlightedPatient } = usePatient(highlight ?? undefined);
 
   const list = useAppointmentList({ date, status: filter === "all" ? "all" : filter, page, size: PAGE_SIZE });
   const cancel = useCancelAppointment();
   const noShow = useNoShowAppointment();
   const checkIn = useCheckInAppointment();
 
-  const visible: Appointment[] = useMemo(() => {
-    const data = (list.data as AppointmentListResponse | undefined)?.items ?? [];
-    const f = STATUS_FILTERS.find((s) => s.key === filter);
-    return f ? data.filter(f.predicate) : data;
-  }, [list.data, filter]);
+  const rawList = list.data;
+  const rawItems: unknown[] = Array.isArray(rawList)
+    ? rawList
+    : (rawList as AppointmentListResponse | undefined)?.items ?? [];
 
-  const total: number = (list.data as AppointmentListResponse | undefined)?.total ?? visible.length;
+  const normalizedItems = useMemo(() => rawItems.map(normalizeAppointment), [rawItems]);
+
+  const visible: Appointment[] = useMemo(() => {
+    const f = STATUS_FILTERS.find((s) => s.key === filter);
+    return f ? normalizedItems.filter(f.predicate) : normalizedItems;
+  }, [normalizedItems, filter]);
+
+  const total: number = Array.isArray(rawList)
+    ? visible.length
+    : (rawList as AppointmentListResponse | undefined)?.total ?? visible.length;
   const hasMore: boolean =
-    (list.data as AppointmentListResponse | undefined)?.hasMore ?? visible.length >= PAGE_SIZE;
+    (rawList as AppointmentListResponse | undefined)?.hasMore ?? visible.length >= PAGE_SIZE;
+
+  // Highlight card data:
+  const appointmentInList = useMemo(
+    () => (highlight != null ? normalizedItems.find((a) => a.id === highlight) : undefined),
+    [normalizedItems, highlight],
+  );
+  const { data: fetchedApptRaw } = useAppointment(highlight ?? undefined);
+  const highlightedAppointment = useMemo(() => {
+    if (appointmentInList) return appointmentInList;
+    if (fetchedApptRaw) return normalizeAppointment(fetchedApptRaw);
+    return null;
+  }, [appointmentInList, fetchedApptRaw]);
+
+  const effectivePatientId = highlightedAppointment?.patientId;
+  const { patient: highlightedPatient } = usePatient(effectivePatientId ?? undefined);
 
   const setFilterAndPage = (next: StatusFilter, nextPage: number) => {
     setFilter(next);
@@ -118,15 +147,38 @@ export function AppointmentListPage() {
     {
       key: "time",
       header: "When",
-      accessor: (a) => a.startAt,
-      render: (a) => (
-        <div>
-          <div>{new Date(a.startAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</div>
-          {a.endAt ? (
-            <div className="muted small">to {new Date(a.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-          ) : null}
-        </div>
-      ),
+      accessor: (a) => a.startAt || a.apptDate || "",
+      render: (a) => {
+        let formattedDate = a.apptDate ?? "—";
+        const dateStr = a.startAt || (a.apptDate ? `${a.apptDate}${a.slotStart ? `T${a.slotStart}` : ""}` : "");
+        if (dateStr) {
+          try {
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+              formattedDate = d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+            }
+          } catch {
+            // fallback
+          }
+        }
+        let endStr: string | null = null;
+        if (a.endAt) {
+          try {
+            const d = new Date(a.endAt);
+            if (!isNaN(d.getTime())) {
+              endStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            }
+          } catch {}
+        } else if (a.slotEnd) {
+          endStr = a.slotEnd;
+        }
+        return (
+          <div>
+            <div>{formattedDate}</div>
+            {endStr ? <div className="muted small">to {endStr}</div> : null}
+          </div>
+        );
+      },
     },
     {
       key: "patient",
@@ -147,25 +199,25 @@ export function AppointmentListPage() {
     {
       key: "department",
       header: "Dept",
-      accessor: (a) => a.departmentName ?? `#${a.departmentId}`,
+      accessor: (a) => a.departmentName ?? (a.departmentId != null ? `#${a.departmentId}` : (a.deptId != null ? `#${a.deptId}` : "—")),
     },
     {
       key: "source",
       header: "Source",
-      accessor: (a) => a.source ?? "—",
-      render: (a) => <span className="badge badge--muted">{a.source ?? "—"}</span>,
+      accessor: (a) => a.source ?? a.visitType ?? "—",
+      render: (a) => <span className="badge badge--muted">{a.source ?? a.visitType ?? "—"}</span>,
     },
     {
       key: "token",
       header: "Token",
-      accessor: (a) => a.tokenNumber ?? "",
-      render: (a) => a.tokenNumber ? <code>{a.tokenNumber}</code> : <span className="muted">—</span>,
+      accessor: (a) => a.tokenNumber ?? (a.tokenNo != null ? String(a.tokenNo) : ""),
+      render: (a) => (a.tokenNumber || a.tokenNo != null) ? <code>{a.tokenNumber ?? a.tokenNo}</code> : <span className="muted">—</span>,
     },
     {
       key: "status",
       header: "Status",
-      accessor: (a) => a.status,
-      render: (a) => <AppointmentStatusBadge status={a.status as AppointmentStatus} />,
+      accessor: (a) => a.apptStatus ?? a.status,
+      render: (a) => <AppointmentStatusBadge status={(a.apptStatus ?? a.status) as AppointmentStatus} />,
     },
     {
       key: "actions",
@@ -174,7 +226,7 @@ export function AppointmentListPage() {
       accessor: () => null,
       render: (a) => (
         <div className="row-actions">
-          {a.status === 1 ? (
+          {(a.apptStatus ?? a.status) === 1 ? (
             <>
               <Button
                 type="button"
@@ -251,12 +303,39 @@ export function AppointmentListPage() {
         </Button>
       </header>
 
-      {highlight != null && highlightedPatient ? (
-        <div className="card card--banner">
-          <PatientBanner patient={highlightedPatient} />
+      {highlight != null && (highlightedPatient || highlightedAppointment) ? (
+        <div className="card card--banner" data-testid="highlight-card">
+          {highlightedPatient ? (
+            <PatientBanner patient={highlightedPatient} />
+          ) : (
+            <div className="patient-banner">
+              <div className="patient-banner__bar" aria-hidden="true" />
+              <div className="patient-banner__content">
+                <div className="patient-banner__id">
+                  <span className="patient-banner__mrn">
+                    {highlightedAppointment?.patientMrn ??
+                      (highlightedAppointment?.patientId ? `Patient #${highlightedAppointment.patientId}` : "")}
+                  </span>
+                  <span className="patient-banner__name">
+                    {highlightedAppointment?.patientName ??
+                      (highlightedAppointment?.patientId
+                        ? `Patient #${highlightedAppointment.patientId}`
+                        : `Appointment #${highlight}`)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           <p className="muted small">
-            Just created appointment #{highlight}. It will appear in the list below as soon as the
-            refetch resolves.
+            Just created appointment #{highlight}
+            {highlightedAppointment?.tokenNumber
+              ? ` · Token ${highlightedAppointment.tokenNumber}`
+              : highlightedAppointment?.tokenNo != null
+                ? ` · Token ${highlightedAppointment.tokenNo}`
+                : ""}
+            {highlightedAppointment?.apptDate ? ` · Date ${highlightedAppointment.apptDate}` : ""}
+            {highlightedAppointment?.slotStart ? ` · Time ${highlightedAppointment.slotStart}` : ""}.
+            It will appear in the list below as soon as the refetch resolves.
           </p>
         </div>
       ) : null}

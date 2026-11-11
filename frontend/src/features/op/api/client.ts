@@ -169,9 +169,24 @@ export const patientApi = {
 
 /** appointment-service wrappers (:8091). */
 export const appointmentApi = {
-  /** GET /api/v1/appointments — list with filters + legacy pagination. */
-  list: (q: AppointmentListQuery) =>
-    request<AppointmentListResponse>(APPT_BASE, "/api/v1/appointments", { query: toAppointmentListQuery(q) }),
+  /** GET /api/v1/appointments — list with filters + legacy pagination (handles plain array and paged). */
+  list: async (q: AppointmentListQuery): Promise<AppointmentListResponse> => {
+    const res = await request<AppointmentListResponse | Appointment[]>(
+      APPT_BASE,
+      "/api/v1/appointments",
+      { query: toAppointmentListQuery(q) },
+    );
+    if (Array.isArray(res)) {
+      return {
+        items: res,
+        page: q.page ?? 0,
+        size: q.size ?? res.length,
+        total: res.length,
+        hasMore: false,
+      };
+    }
+    return res;
+  },
 
   /** GET /api/v1/appointments/{id} — one appointment. */
   get: (id: number) => request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}`),

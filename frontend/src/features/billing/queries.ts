@@ -299,8 +299,11 @@ export function useIssueDebitNote() {
 export function usePatientSearch(query: string) {
   return useQuery<unknown[]>({
     queryKey: billingQueryKeys.patientSearch(query),
-    queryFn: () => billingJson<unknown[]>(`${BILLING_BASE}/api/v1/patients/search?query=${encodeURIComponent(query)}`),
-    enabled: query.length >= 3,
+    queryFn: () =>
+      billingJson<unknown[]>(
+        `${BILLING_BASE}/api/v1/patients/search?q=${encodeURIComponent(query)}&query=${encodeURIComponent(query)}`,
+      ),
+    enabled: query.trim().length >= 2,
   });
 }
 

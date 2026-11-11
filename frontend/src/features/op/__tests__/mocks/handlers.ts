@@ -2,8 +2,8 @@ import { http, HttpResponse } from "msw";
 import type {
   AbhaEnrollment,
   Appointment,
-  AppointmentListResponse,
   AppointmentSlot,
+  AppointmentStatus,
   Department,
   Doctor,
   DoctorSchedule,
@@ -95,16 +95,46 @@ const sampleSlots: AppointmentSlot[] = [
 
 const sampleAppointments: Appointment[] = [
   {
-    id: 9001, patientId: 7001, patientName: "Asha Verma", patientMrn: "MRN-7001",
-    doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, departmentName: "General Medicine",
-    startAt: "2024-08-15T09:00:00", endAt: "2024-08-15T09:30:00",
-    status: 1, source: "WALK_IN", tokenNumber: "OPD-1",
+    id: 9001,
+    patientId: 7001,
+    patientName: "Asha Verma",
+    patientMrn: "MRN-7001",
+    doctorId: 100,
+    doctorName: "Dr. Anjali Rao",
+    departmentId: 1,
+    departmentName: "General Medicine",
+    apptDate: "2024-08-15",
+    slotStart: "09:00:00",
+    slotEnd: "09:30:00",
+    startAt: "2024-08-15T09:00:00",
+    endAt: "2024-08-15T09:30:00",
+    apptStatus: 1,
+    status: true as unknown as AppointmentStatus,
+    activeStatus: true,
+    visitType: "WALK_IN",
+    source: "WALK_IN",
+    tokenNo: 1,
+    tokenNumber: "OPD-1",
   },
   {
-    id: 9002, patientId: 7002, patientName: "Ravi Kumar", patientMrn: "MRN-7002",
-    doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, departmentName: "General Medicine",
-    startAt: "2024-08-15T10:00:00", endAt: "2024-08-15T10:30:00",
-    status: 2, source: "ONLINE",
+    id: 9002,
+    patientId: 7002,
+    patientName: "Ravi Kumar",
+    patientMrn: "MRN-7002",
+    doctorId: 100,
+    doctorName: "Dr. Anjali Rao",
+    departmentId: 1,
+    departmentName: "General Medicine",
+    apptDate: "2024-08-15",
+    slotStart: "10:00:00",
+    slotEnd: "10:30:00",
+    startAt: "2024-08-15T10:00:00",
+    endAt: "2024-08-15T10:30:00",
+    apptStatus: 2,
+    status: true as unknown as AppointmentStatus,
+    activeStatus: true,
+    visitType: "APPOINTMENT",
+    source: "ONLINE",
   },
 ];
 
@@ -166,15 +196,19 @@ export const handlers = [
     const url = new URL(request.url);
     const status = url.searchParams.get("status") ?? "all";
     let items = [...sampleAppointments];
-    if (status === "pending") items = items.filter((a) => a.status === 1);
-    if (status === "checkedIn") items = items.filter((a) => a.status === 2);
-    if (status === "noShow") items = items.filter((a) => a.status === 6);
-    if (status === "walkIn") items = items.filter((a) => a.source === "WALK_IN");
-    if (status === "emergency") items = items.filter((a) => a.source === "EMERGENCY");
-    const response: AppointmentListResponse = {
-      items, page: 0, size: items.length, total: items.length, hasMore: false,
-    };
-    return ok(response);
+    if (status === "pending") items = items.filter((a) => (a.apptStatus ?? a.status) === 1);
+    if (status === "checkedIn") items = items.filter((a) => (a.apptStatus ?? a.status) === 2);
+    if (status === "noShow") items = items.filter((a) => (a.apptStatus ?? a.status) === 6);
+    if (status === "walkIn") items = items.filter((a) => a.source === "WALK_IN" || a.visitType === "WALK_IN");
+    if (status === "emergency") items = items.filter((a) => a.source === "EMERGENCY" || a.visitType === "EMERGENCY");
+    // Plain array response per live Spring backend
+    return ok(items);
+  }),
+  http.get("/api/v1/appointments/:id", ({ params }) => {
+    const id = Number(params.id);
+    const found = sampleAppointments.find((a) => a.id === id);
+    if (found) return ok(found);
+    return err(404, "NOT_FOUND", `Appointment ${id} not found`);
   }),
   http.post("/api/v1/appointments", async ({ request }) => {
     const body = (await request.json()) as {

@@ -5,8 +5,7 @@ import {
   useCreateCharge,
   usePatientSearch,
 } from "./queries";
-import { type ChargeValues } from "./zodSchema";
-import { createBillSchema, chargeSchema, type CreateBillValues } from "./zodSchema";
+import { type ChargeValues, createBillSchema, chargeSchema, type CreateBillValues } from "./zodSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button, Checkbox, Table } from "@chakra-ui/react";
@@ -18,6 +17,8 @@ export function NewBillPage() {
   const { data: patients = [] } = usePatientSearch(patientQuery);
   const [selectedPatient, setSelectedPatient] = useState<{ id: number; name: string } | null>(null);
   const [charges, setCharges] = useState<ChargeValues[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const billForm = useForm<CreateBillValues>({
     resolver: zodResolver(createBillSchema),
@@ -37,15 +38,63 @@ export function NewBillPage() {
   };
 
   const handleSubmit = async (values: CreateBillValues) => {
+    setErrorMessage(null);
+    if (!selectedPatient) {
+      setErrorMessage("Please select a patient");
+      return;
+    }
+    if (charges.length === 0) {
+      setErrorMessage("At least one charge is required to create a bill");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const bill = await createBill.mutateAsync(values);
-      // Create charges if any
+      // 1. For each charge row POST /api/v1/charges {serviceId, serviceName, rate, qty} -> response has chargeId
+      const chargeIds: number[] = [];
       for (const charge of charges) {
-        await createCharge.mutateAsync({ ...charge, billId: bill.billId });
+        const createdCharge = await createCharge.mutateAsync({
+          serviceId: Number(charge.serviceId),
+          serviceName: charge.serviceName,
+          rate: Number(charge.rate),
+          qty: Number(charge.qty),
+        });
+        const chargeId = createdCharge?.chargeId ?? (createdCharge as any)?.id;
+        if (!chargeId) {
+          throw new Error("Failed to create charge: missing chargeId in response");
+        }
+        chargeIds.push(Number(chargeId));
       }
-      navigate(`/billing/${bill.billId}`);
-    } catch (err) {
-      console.error(err);
+
+      // 2. POST /api/v1/bills {patientId, encounterId?, admissionId?, prescriberDoctorId?, isSelfCompany, chargeIds:[...]} -> response has billId
+      const billPayload: Record<string, unknown> = {
+        patientId: Number(values.patientId ?? selectedPatient.id),
+        cashCounterId: Number(values.cashCounterId ?? 1),
+        isSelfCompany: values.isSelfCompany ?? true,
+        chargeIds,
+      };
+      if (values.encounterId != null && String(values.encounterId) !== "") {
+        billPayload.encounterId = Number(values.encounterId);
+      }
+      if (values.admissionId != null && String(values.admissionId) !== "") {
+        billPayload.admissionId = Number(values.admissionId);
+      }
+      if (values.prescriberDoctorId != null && String(values.prescriberDoctorId) !== "") {
+        billPayload.prescriberDoctorId = Number(values.prescriberDoctorId);
+      }
+
+      const bill = await createBill.mutateAsync(billPayload);
+      const billId = bill?.billId ?? (bill as any)?.id;
+      if (!billId) {
+        throw new Error("Failed to create bill: missing billId in response");
+      }
+      navigate(`/billing/${billId}`);
+    } catch (err: any) {
+      const msg = err?.message || (typeof err === "string" ? err : "Failed to create bill");
+      setErrorMessage(msg);
+      console.error("Failed to create bill:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,6 +103,12 @@ export function NewBillPage() {
       <header className="page__header">
         <h1>New Bill</h1>
       </header>
+
+      {errorMessage && (
+        <div className="alert alert--error" role="alert" style={{ marginBottom: "1rem" }}>
+          {errorMessage}
+        </div>
+      )}
 
       <form className="form" onSubmit={billForm.handleSubmit(handleSubmit)}>
         <fieldset>
@@ -68,25 +123,46 @@ export function NewBillPage() {
               />
               {patients.length > 0 && (
                 <ul className="search-results">
-                  {patients.map((p: any) => (
-                    <li key={p.patientId} onClick={() => {
-                      setSelectedPatient({ id: p.patientId, name: p.name ?? `Patient ${p.patientId}` });
-                      billForm.setValue("patientId", p.patientId);
-                    }}>
-                      {p.name ?? `Patient ${p.patientId}`} — {p.mobileNo ?? ""}
-                    </li>
-                  ))}
+                  {patients.map((p: any) => {
+                    const pid = Number(p.id ?? p.patientId);
+                    const fullName = [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" ");
+                    const pname = p.name || fullName || `Patient ${pid}`;
+                    const pmobile = p.mobile ?? p.mobileNo ?? "";
+                    return (
+                      <li
+                        key={pid}
+                        onClick={() => {
+                          setSelectedPatient({ id: pid, name: pname });
+                          billForm.setValue("patientId", pid, { shouldValidate: true });
+                        }}
+                      >
+                        {pname} — {pmobile}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </>
           ) : (
             <div className="selected-patient">
               {selectedPatient.name} (ID: {selectedPatient.id})
-              <Button type="button" variant="ghost" size="sm" onClick={() => {
-                setSelectedPatient(null);
-                billForm.setValue("patientId", undefined as any);
-              }}>Change</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedPatient(null);
+                  billForm.setValue("patientId", undefined as any, { shouldValidate: true });
+                }}
+              >
+                Change
+              </Button>
             </div>
+          )}
+          {billForm.formState.errors.patientId && (
+            <p className="field__error" role="alert">
+              {billForm.formState.errors.patientId.message}
+            </p>
           )}
         </fieldset>
 
@@ -117,14 +193,37 @@ export function NewBillPage() {
           <ChargeEntryForm onAdd={handleAddCharge} />
           {charges.length > 0 && (
             <Table.Root size="sm" variant="line">
-              <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Service</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Rate</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader></Table.Row></Table.Header>
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                    Service
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                    Rate
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                    Qty
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">
+                    Total
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase"></Table.ColumnHeader>
+                </Table.Row>
+              </Table.Header>
               <Table.Body>
                 {charges.map((c, i) => (
                   <Table.Row key={i}>
-                    <Table.Cell>{c.serviceName}</Table.Cell>
-                    <Table.Cell>{c.rate?.toFixed(2)}</Table.Cell>
+                    <Table.Cell>
+                      {c.serviceName} (#{c.serviceId})
+                    </Table.Cell>
+                    <Table.Cell>{Number(c.rate).toFixed(2)}</Table.Cell>
                     <Table.Cell>{c.qty}</Table.Cell>
-                    <Table.Cell><Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveCharge(i)}>✕</Button></Table.Cell>
+                    <Table.Cell>{(Number(c.rate) * Number(c.qty)).toFixed(2)}</Table.Cell>
+                    <Table.Cell>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveCharge(i)}>
+                        ✕
+                      </Button>
+                    </Table.Cell>
                   </Table.Row>
                 ))}
               </Table.Body>
@@ -132,7 +231,17 @@ export function NewBillPage() {
           )}
         </fieldset>
 
-        <Button type="submit" variant="primary" disabled={createBill.isPending || !selectedPatient} loading={createBill.isPending} loadingText="Creating...">
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isSubmitting || createBill.isPending || createCharge.isPending || !selectedPatient}
+          loading={isSubmitting || createBill.isPending || createCharge.isPending}
+          loadingText="Creating..."
+          onClick={(e) => {
+            e.preventDefault();
+            void billForm.handleSubmit(handleSubmit)(e);
+          }}
+        >
           Create Bill
         </Button>
       </form>
@@ -141,23 +250,51 @@ export function NewBillPage() {
 }
 
 function ChargeEntryForm({ onAdd }: { onAdd: (c: ChargeValues) => void }) {
-  const { register, handleSubmit, reset } = useForm<ChargeValues>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChargeValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: { qty: 1 },
   });
 
   const submit = (values: ChargeValues) => {
     onAdd(values);
-    reset();
+    reset({ qty: 1, serviceId: undefined as any, serviceName: "", rate: undefined as any });
   };
 
   return (
-    <form className="inline-form" onSubmit={handleSubmit(submit)}>
+    <div
+      className="inline-form"
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.stopPropagation();
+          void handleSubmit(submit)();
+        }
+      }}
+    >
       <TextInput type="number" placeholder="Service ID" {...register("serviceId")} />
       <TextInput placeholder="Service Name" {...register("serviceName")} />
       <TextInput type="number" step="0.01" placeholder="Rate" {...register("rate")} />
       <TextInput type="number" placeholder="Qty" {...register("qty")} />
-      <Button type="submit" variant="primary">+ Add</Button>
-    </form>
+      <Button
+        type="button"
+        variant="primary"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void handleSubmit(submit)(e);
+        }}
+      >
+        + Add
+      </Button>
+      {errors.serviceId && <p className="field__error" role="alert">{errors.serviceId.message}</p>}
+      {errors.serviceName && <p className="field__error" role="alert">{errors.serviceName.message}</p>}
+      {errors.rate && <p className="field__error" role="alert">{errors.rate.message}</p>}
+      {errors.qty && <p className="field__error" role="alert">{errors.qty.message}</p>}
+    </div>
   );
 }
