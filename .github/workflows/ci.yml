@@ -54,12 +54,12 @@ jobs:
           name: surefire-reports
           path: services/reference-service/target/surefire-reports/
 
-  item-service-build-test:
-    name: item-service build + test (L0/L1/L2 via Testcontainers on Podman)
+  pharmacy-service-build-test:
+    name: pharmacy-service build + test (L0/L1/L2 via Testcontainers on Podman)
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: services/item-service
+        working-directory: services/pharmacy-service
     steps:
       - uses: actions/checkout@v4
 
@@ -91,15 +91,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: item-service-surefire-reports
-          path: services/item-service/target/surefire-reports/
+          name: pharmacy-service-surefire-reports
+          path: services/pharmacy-service/target/surefire-reports/
 
-  queue-service-build-test:
-    name: queue-service build + test (L0/L1/L2 via Testcontainers on Podman)
+  appointment-service-build-test:
+    name: appointment-service build + test (L0/L1/L2 via Testcontainers on Podman)
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: services/queue-service
+        working-directory: services/appointment-service
     steps:
       - uses: actions/checkout@v4
 
@@ -131,8 +131,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: queue-service-surefire-reports
-          path: services/queue-service/target/surefire-reports/
+          name: appointment-service-surefire-reports
+          path: services/appointment-service/target/surefire-reports/
 
   patient-service-build-test:
     name: patient-service build + test (L0/L1/L2 via Testcontainers PG16+Kafka on Podman)
