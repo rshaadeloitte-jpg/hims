@@ -13,15 +13,15 @@ public abstract class AbhaBase {
     @SequenceGenerator(name = "abha_seq", sequenceName = "abha_seq", allocationSize = 1)
     private Long id;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "added_by", nullable = false, updatable = false)
     private String addedBy;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "added_datetime", nullable = false, updatable = false)
     private LocalDateTime addedDatetime;
 
-    @Column(nullable = false)
+    @Column(name = "updated_by", nullable = false)
     private String updatedBy;
 
-    @Column(nullable = false)
+    @Column(name = "updated_datetime", nullable = false)
     private LocalDateTime updatedDatetime;
 }
