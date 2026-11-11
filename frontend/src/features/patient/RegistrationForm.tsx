@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Checkbox, Textarea } from "@chakra-ui/react";
@@ -62,6 +63,11 @@ export function RegistrationForm({
 }) {
   const [activeSection, setActiveSection] = useState<SectionKey>("identity");
   const [completedSections, setCompletedSections] = useState<Set<SectionKey>>(new Set());
+  const [createdPatient, setCreatedPatient] = useState<{
+    id: number;
+    mrNo: string;
+    fullName: string;
+  } | null>(null);
 
   const isEdit = !!patientId;
   const registerMutation = useRegisterPatient();
@@ -75,6 +81,7 @@ export function RegistrationForm({
     setValue,
     getValues,
     reset,
+    clearErrors,
     control,
     watch,
   } = useForm<PatientRegistrationValues>({
@@ -156,6 +163,20 @@ export function RegistrationForm({
     }
   }, [activeSection]);
 
+  const handleRegisterAnother = useCallback(() => {
+    setCreatedPatient(null);
+    setActiveSection("identity");
+    setCompletedSections(new Set());
+    reset(DEFAULT_VALUES, {
+      keepErrors: false,
+      keepDirty: false,
+      keepTouched: false,
+      keepValues: false,
+      keepDefaultValues: false,
+    });
+    clearErrors();
+  }, [reset, clearErrors]);
+
   const onSubmit = handleSubmit(async (values) => {
     const payload: Record<string, unknown> = {};
     // Map form fields -> PatientRegistration entity field names (backend contract).
@@ -182,11 +203,25 @@ export function RegistrationForm({
     let saved: PatientDetail;
     if (isEdit && patientId) {
       saved = await updateMutation.mutateAsync(payload);
+      onSaved?.(saved.patientId || patientId);
     } else {
       saved = await registerMutation.mutateAsync(payload);
+      const fullName = [
+        saved.firstName || values.firstName,
+        saved.middleName || values.middleName,
+        saved.lastName || values.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ") || "Patient";
+      const pid = saved.patientId || saved.id || 0;
+      const mrNo = saved.mrNo || saved.mrno || "—";
+      setCreatedPatient({
+        id: pid,
+        mrNo,
+        fullName,
+      });
+      onSaved?.(pid);
     }
-    onSaved?.(saved.patientId);
-    reset();
   });
 
   const mutationError = registerMutation.isError
@@ -196,6 +231,106 @@ export function RegistrationForm({
       : null;
 
   const isPending = registerMutation.isPending || updateMutation.isPending;
+
+  if (createdPatient) {
+    return (
+      <div
+        className="registration-success card"
+        role="region"
+        aria-label="registration-success"
+        style={{
+          maxWidth: "600px",
+          margin: "2rem auto",
+          padding: "2rem",
+          textAlign: "center",
+          borderRadius: "8px",
+          backgroundColor: "#ffffff",
+          border: "1px solid #e5e7eb",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <div style={{ marginBottom: "1.5rem" }}>
+          <div
+            style={{
+              width: "56px",
+              height: "56px",
+              margin: "0 auto 1rem",
+              borderRadius: "50%",
+              backgroundColor: "#dcfce7",
+              color: "#16a34a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.75rem",
+              fontWeight: "bold",
+            }}
+            aria-hidden="true"
+          >
+            ✓
+          </div>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#111827", margin: "0 0 0.5rem" }}>
+            Patient Registered Successfully
+          </h1>
+          <p style={{ color: "#4b5563", fontSize: "0.95rem", margin: 0 }}>
+            Patient record has been created in the master index.
+          </p>
+        </div>
+
+        <div
+          style={{
+            background: "#f9fafb",
+            borderRadius: "8px",
+            padding: "1.25rem",
+            margin: "1.5rem 0",
+            textAlign: "left",
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div>
+              <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", fontWeight: 600, display: "block" }}>
+                Patient Name
+              </span>
+              <span style={{ fontSize: "1.1rem", fontWeight: 600, color: "#111827" }} data-testid="registered-patient-name">
+                {createdPatient.fullName}
+              </span>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", fontWeight: 600, display: "block" }}>
+                Medical Record Number (MRN)
+              </span>
+              <span style={{ fontSize: "1.1rem", fontWeight: 600, color: "#2563eb", fontFamily: "monospace" }} data-testid="registered-patient-mrn">
+                {createdPatient.mrNo}
+              </span>
+            </div>
+            <div>
+              <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", fontWeight: 600, display: "block" }}>
+                Patient ID
+              </span>
+              <span style={{ fontSize: "0.95rem", color: "#374151" }} data-testid="registered-patient-id">
+                {createdPatient.id}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "1rem", justifyContent: "center", marginTop: "1.5rem", flexWrap: "wrap" }}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleRegisterAnother}
+          >
+            Register Another Patient
+          </Button>
+          <Link to={`/patients/${createdPatient.id}`} style={{ textDecoration: "none" }}>
+            <Button type="button" variant="primary">
+              Go to Patient Profile
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form
