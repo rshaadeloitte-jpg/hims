@@ -11,6 +11,8 @@ import type {
   AppointmentListQuery,
   AppointmentListResponse,
   AppointmentSlot,
+  AppointmentSource,
+  AppointmentStatus,
   Department,
   Doctor,
   DoctorSchedule,
@@ -224,6 +226,109 @@ export function useDoctorSlots(doctorId: number | undefined, date: string | unde
 }
 
 /* ── appointments ──────────────────────────────────── */
+
+const APPT_STATUS_NAME_MAP: Record<string, AppointmentStatus> = {
+  BOOKED: 1,
+  CHECKED_IN: 2,
+  CHECKEDIN: 2,
+  COMPLETED: 3,
+  CANCELLED: 4,
+  RESCHEDULED: 5,
+  NO_SHOW: 6,
+  NOSHOW: 6,
+};
+
+export function normalizeAppointment(raw: unknown): Appointment {
+  if (!raw || typeof raw !== "object") {
+    return raw as Appointment;
+  }
+  const r = raw as Record<string, unknown>;
+
+  // Resolve workflow status (1..6)
+  // Backend domain model Appointment has:
+  // - apptStatus: short (1=BOOKED, 2=CHECKED_IN, 3=COMPLETED, 4=CANCELLED, 5=RESCHEDULED, 6=NO_SHOW)
+  // - status: Boolean (active flag, true/false)
+  let workflowStatus: AppointmentStatus = 1;
+  if (typeof r.apptStatus === "number" && r.apptStatus >= 1 && r.apptStatus <= 6) {
+    workflowStatus = r.apptStatus as AppointmentStatus;
+  } else if (typeof r.apptStatus === "string") {
+    workflowStatus = APPT_STATUS_NAME_MAP[r.apptStatus.toUpperCase()] ?? 1;
+  } else if (typeof r.status === "number" && r.status >= 1 && r.status <= 6) {
+    workflowStatus = r.status as AppointmentStatus;
+  }
+
+  // Resolve visitType / source
+  // Backend domain model Appointment has visitType: "APPOINTMENT", "WALK_IN", "EMERGENCY"
+  const rawVisitType = (r.visitType as string) ?? (r.visittype as string);
+  let source = r.source as AppointmentSource | undefined;
+  if (!source && rawVisitType) {
+    const vtUpper = rawVisitType.toUpperCase();
+    if (vtUpper === "WALK_IN" || vtUpper === "WALKIN") source = "WALK_IN";
+    else if (vtUpper === "EMERGENCY") source = "EMERGENCY";
+    else if (vtUpper === "ONLINE") source = "ONLINE";
+    else if (vtUpper === "TELECONSULT") source = "TELECONSULT";
+    else if (vtUpper === "FPV") source = "FPV";
+    else if (vtUpper === "RGHS") source = "RGHS";
+  }
+
+  const tokenNo = typeof r.tokenNo === "number" ? r.tokenNo : (typeof r.token_no === "number" ? r.token_no : undefined);
+  const tokenNumber = (r.tokenNumber as string) ?? (r.token_number as string) ?? (tokenNo != null ? String(tokenNo) : undefined);
+
+  const apptDate = (r.apptDate as string) ?? (r.appt_date as string) ?? (typeof r.startAt === "string" ? r.startAt.slice(0, 10) : "");
+  const slotStart = (r.slotStart as string) ?? (r.slot_start as string) ?? (typeof r.startAt === "string" && r.startAt.includes("T") ? r.startAt.split("T")[1] : "");
+  const slotEnd = (r.slotEnd as string) ?? (r.slot_end as string) ?? (typeof r.endAt === "string" && r.endAt.includes("T") ? r.endAt.split("T")[1] : "");
+
+  let startAt = (r.startAt as string) ?? "";
+  if (!startAt) {
+    if (apptDate && slotStart) {
+      startAt = `${apptDate}T${slotStart}`;
+    } else if (apptDate) {
+      startAt = `${apptDate}T00:00:00`;
+    } else if (r.addedDatetime) {
+      startAt = String(r.addedDatetime);
+    }
+  }
+
+  let endAt = (r.endAt as string) ?? "";
+  if (!endAt) {
+    if (apptDate && slotEnd) {
+      endAt = `${apptDate}T${slotEnd}`;
+    } else if (startAt) {
+      endAt = startAt;
+    }
+  }
+
+  const departmentId = (r.departmentId as number) ?? (r.deptId as number) ?? (r.department_id as number);
+
+  return {
+    ...(r as unknown as Appointment),
+    id: Number(r.id),
+    patientId: Number(r.patientId ?? r.patient_id),
+    patientName: r.patientName as string | undefined,
+    patientMrn: (r.patientMrn as string) ?? (r.patient_mrn as string),
+    doctorId: Number(r.doctorId ?? r.doctor_id),
+    doctorName: r.doctorName as string | undefined,
+    departmentId,
+    deptId: departmentId,
+    departmentName: r.departmentName as string | undefined,
+    cabin: (r.cabin as string) ?? (r.cabinId != null ? String(r.cabinId) : undefined),
+    cabinId: typeof r.cabinId === "number" ? r.cabinId : undefined,
+    apptDate,
+    slotStart,
+    slotEnd,
+    startAt,
+    endAt,
+    status: workflowStatus,
+    activeStatus: typeof r.status === "boolean" ? r.status : true,
+    apptStatus: workflowStatus,
+    source,
+    visitType: rawVisitType ?? (source ? String(source) : undefined),
+    tokenNo,
+    tokenNumber,
+    addedDatetime: r.addedDatetime != null ? String(r.addedDatetime) : undefined,
+    updatedDatetime: r.updatedDatetime != null ? String(r.updatedDatetime) : undefined,
+  };
+}
 
 export function useAppointmentList(q: AppointmentListQuery) {
   return useQuery({

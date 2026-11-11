@@ -32,7 +32,14 @@ export const createBillSchema = z.object({
   patientId: z.coerce.number().int().positive("Patient is required"),
   encounterId: optionalNumber,
   admissionId: optionalNumber,
-  isSelfCompany: z.boolean().default(true),
+  isSelfCompany: z
+    .preprocess((v) => {
+      if (typeof v === "boolean") return v;
+      if (v === "on" || v === "true") return true;
+      if (v === "false" || v === "" || v == null) return false;
+      return Boolean(v);
+    }, z.boolean())
+    .default(true),
   prescriberDoctorId: optionalNumber,
   cashCounterId: z.coerce.number().int().default(1),
 });
