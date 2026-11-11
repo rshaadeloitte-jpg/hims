@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  * Legacy {@code M_COMPANYMASTER} (Companymaster.java). Field names preserved verbatim.
  */
 @Entity
-@Table(name = "M_COMPANYMASTER")
+@Table(name = "M_COMPANYMASTER", schema = "ihms_master")
 public class CompanyMaster extends MasterEntityBase {
 
     @Column(name = "CODE")

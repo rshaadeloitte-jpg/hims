@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
  * one hierarchy table (AGT-02 §4.3, V5). MIG-011.
  */
 @Entity
-@Table(name = "facility_location")
+@Table(name = "facility_location", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),

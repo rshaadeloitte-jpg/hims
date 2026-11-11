@@ -7,7 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "geo_sub_district")
+@Table(name = "geo_sub_district", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),

@@ -2,11 +2,11 @@ spring:
   application:
     name: reference-service
   datasource:
-    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}
+    url: jdbc:postgresql://${DEV_DB_HOST:10.68.61.102}:${DEV_DB_PORT:5432}/${DEV_DB_NAME:hims}?currentSchema=ihms_master,ihms_search,ihms_file
     username: ${DEV_DB_USERNAME:postgres}
     password: ${DEV_DB_PASSWORD:TMSProduct1234}
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
       pool-name: reference-cp
   jpa:
     hibernate:
@@ -16,14 +16,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        default_schema: ihms_master
         globally_quoted_identifiers: true
   flyway:
-    schemas: ihms_master
-    default-schema: ihms_master
-    create-schemas: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
@@ -61,6 +56,14 @@ app:
   outbox:
     poll-interval-ms: 5000
     max-attempts: 3
+  search:
+    backend: ${SEARCH_BACKEND:memory}
+    live-collections: patient,encounter,item,icd10cm,healthfactor
+    solr:
+      base-url: ${SOLR_BASE_URL:http://localhost:8983}
+      connect-timeout-ms: 3000
+      read-timeout-ms: 10000
+    patient-qf: ${SEARCH_PATIENT_QF:text_t^1 mrno_s^18 mobile_s^16 civilid_s^16 janaadhar_s^17 name_s^8}
 
 info:
   app:

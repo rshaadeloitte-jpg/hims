@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 
 /** Clean target of M_DOCTORTYPEMASTER (AGT-02 §4.5, V5). MIG-011. */
 @Entity
-@Table(name = "doctor_type")
+@Table(name = "doctor_type", schema = "ihms_master")
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "id")),
         @AttributeOverride(name = "unitId", column = @Column(name = "unit_id")),
