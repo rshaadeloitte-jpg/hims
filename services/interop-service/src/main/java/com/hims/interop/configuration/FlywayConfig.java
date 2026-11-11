@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FlywayConfig {
 
-    private static final String[] MODULES = {"interop", "govt", "aasmaan", "abha"};
+    private static final String[] MODULES = {"interop", "govt", "abha"};
     private static final String[] SCHEMAS = {
-            "ihms_interop", "ihms_govt", "ihms_aasmaan", "ihms_abha"
+            "ihms_interop", "ihms_govt", "ihms_abha"
     };
 
     @Bean(name = "bundleFlywayMigrator", initMethod = "migrate")
