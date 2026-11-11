@@ -3,7 +3,7 @@ package com.hims.bcma.domain.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "t_ivp_drug_config", schema = "ihms_bcma")
+@Table(name = "t_ivp_drug_config", schema = "public")
 public class IvpDrugConfig extends BcmaBase {
 
     @Id

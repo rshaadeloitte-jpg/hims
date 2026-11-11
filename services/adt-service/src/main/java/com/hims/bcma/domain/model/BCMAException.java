@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_bcma_exception", schema = "ihms_bcma")
+@Table(name = "t_bcma_exception", schema = "public")
 public class BCMAException extends BcmaBase {
     @Id
     @Column(name = "exception_id")

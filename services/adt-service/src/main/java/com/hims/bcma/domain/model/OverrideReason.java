@@ -3,7 +3,7 @@ package com.hims.bcma.domain.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "t_override_reason", schema = "ihms_bcma")
+@Table(name = "t_override_reason", schema = "public")
 public class OverrideReason extends BcmaBase {
 
     @Id

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_verification_log", schema = "ihms_bcma")
+@Table(name = "t_verification_log", schema = "public")
 public class VerificationLog extends BcmaBase {
 
     @Id

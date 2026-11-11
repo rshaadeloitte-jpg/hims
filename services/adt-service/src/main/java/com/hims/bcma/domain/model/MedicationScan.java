@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_bcma_medication_scan", schema = "ihms_bcma")
+@Table(name = "t_bcma_medication_scan", schema = "public")
 public class MedicationScan extends BcmaBase {
     @Id
     @Column(name = "scan_id")

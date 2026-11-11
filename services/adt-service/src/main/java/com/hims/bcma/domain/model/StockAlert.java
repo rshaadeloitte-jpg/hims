@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_stock_alert", schema = "ihms_bcma")
+@Table(name = "t_stock_alert", schema = "public")
 public class StockAlert extends BcmaBase {
 
     @Id

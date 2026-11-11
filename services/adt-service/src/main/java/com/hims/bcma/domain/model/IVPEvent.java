@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_bcma_ivp_event", schema = "ihms_bcma")
+@Table(name = "t_bcma_ivp_event", schema = "public")
 public class IVPEvent extends BcmaBase {
     @Id
     @Column(name = "ivp_id")

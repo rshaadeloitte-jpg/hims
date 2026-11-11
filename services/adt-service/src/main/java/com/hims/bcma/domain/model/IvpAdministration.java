@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "t_ivp_administration", schema = "ihms_bcma")
+@Table(name = "t_ivp_administration", schema = "public")
 public class IvpAdministration extends BcmaBase {
 
     @Id

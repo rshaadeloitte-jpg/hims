@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "t_medication_stock", schema = "ihms_bcma")
+@Table(name = "t_medication_stock", schema = "public")
 public class MedicationStock extends BcmaBase {
 
     @Id

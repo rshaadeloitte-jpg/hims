@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FlywayConfig {
 
-    private static final String[] MODULES = {"adt", "nursing", "bcma", "ot"};
+    private static final String[] MODULES = {"adt", "nursing", "ot"};
     private static final String[] SCHEMAS = {
-            "ihms_adt", "ihms_nursing", "ihms_bcma", "ihms_ot"
+            "ihms_adt", "ihms_nursing", "ihms_ot"
     };
 
     @Bean(name = "bundleFlywayMigrator", initMethod = "migrate")
