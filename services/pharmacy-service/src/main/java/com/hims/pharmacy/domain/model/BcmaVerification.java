@@ -22,7 +22,7 @@ public class BcmaVerification extends PharmacyBase {
     @Column(name = "sale_id", nullable = false)
     private Long saleId;
 
-    @Column(name = "detail_id", nullable = false)
+    @Column(name = "line_no", nullable = false)
     private Long detailId;
 
     @Column(name = "encounter_id")
