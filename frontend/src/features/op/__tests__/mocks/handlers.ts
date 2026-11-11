@@ -6,6 +6,7 @@ import type {
   AppointmentSlot,
   Department,
   Doctor,
+  DoctorSchedule,
   Patient,
   PatientSearchHit,
   QueueToken,
@@ -72,12 +73,24 @@ const sampleDoctors: Doctor[] = [
   { id: 200, name: "Dr. Maya Iyer", departmentId: 2, departmentName: "Pediatrics", isActive: true },
 ];
 
+const sampleSchedules: DoctorSchedule[] = [
+  { id: 1, doctorId: 100, departmentId: 1, dayOfWeek: 1, startTime: "09:00:00", endTime: "17:00:00", slotMinutes: 30, status: true },
+  { id: 2, doctorId: 101, departmentId: 1, dayOfWeek: 1, startTime: "09:00:00", endTime: "17:00:00", slotMinutes: 30, status: true },
+  { id: 3, doctorId: 200, departmentId: 2, dayOfWeek: 1, startTime: "09:00:00", endTime: "17:00:00", slotMinutes: 30, status: true },
+];
+
+const sampleDoctorMasters = [
+  { id: 100, firstName: "Anjali", lastName: "Rao", status: true },
+  { id: 101, firstName: "Vikram", lastName: "Singh", status: true },
+  { id: 200, firstName: "Maya", lastName: "Iyer", status: true },
+];
+
 const sampleSlots: AppointmentSlot[] = [
-  { slotId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", startAt: "2024-08-15T09:00:00", endAt: "2024-08-15T09:30:00", capacity: 1, booked: 0, available: true },
-  { slotId: 2, doctorId: 100, doctorName: "Dr. Anjali Rao", startAt: "2024-08-15T09:30:00", endAt: "2024-08-15T10:00:00", capacity: 1, booked: 1, available: false },
-  { slotId: 3, doctorId: 100, doctorName: "Dr. Anjali Rao", startAt: "2024-08-15T10:00:00", endAt: "2024-08-15T10:30:00", capacity: 1, booked: 0, available: true },
-  { slotId: 4, doctorId: 100, doctorName: "Dr. Anjali Rao", startAt: "2024-08-15T14:00:00", endAt: "2024-08-15T14:30:00", capacity: 1, booked: 0, available: true },
-  { slotId: 5, doctorId: 100, doctorName: "Dr. Anjali Rao", startAt: "2024-08-15T18:00:00", endAt: "2024-08-15T18:30:00", capacity: 1, booked: 0, available: true },
+  { slotId: 1, scheduleId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, date: "2024-08-15", slotStart: "09:00:00", slotEnd: "09:30:00", startAt: "2024-08-15T09:00:00", endAt: "2024-08-15T09:30:00", capacity: 1, booked: 0, bookedCount: 0, available: true },
+  { slotId: 2, scheduleId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, date: "2024-08-15", slotStart: "09:30:00", slotEnd: "10:00:00", startAt: "2024-08-15T09:30:00", endAt: "2024-08-15T10:00:00", capacity: 1, booked: 1, bookedCount: 1, available: false },
+  { slotId: 3, scheduleId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, date: "2024-08-15", slotStart: "10:00:00", slotEnd: "10:30:00", startAt: "2024-08-15T10:00:00", endAt: "2024-08-15T10:30:00", capacity: 1, booked: 0, bookedCount: 0, available: true },
+  { slotId: 4, scheduleId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, date: "2024-08-15", slotStart: "14:00:00", slotEnd: "14:30:00", startAt: "2024-08-15T14:00:00", endAt: "2024-08-15T14:30:00", capacity: 1, booked: 0, bookedCount: 0, available: true },
+  { slotId: 5, scheduleId: 1, doctorId: 100, doctorName: "Dr. Anjali Rao", departmentId: 1, date: "2024-08-15", slotStart: "18:00:00", slotEnd: "18:30:00", startAt: "2024-08-15T18:00:00", endAt: "2024-08-15T18:30:00", capacity: 1, booked: 0, bookedCount: 0, available: true },
 ];
 
 const sampleAppointments: Appointment[] = [
@@ -136,10 +149,12 @@ export const handlers = [
 
   /* ── appointment-service ── */
   http.get("/api/v1/masters/departmentmaster/all", () => ok(sampleDepartments)),
+  http.get("/api/v1/masters/doctor", () => ok(sampleDoctorMasters)),
+  http.get("/api/v1/masters/doctor/all", () => ok(sampleDoctorMasters)),
   http.get("/api/v1/doctors/schedules", ({ request }) => {
     const url = new URL(request.url);
-    const deptId = Number(url.searchParams.get("departmentId") ?? "0");
-    return ok(sampleDoctors.filter((d) => d.departmentId === deptId));
+    const deptId = Number(url.searchParams.get("departmentId") ?? url.searchParams.get("deptId") ?? "0");
+    return ok(sampleSchedules.filter((s) => !deptId || s.departmentId === deptId));
   }),
   http.get("/api/v1/doctors/:id/slots", ({ params, request }) => {
     const url = new URL(request.url);
@@ -162,13 +177,21 @@ export const handlers = [
     return ok(response);
   }),
   http.post("/api/v1/appointments", async ({ request }) => {
-    const body = (await request.json()) as { patientId: number; doctorId: number; startAt: string; endAt: string };
-    if (!body.patientId || !body.doctorId || !body.startAt || !body.endAt) {
-      return err(400, "BEXA003", "patientId, doctorId, startAt, endAt are required");
+    const body = (await request.json()) as {
+      patientId: number;
+      doctorId: number;
+      startAt?: string;
+      endAt?: string;
+      apptDate?: string;
+      slotStart?: string;
+    };
+    const startAt = body.startAt ?? (body.apptDate && body.slotStart ? `${body.apptDate}T${body.slotStart}` : "");
+    if (!body.patientId || !body.doctorId || !startAt) {
+      return err(400, "BEXA003", "patientId, doctorId, startAt are required");
     }
     return ok({
       id: 9999, patientId: body.patientId, doctorId: body.doctorId, departmentId: 1,
-      startAt: body.startAt, endAt: body.endAt, status: 1, source: "WALK_IN",
+      startAt, endAt: body.endAt ?? startAt, status: 1, source: "WALK_IN",
     } as Appointment, 201);
   }),
   http.put("/api/v1/appointments/:id/cancel", async ({ params, request }) => {

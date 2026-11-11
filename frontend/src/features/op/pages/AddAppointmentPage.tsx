@@ -62,11 +62,19 @@ export function AddAppointmentPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatient || !doctorId || !selectedSlot) return;
+    const apptDate = selectedSlot.date || selectedSlot.startAt.slice(0, 10);
+    const slotStart =
+      selectedSlot.slotStart ||
+      (selectedSlot.startAt.includes("T") ? selectedSlot.startAt.split("T")[1] : selectedSlot.startAt);
     void create
       .mutateAsync({
         patientId: selectedPatient.id,
         doctorId,
-        departmentId: departmentId ?? 0,
+        scheduleId: selectedSlot.scheduleId ?? selectedSlot.slotId,
+        departmentId: departmentId ?? selectedSlot.departmentId ?? 0,
+        apptDate,
+        slotStart,
+        cabin: selectedSlot.cabin,
         startAt: selectedSlot.startAt,
         endAt: selectedSlot.endAt,
         source: appType === "EMG" ? "EMERGENCY" : isNhnc ? "ONLINE" : "WALK_IN",
@@ -226,10 +234,16 @@ export function AddAppointmentPage() {
 
 interface SlotRow {
   slotId: number;
+  scheduleId?: number;
   doctorId: number;
-  doctorName: string;
+  doctorName?: string;
+  departmentId?: number;
+  date?: string;
+  slotStart?: string;
+  slotEnd?: string;
   startAt: string;
   endAt: string;
+  cabin?: string;
   capacity: number;
   booked: number;
   available: boolean;

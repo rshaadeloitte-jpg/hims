@@ -183,10 +183,237 @@ const companyMaster: EntityMeta = {
   ],
 };
 
+/** Doctor master (Doctor.java). Unit-scoped. */
+const doctor: EntityMeta = {
+  name: "doctor",
+  label: "Doctor",
+  idField: "id",
+  searchFields: ["firstName", "lastName", "mobileNo", "emailId", "registrationNumber"],
+  allowedFilters: ["status", "doctorTypeId", "specializationId"],
+  fields: [
+    idField,
+    unitIdField,
+    { name: "firstName", label: "First Name", type: "text", required: true, listable: true },
+    { name: "middleName", label: "Middle Name", type: "text" },
+    { name: "lastName", label: "Last Name", type: "text", required: true, listable: true },
+    { name: "genderId", label: "Gender ID", type: "number", listable: true },
+    { name: "dob", label: "Date of Birth", type: "date" },
+    { name: "mobileNo", label: "Mobile No.", type: "text", listable: true },
+    { name: "emailId", label: "Email", type: "text", listable: true },
+    { name: "doctorTypeId", label: "Doctor Type", type: "number", listable: true },
+    { name: "specializationId", label: "Specialization", type: "number", listable: true },
+    { name: "registrationNumber", label: "Registration No.", type: "text", listable: true },
+    { name: "doctorNo", label: "Doctor No.", type: "text" },
+    { name: "education", label: "Education", type: "text" },
+    { name: "experience", label: "Experience", type: "text" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Doctor Type master (DoctorType.java). Unit-scoped. */
+const doctorType: EntityMeta = {
+  name: "doctor-type",
+  label: "Doctor Type",
+  idField: "id",
+  searchFields: ["code", "description"],
+  allowedFilters: ["status"],
+  fields: [
+    idField,
+    unitIdField,
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "description", label: "Description", type: "text", required: true, listable: true },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Specialization master (Specialization.java). Unit-scoped. */
+const specialization: EntityMeta = {
+  name: "specialization",
+  label: "Specialization",
+  idField: "id",
+  searchFields: ["code", "description"],
+  allowedFilters: ["status", "isDoctorShow"],
+  fields: [
+    idField,
+    unitIdField,
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "description", label: "Description", type: "text", required: true, listable: true },
+    { name: "printOrder", label: "Print Order", type: "number" },
+    { name: "ledgerName", label: "Ledger Name", type: "text" },
+    { name: "isDoctorShow", label: "Show in Doctor", type: "boolean", listable: true },
+    { name: "isDepartmentShow", label: "Show in Department", type: "boolean" },
+    { name: "isRecalculateService", label: "Recalculate Service", type: "boolean" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Facility Location master (FacilityLocation.java). Unit-scoped. */
+const facilityLocation: EntityMeta = {
+  name: "facility-location",
+  label: "Facility Location",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status", "locationType"],
+  fields: [
+    idField,
+    unitIdField,
+    {
+      name: "locationType",
+      label: "Location Type",
+      type: "select",
+      required: true,
+      listable: true,
+      options: [
+        { value: "BUILDING", label: "Building" },
+        { value: "FLOOR", label: "Floor" },
+        { value: "WING", label: "Wing" },
+        { value: "ROOM", label: "Room" },
+        { value: "CABIN", label: "Cabin" },
+        { value: "WARD", label: "Ward" },
+        { value: "NURSING_STATION", label: "Nursing Station" },
+        { value: "OT_THEATRE", label: "OT Theatre" },
+      ],
+    },
+    { name: "code", label: "Code", type: "text", listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    { name: "nameHindi", label: "Name (Hindi)", type: "text" },
+    { name: "parentId", label: "Parent Location", type: "number", listable: true },
+    { name: "sequenceNo", label: "Sequence No.", type: "number" },
+    { name: "isUniqueSequence", label: "Unique Sequence", type: "boolean" },
+    { name: "tokenPrefix", label: "Token Prefix", type: "text" },
+    { name: "isRoomAmenities", label: "Room Amenities", type: "boolean" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Subunit master (Subunit.java). Unit-scoped. */
+const subunit: EntityMeta = {
+  name: "subunit",
+  label: "Subunit",
+  idField: "id",
+  searchFields: ["code", "description"],
+  allowedFilters: ["status"],
+  fields: [
+    idField,
+    unitIdField,
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "description", label: "Description", type: "text", listable: true },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Geo Country master (GeoCountry.java). Global scope (unit_id NULL). */
+const geoCountry: EntityMeta = {
+  name: "geo-country",
+  label: "Country",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status"],
+  fields: [
+    idField,
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    { name: "isDefault", label: "Default Country", type: "boolean", listable: true },
+    { name: "nationalityName", label: "Nationality", type: "text", listable: true },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Geo State master (GeoState.java). Global scope (unit_id NULL). */
+const geoState: EntityMeta = {
+  name: "geo-state",
+  label: "State",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status", "countryId"],
+  fields: [
+    idField,
+    { name: "countryId", label: "Country", type: "number", required: true, listable: true },
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    { name: "nameHindi", label: "Name (Hindi)", type: "text" },
+    { name: "abdmCode", label: "ABDM Code", type: "text" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Geo District master (GeoDistrict.java). Global scope (unit_id NULL). */
+const geoDistrict: EntityMeta = {
+  name: "geo-district",
+  label: "District",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status", "zoneId", "stateId"],
+  fields: [
+    idField,
+    { name: "stateId", label: "State", type: "number", required: true, listable: true },
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    { name: "census2011Code", label: "Census 2011 Code", type: "text" },
+    { name: "zoneId", label: "Zone ID", type: "number" },
+    { name: "abdmDistrictCode", label: "ABDM District Code", type: "text" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Geo City master (GeoCity.java). Global scope (unit_id NULL). */
+const geoCity: EntityMeta = {
+  name: "geo-city",
+  label: "City",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status", "districtId", "stateId"],
+  fields: [
+    idField,
+    { name: "stateId", label: "State", type: "number", required: true, listable: true },
+    { name: "districtId", label: "District", type: "number", listable: true },
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    { name: "censusCode", label: "Census Code", type: "text" },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
+/** Geo Area master (GeoArea.java). Global scope (unit_id NULL). */
+const geoArea: EntityMeta = {
+  name: "geo-area",
+  label: "Area",
+  idField: "id",
+  searchFields: ["code", "name"],
+  allowedFilters: ["status", "cityId"],
+  fields: [
+    idField,
+    { name: "cityId", label: "City", type: "number", required: true, listable: true },
+    { name: "code", label: "Code", type: "text", required: true, listable: true },
+    { name: "name", label: "Name", type: "text", required: true, listable: true },
+    statusField,
+    addedDatetimeField,
+  ],
+};
+
 export const ENTITY_METADATA: Record<string, EntityMeta> = {
   [unitMaster.name]: unitMaster,
   [departmentMaster.name]: departmentMaster,
   [companyMaster.name]: companyMaster,
+  [doctor.name]: doctor,
+  [doctorType.name]: doctorType,
+  [specialization.name]: specialization,
+  [facilityLocation.name]: facilityLocation,
+  [subunit.name]: subunit,
+  [geoCountry.name]: geoCountry,
+  [geoState.name]: geoState,
+  [geoDistrict.name]: geoDistrict,
+  [geoCity.name]: geoCity,
+  [geoArea.name]: geoArea,
 };
 
 /** Metadata for a registry entity; falls back to a generic text-only model. */

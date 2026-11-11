@@ -8,6 +8,7 @@ import com.hims.appointment.application.exceptions.SlotAlreadyBookedException;
 import com.hims.appointment.configuration.SecurityConfig;
 import com.hims.appointment.domain.model.Appointment;
 import com.hims.appointment.domain.model.AppointmentStatus;
+import com.hims.appointment.domain.model.DoctorSchedule;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -280,7 +281,7 @@ class AppointmentControllerTest {
                         "scheduleId", 3L, "doctorId", 11L, "date", "2027-03-01",
                         "slotStart", "09:30", "slotEnd", "10:00",
                         "booked", false, "capacity", 1, "bookedCount", 0))));
-        when(service.listSchedules(isNull())).thenReturn(List.of());
+        when(service.listSchedules(isNull(), isNull())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/doctors/11/slots")
                         .with(jwt()).param("date", "2027-03-01"))
@@ -293,5 +294,35 @@ class AppointmentControllerTest {
                         .param("unitId", "1").param("dayOfWeek", "1")
                         .param("startTime", "09:00").param("endTime", "12:00"))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void listSchedules_filtersByDepartmentId() throws Exception {
+        DoctorSchedule s = new DoctorSchedule();
+        s.setId(10L);
+        s.setDoctorId(5L);
+        s.setDepartmentId(1L);
+        s.setDayOfWeek((short) 1);
+        s.setStartTime(LocalTime.of(9, 0));
+        s.setEndTime(LocalTime.of(17, 0));
+        s.setStatus(true);
+
+        when(service.listSchedules(isNull(), eq(1L))).thenReturn(List.of(s));
+
+        mockMvc.perform(get("/api/v1/doctors/schedules")
+                        .with(jwt())
+                        .param("departmentId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(10))
+                .andExpect(jsonPath("$[0].doctorId").value(5))
+                .andExpect(jsonPath("$[0].departmentId").value(1));
+
+        mockMvc.perform(get("/api/v1/doctors/schedules")
+                        .with(jwt())
+                        .param("deptId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(10))
+                .andExpect(jsonPath("$[0].doctorId").value(5))
+                .andExpect(jsonPath("$[0].departmentId").value(1));
     }
 }

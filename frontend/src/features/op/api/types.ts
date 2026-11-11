@@ -90,16 +90,54 @@ export type AppointmentStatus =
 
 export type AppointmentSource = "WALK_IN" | "ONLINE" | "EMERGENCY" | "TELECONSULT" | "FPV" | "RGHS";
 
+/** Doctor schedule master (DoctorSchedule.java) */
+export interface DoctorSchedule {
+  id: number;
+  doctorId: number;
+  departmentId?: number;
+  clinicId?: number;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotMinutes?: number;
+  cabin?: string;
+  unitId?: number;
+  status?: boolean;
+}
+
 export interface AppointmentSlot {
   slotId: number;
+  scheduleId?: number;
   doctorId: number;
-  doctorName: string;
+  doctorName?: string;
+  departmentId?: number;
+  date?: string;
+  slotStart?: string;
+  slotEnd?: string;
   startAt: string;        // ISO-8601
   endAt: string;
+  cabin?: string;
   capacity: number;
   booked: number;
+  bookedCount?: number;
   /** Computed for convenience; true iff booked < capacity. */
   available: boolean;
+}
+
+export interface BookingRequest {
+  patientId: number;
+  doctorId: number;
+  departmentId: number;
+  scheduleId?: number;
+  apptDate?: string;
+  slotStart?: string;
+  cabin?: string;
+  cabinId?: number;
+  unitId?: number;
+  startAt?: string;
+  endAt?: string;
+  source?: AppointmentSource;
+  notes?: string;
 }
 
 export interface Appointment {

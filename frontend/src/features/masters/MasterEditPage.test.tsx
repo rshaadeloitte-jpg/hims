@@ -40,6 +40,7 @@ function renderEditPage(entry: string) {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[entry]}>
         <Routes>
+          <Route path="/masters/:entity/new" element={<MasterEditPage />} />
           <Route path="/masters/:entity/:id" element={<MasterEditPage />} />
           {/* post-save navigation target (list) — keeps router warnings out */}
           <Route path="/masters/:entity" element={<div>list fallback</div>} />
@@ -110,5 +111,35 @@ describe("MasterEditPage — unit-scoped entity edit (F-6)", () => {
   it("falls back to unscoped GET when no unitId is carried", async () => {
     renderEditPage("/masters/unitmaster/3");
     await waitFor(() => expect(api.getById).toHaveBeenCalledWith("unitmaster", "3", undefined));
+  });
+
+  it("renders 'New Doctor' title and input fields on /masters/doctor/new?unitId=1", async () => {
+    const user = userEvent.setup();
+    api.create.mockResolvedValue({ id: 101, unitId: 1, firstName: "Anita", lastName: "Sharma" });
+
+    renderEditPage("/masters/doctor/new?unitId=1");
+
+    // Title must be 'New Doctor', not 'Edit Doctor'
+    expect(await screen.findByRole("heading", { name: "New Doctor" })).toBeInTheDocument();
+    expect(screen.getByText(/doctor · create mode \(POST\) · unitId 1/)).toBeInTheDocument();
+
+    // Verify fields are rendered
+    expect(screen.getByLabelText(/^First Name/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Last Name/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Mobile No\./)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Email/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Doctor Type/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Specialization/)).toBeInTheDocument();
+
+    // Fill in required fields and save
+    await user.type(screen.getByLabelText(/^First Name/), "Anita");
+    await user.type(screen.getByLabelText(/^Last Name/), "Sharma");
+    await user.click(screen.getByRole("button", { name: /Save/ }));
+
+    await waitFor(() => expect(api.create).toHaveBeenCalledTimes(1));
+    const [entity, payload, unitId] = api.create.mock.calls[0];
+    expect(entity).toBe("doctor");
+    expect(unitId).toBe(1);
+    expect(payload).toMatchObject({ firstName: "Anita", lastName: "Sharma", unitId: 1 });
   });
 });

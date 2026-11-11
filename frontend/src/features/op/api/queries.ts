@@ -13,6 +13,7 @@ import type {
   AppointmentSlot,
   Department,
   Doctor,
+  DoctorSchedule,
   Patient,
   PatientSearchQuery,
   QueueToken,
@@ -103,19 +104,120 @@ export function useDepartments(unitId?: number | null) {
   });
 }
 
+/**
+ * Derives unique doctor records from DoctorSchedule rows, resolving names
+ * from doctor master records if the schedule row does not provide a name.
+ */
+export function deriveDoctorsFromSchedules(
+  schedules: DoctorSchedule[],
+  doctorMasters?: Array<Record<string, unknown>>,
+): Doctor[] {
+  const masterMap = new Map<number, string>();
+  if (doctorMasters) {
+    for (const d of doctorMasters) {
+      const id = Number(d.id);
+      if (!id) continue;
+      const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ");
+      const name = fullName
+        ? (fullName.startsWith("Dr.") ? fullName : `Dr. ${fullName}`)
+        : (d.name ? String(d.name) : `Doctor #${id}`);
+      masterMap.set(id, name);
+    }
+  }
+
+  const seenDoctorIds = new Set<number>();
+  const doctors: Doctor[] = [];
+
+  for (const s of schedules) {
+    const raw = s as unknown as Record<string, unknown>;
+    const doctorId = typeof s.doctorId === "number" ? s.doctorId : Number(raw.id);
+    if (!doctorId || seenDoctorIds.has(doctorId)) continue;
+    seenDoctorIds.add(doctorId);
+
+    const inlineName = (raw.name as string | undefined) ?? (raw.doctorName as string | undefined);
+    const name = inlineName ?? masterMap.get(doctorId) ?? `Doctor #${doctorId}`;
+
+    doctors.push({
+      id: doctorId,
+      name,
+      departmentId: s.departmentId ?? 0,
+      isActive: s.status !== false,
+    });
+  }
+
+  return doctors;
+}
+
 export function useDoctorSchedules(departmentId?: number) {
+  const sessionUnitId = useOpSession().unitId;
   return useQuery({
     queryKey: opKeys.doctorSchedules(departmentId),
-    queryFn: () => appointmentApi.doctorSchedules(departmentId),
+    queryFn: async (): Promise<Doctor[]> => {
+      const schedules = await appointmentApi.doctorSchedules(departmentId);
+      const needsNameResolution = schedules.some((s) => {
+        const raw = s as unknown as Record<string, unknown>;
+        return !raw.name && !raw.doctorName;
+      });
+
+      let doctorMasters: Array<Record<string, unknown>> | undefined;
+      if (needsNameResolution && schedules.length > 0) {
+        try {
+          doctorMasters = await appointmentApi.doctorsMaster(sessionUnitId);
+        } catch {
+          // If master lookup fails, fall back gracefully to Doctor #id
+        }
+      }
+
+      return deriveDoctorsFromSchedules(schedules, doctorMasters);
+    },
     enabled: departmentId != null,
     staleTime: 60_000,
+  });
+}
+
+export function normalizeSlots(rawSlots: AppointmentSlot[]): AppointmentSlot[] {
+  return (rawSlots ?? []).map((s, idx) => {
+    const raw = s as unknown as Record<string, unknown>;
+    const scheduleId = (raw.scheduleId as number) ?? (raw.slotId as number) ?? idx + 1;
+    const slotId = (raw.slotId as number) ?? scheduleId;
+    const doctorId = Number(raw.doctorId);
+    const date = (raw.date as string) ?? (typeof raw.startAt === "string" ? raw.startAt.slice(0, 10) : "");
+    const slotStart = (raw.slotStart as string) ?? (typeof raw.startAt === "string" && raw.startAt.includes("T") ? raw.startAt.split("T")[1] : "");
+    const slotEnd = (raw.slotEnd as string) ?? (typeof raw.endAt === "string" && raw.endAt.includes("T") ? raw.endAt.split("T")[1] : "");
+    const startAt = (raw.startAt as string) ?? (date && slotStart ? `${date}T${slotStart}` : "");
+    const endAt = (raw.endAt as string) ?? (date && slotEnd ? `${date}T${slotEnd}` : startAt);
+    const capacity = typeof raw.capacity === "number" ? raw.capacity : 1;
+    const bookedCount = typeof raw.bookedCount === "number" ? raw.bookedCount : (typeof raw.booked === "number" ? raw.booked : 0);
+    const booked = typeof raw.booked === "boolean" ? raw.booked : bookedCount >= capacity;
+    const available = raw.available !== undefined ? Boolean(raw.available) : !booked;
+
+    return {
+      slotId,
+      scheduleId,
+      doctorId,
+      departmentId: raw.departmentId as number | undefined,
+      doctorName: raw.doctorName as string | undefined,
+      date,
+      slotStart,
+      slotEnd,
+      startAt,
+      endAt,
+      cabin: raw.cabin as string | undefined,
+      capacity,
+      booked: bookedCount,
+      bookedCount,
+      available,
+    };
   });
 }
 
 export function useDoctorSlots(doctorId: number | undefined, date: string | undefined) {
   return useQuery({
     queryKey: opKeys.doctorSlots(doctorId ?? -1, date ?? ""),
-    queryFn: () => appointmentApi.slots(doctorId!, date!),
+    queryFn: async (): Promise<AppointmentSlot[]> => {
+      const raw = await appointmentApi.slots(doctorId!, date!);
+      return normalizeSlots(raw);
+    },
     enabled: doctorId != null && !!date,
     staleTime: 30_000,
   });
