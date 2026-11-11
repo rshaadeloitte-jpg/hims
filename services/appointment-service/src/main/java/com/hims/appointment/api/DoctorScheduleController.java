@@ -51,9 +51,14 @@ public class DoctorScheduleController {
     }
 
     @GetMapping("/api/v1/doctors/schedules")
-    @Operation(summary = "List doctor schedules", description = "Optional doctorId filter; active schedules only when filtered.")
-    public List<DoctorSchedule> listSchedules(@RequestParam(required = false) Long doctorId) {
-        return service.listSchedules(doctorId);
+    @Operation(summary = "List doctor schedules",
+            description = "Optional doctorId and deptId/departmentId filter; active schedules only when filtered.")
+    public List<DoctorSchedule> listSchedules(
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long deptId,
+            @RequestParam(required = false) Long departmentId) {
+        Long effectiveDeptId = deptId != null ? deptId : departmentId;
+        return service.listSchedules(doctorId, effectiveDeptId);
     }
 
     @GetMapping("/api/v1/doctors/{doctorId}/slots")

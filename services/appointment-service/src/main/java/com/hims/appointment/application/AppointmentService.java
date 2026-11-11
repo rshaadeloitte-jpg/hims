@@ -118,9 +118,19 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<DoctorSchedule> listSchedules(Long doctorId) {
-        return doctorId == null
-                ? scheduleRepository.findAll()
-                : scheduleRepository.findByDoctorIdAndStatusTrue(doctorId);
+        return listSchedules(doctorId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoctorSchedule> listSchedules(Long doctorId, Long departmentId) {
+        if (doctorId != null && departmentId != null) {
+            return scheduleRepository.findByDoctorIdAndDepartmentIdAndStatusTrue(doctorId, departmentId);
+        } else if (doctorId != null) {
+            return scheduleRepository.findByDoctorIdAndStatusTrue(doctorId);
+        } else if (departmentId != null) {
+            return scheduleRepository.findByDepartmentIdAndStatusTrue(departmentId);
+        }
+        return scheduleRepository.findAll();
     }
 
     // ------------------------------------------------------------------ slot search

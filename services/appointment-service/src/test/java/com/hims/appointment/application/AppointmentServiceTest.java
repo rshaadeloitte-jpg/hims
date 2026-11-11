@@ -331,4 +331,29 @@ class AppointmentServiceTest {
                 .isInstanceOf(InvalidAppointmentRequestException.class)
                 .hasFieldOrPropertyWithValue("errorCode", "BEXA003");
     }
+
+    @Test
+    void listSchedules_filtersByDepartmentIdAndStatusTrue() {
+        DoctorSchedule s = new DoctorSchedule();
+        s.setId(101L);
+        s.setDepartmentId(2L);
+        when(schedules.findByDepartmentIdAndStatusTrue(2L)).thenReturn(List.of(s));
+
+        List<DoctorSchedule> result = service.listSchedules(null, 2L);
+        assertThat(result).containsExactly(s);
+        verify(schedules).findByDepartmentIdAndStatusTrue(2L);
+    }
+
+    @Test
+    void listSchedules_filtersByDoctorAndDepartment() {
+        DoctorSchedule s = new DoctorSchedule();
+        s.setId(102L);
+        s.setDoctorId(5L);
+        s.setDepartmentId(2L);
+        when(schedules.findByDoctorIdAndDepartmentIdAndStatusTrue(5L, 2L)).thenReturn(List.of(s));
+
+        List<DoctorSchedule> result = service.listSchedules(5L, 2L);
+        assertThat(result).containsExactly(s);
+        verify(schedules).findByDoctorIdAndDepartmentIdAndStatusTrue(5L, 2L);
+    }
 }

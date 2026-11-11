@@ -76,4 +76,43 @@ describe("entityMeta → zod schema conversion (mini FAUG-schema adapter)", () =
     expect(typeof schema.parse).toBe("function");
     expect(schema._def.typeName).toBe("ZodObject");
   });
+
+  it("validates doctor schema with required firstName and lastName", () => {
+    const doctorMeta = getEntityMeta("doctor")!;
+    expect(doctorMeta).toBeDefined();
+    const docSchema = entityMetaToZod(doctorMeta);
+
+    // Missing required names fails
+    expect(docSchema.safeParse({ unitId: 1 }).success).toBe(false);
+    expect(docSchema.safeParse({ unitId: 1, firstName: "Anita" }).success).toBe(false);
+
+    // Valid doctor passes
+    const valid = docSchema.safeParse({
+      unitId: 1,
+      firstName: "Anita",
+      lastName: "Sharma",
+      mobileNo: "9876543210",
+      doctorTypeId: 2,
+    });
+    expect(valid.success).toBe(true);
+    if (valid.success) {
+      expect(valid.data.firstName).toBe("Anita");
+      expect(valid.data.lastName).toBe("Sharma");
+      expect(valid.data.doctorTypeId).toBe(2);
+    }
+  });
+
+  it("has metadata registered for all 13 entities", () => {
+    const all13 = [
+      "unitmaster", "departmentmaster", "companymaster",
+      "doctor", "doctor-type", "specialization", "facility-location", "subunit",
+      "geo-country", "geo-state", "geo-district", "geo-city", "geo-area",
+    ];
+    for (const name of all13) {
+      const meta = getEntityMeta(name);
+      expect(meta).not.toBeNull();
+      expect(meta?.name).toBe(name);
+      expect(meta?.fields.length).toBeGreaterThan(1);
+    }
+  });
 });

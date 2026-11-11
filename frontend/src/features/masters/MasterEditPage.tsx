@@ -17,18 +17,18 @@ import { useMasterDetail, useSaveMaster } from "./queries";
  * unit-scoped entities (departmentmaster/companymaster); Unitmaster is id-only.
  */
 export function MasterEditPage() {
-  const { entity = "", id = "" } = useParams<{ entity: string; id: string }>();
+  const { entity = "", id } = useParams<{ entity: string; id?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isCreate = id === "new";
+  const isCreate = !id || id === "new";
 
   const unitIdParam = searchParams.get("unitId");
   const unitId =
     unitIdParam !== null && !Number.isNaN(Number(unitIdParam)) ? Number(unitIdParam) : undefined;
 
   const meta = getEntityMeta(entity);
-  const detailQuery = useMasterDetail(entity, id, isCreate ? undefined : unitId);
-  const save = useSaveMaster(entity, id, unitId);
+  const detailQuery = useMasterDetail(entity, id ?? "", isCreate ? undefined : unitId);
+  const save = useSaveMaster(entity, isCreate ? "new" : (id ?? ""), unitId);
   const submitting = save.isPending;
 
   const backToList = () => navigate(`/masters/${entity}`);

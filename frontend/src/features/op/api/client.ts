@@ -7,8 +7,10 @@ import type {
   AppointmentSlot,
   AppointmentSource,
   AppointmentStatus,
+  BookingRequest,
   Department,
   Doctor,
+  DoctorSchedule,
   Patient,
   PatientSearchHit,
   PatientSearchQuery,
@@ -175,16 +177,16 @@ export const appointmentApi = {
   get: (id: number) => request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}`),
 
   /** POST /api/v1/appointments — create (BR-APT-001 unique-slot). */
-  create: (body: {
-    patientId: number;
-    doctorId: number;
-    departmentId: number;
-    cabinId?: number;
-    startAt: string;
-    endAt: string;
-    source?: AppointmentSource;
-    notes?: string;
-  }) => request<Appointment>(APPT_BASE, "/api/v1/appointments", { method: "POST", body }),
+  create: (body: BookingRequest) => {
+    const payload: Record<string, unknown> = { ...body };
+    if (!payload.apptDate && body.startAt) {
+      payload.apptDate = body.startAt.slice(0, 10);
+    }
+    if (!payload.slotStart && body.startAt) {
+      payload.slotStart = body.startAt.includes("T") ? body.startAt.split("T")[1] : body.startAt;
+    }
+    return request<Appointment>(APPT_BASE, "/api/v1/appointments", { method: "POST", body: payload });
+  },
 
   /** PUT /api/v1/appointments/{id}/cancel — terminal 4. */
   cancel: (id: number, reason: string) =>
@@ -206,9 +208,22 @@ export const appointmentApi = {
   slots: (doctorId: number, date: string) =>
     request<AppointmentSlot[]>(APPT_BASE, `/api/v1/doctors/${doctorId}/slots`, { query: { date } }),
 
-  /** GET /api/v1/doctors/schedules — weekly schedule master. */
-  doctorSchedules: (departmentId?: number) =>
-    request<Doctor[]>(APPT_BASE, "/api/v1/doctors/schedules", { query: { departmentId } }),
+  /** GET /api/v1/doctors/schedules — weekly schedule master (optional departmentId / doctorId filter). */
+  doctorSchedules: (departmentId?: number, doctorId?: number) =>
+    request<DoctorSchedule[]>(APPT_BASE, "/api/v1/doctors/schedules", {
+      query: {
+        ...(departmentId != null ? { departmentId } : {}),
+        ...(doctorId != null ? { doctorId } : {}),
+      },
+    }),
+
+  /** GET /api/v1/masters/doctor — doctor master list for resolving names (unitId optional). */
+  doctorsMaster: (unitId?: number | null) =>
+    request<Array<Record<string, unknown>>>(
+      APPT_BASE,
+      unitId != null ? "/api/v1/masters/doctor" : "/api/v1/masters/doctor/all",
+      { query: unitId != null ? { unitId } : undefined },
+    ),
 
   /** GET /api/v1/masters/departmentmaster/all?unitId= — department list for the cascade (unit-scoped; unitId optional). */
   departments: (unitId?: number | null) =>
@@ -281,8 +296,10 @@ export type {
   AppointmentSlot,
   AppointmentSource,
   AppointmentStatus,
+  BookingRequest,
   Department,
   Doctor,
+  DoctorSchedule,
   Patient,
   PatientSearchHit,
   PatientSearchQuery,
