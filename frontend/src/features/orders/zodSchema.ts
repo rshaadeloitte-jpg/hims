@@ -21,12 +21,64 @@ const optionalString = z
 
 // ---- Clinical order -------------------------------------------------------
 
-export const clinicalOrderSchema = z.object({
-  patientId: z.coerce.number().int().positive("Patient ID required"),
-  orderType: z.string().min(1, "Order type required"),
-  description: z.string().min(1, "Description required"),
-  priority: z.enum(["ROUTINE", "URGENT", "STAT"]),
+export const clinicalOrderItemSchema = z.object({
+  itemType: z.enum(["LAB", "RADIOLOGY", "NURSING", "CONSULTATION"], {
+    errorMap: () => ({ message: "Item type must be LAB, RADIOLOGY, NURSING, or CONSULTATION" }),
+  }),
+  itemId: z
+    .preprocess((v) => (v === "" || v == null ? 1 : v), z.coerce.number().int().positive().default(1)),
+  serviceName: z.string().trim().min(1, "Service name is required"),
+  rate: z.coerce.number().min(0, "Rate must be >= 0"),
+  qty: z.coerce.number().int().positive("Qty must be > 0"),
+  doctorSharePercent: z
+    .preprocess(
+      (v) => (v === "" || v == null ? undefined : v),
+      z.coerce.number().min(0, "Doctor share must be >= 0").max(100, "Doctor share must be <= 100").optional(),
+    ),
 });
+
+export type ClinicalOrderItemForm = z.infer<typeof clinicalOrderItemSchema>;
+
+export const clinicalOrderSchema = z
+  .object({
+    patientId: z.coerce.number().int().positive("Patient ID is required"),
+    prescriberId: z.coerce.number().int().positive("Prescriber ID is required"),
+    encounterId: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().int().positive("Encounter ID must be positive").optional(),
+      ),
+    admissionId: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().int().positive("Admission ID must be positive").optional(),
+      ),
+    wardId: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().int().positive("Ward ID must be positive").optional(),
+      ),
+    concessionPercent: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().min(0, "Concession % must be >= 0").max(100, "Concession % must be <= 100").optional(),
+      ),
+    pharmacyPrescriptionId: z
+      .preprocess(
+        (v) => (v === "" || v == null ? undefined : v),
+        z.coerce.number().int().positive("Prescription ID must be positive").optional(),
+      ),
+    items: z.array(clinicalOrderItemSchema).min(1, "At least one item is required"),
+  })
+  .refine(
+    (data) =>
+      (data.encounterId != null && data.admissionId == null) ||
+      (data.encounterId == null && data.admissionId != null),
+    {
+      message: "Exactly one of encounterId or admissionId must be provided",
+      path: ["encounterId"],
+    },
+  );
 
 export type ClinicalOrderForm = z.infer<typeof clinicalOrderSchema>;
 

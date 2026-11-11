@@ -50,6 +50,10 @@ export function OrderDetail() {
   if (orderLoading) return <p className="muted">Loading order…</p>;
   if (!order) return <p className="muted">Order not found.</p>;
 
+  const status = order.status ?? "PENDING";
+  const priority = order.priority ?? "ROUTINE";
+  const orderedAt = order.orderedAt ?? order.addedDatetime ?? "";
+
   const handleStatusUpdate = async (values: OrderStatusUpdateForm) => {
     await updateStatus.mutateAsync({ id: orderId, status: values.status });
   };
@@ -58,17 +62,17 @@ export function OrderDetail() {
     <section className="page">
       <header className="page__header">
         <div>
-          <h1>Order #{order.id}</h1>
+          <h1>Order #{order.orderId ?? order.id}</h1>
           <p className="muted">
-            {order.patientName} · {order.orderType} · {order.priority}
+            {order.patientName ?? `Patient #${order.patientId}`} · {order.orderType ?? "ORDER"} · {priority}
           </p>
         </div>
         <div className="page__actions">
           <span
             className="badge"
-            style={{ backgroundColor: STATUS_COLORS[order.status] ?? "var(--color-border)", color: "white" }}
+            style={{ backgroundColor: STATUS_COLORS[status] ?? "var(--color-border)", color: "white" }}
           >
-            {order.status}
+            {status}
           </span>
         </div>
       </header>
@@ -77,25 +81,25 @@ export function OrderDetail() {
       <div className="card-grid">
         <div className="card">
           <label>Patient</label>
-          <strong>{order.patientName}</strong>
+          <strong>{order.patientName ?? `Patient #${order.patientId}`}</strong>
         </div>
         <div className="card">
           <label>Type</label>
-          <strong>{order.orderType}</strong>
+          <strong>{order.orderType ?? "ORDER"}</strong>
         </div>
         <div className="card">
           <label>Priority</label>
-          <strong className={`badge ${PRIORITY_BADGES[order.priority] ?? ""}`}>
-            {order.priority}
+          <strong className={`badge ${PRIORITY_BADGES[priority] ?? ""}`}>
+            {priority}
           </strong>
         </div>
         <div className="card">
           <label>Ordered By</label>
-          <strong>{order.orderedBy}</strong>
+          <strong>{order.orderedBy ?? "—"}</strong>
         </div>
         <div className="card">
           <label>Ordered At</label>
-          <strong>{new Date(order.orderedAt).toLocaleString()}</strong>
+          <strong>{orderedAt ? new Date(orderedAt).toLocaleString() : "—"}</strong>
         </div>
       </div>
 

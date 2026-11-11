@@ -15,23 +15,83 @@ async function ordJson<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export const ORDER_ITEM_TYPES = ["LAB", "RADIOLOGY", "NURSING", "CONSULTATION"] as const;
+export type OrderItemType = (typeof ORDER_ITEM_TYPES)[number];
+
+export function getOrderStatusLabel(statusCode?: number | null, fallbackStatus?: string | null): string {
+  if (statusCode != null) {
+    switch (statusCode) {
+      case 1:
+        return "INITIATED";
+      case 2:
+        return "CONFIRMED";
+      case 3:
+        return "CANCELLED";
+      case 4:
+        return "FAILED";
+      default:
+        return String(statusCode);
+    }
+  }
+  return fallbackStatus ?? "—";
+}
+
+export interface OrderItemInput {
+  itemType: OrderItemType | string;
+  itemId?: number;
+  serviceName: string;
+  rate: number;
+  qty: number;
+  doctorSharePercent?: number;
+}
+
+export interface OrderItem extends OrderItemInput {
+  orderId?: number;
+  lineNo?: number;
+}
+
 export interface ClinicalOrder {
-  id: number;
+  orderId?: number;
+  id?: number;
   patientId: number;
-  patientName: string;
-  orderType: string;
-  description: string;
-  status: string;
-  priority: string;
-  orderedBy: string;
-  orderedAt: string;
+  encounterId?: number | null;
+  admissionId?: number | null;
+  prescriberId?: number;
+  wardId?: number | null;
+  statusCode?: number;
+  grossTotal?: number;
+  concessionPercent?: number;
+  concessionAmount?: number;
+  netTotal?: number;
+  rejectionReason?: string | null;
+  pharmacyPrescriptionId?: number | null;
+  items?: OrderItem[];
+  addedDatetime?: string;
+
+  // Optional legacy fields for backward-compat with OrderDetail mock
+  patientName?: string;
+  orderType?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  orderedBy?: string;
+  orderedAt?: string;
 }
 
 export interface ClinicalOrderInput {
   patientId: number;
-  orderType: string;
-  description: string;
-  priority: string;
+  prescriberId: number;
+  encounterId?: number | null;
+  admissionId?: number | null;
+  wardId?: number | null;
+  concessionPercent?: number;
+  pharmacyPrescriptionId?: number | null;
+  items: OrderItemInput[];
+
+  // Optional legacy fields for backward-compat
+  orderType?: string;
+  description?: string;
+  priority?: string;
 }
 
 export function useClinicalOrders() {
@@ -46,6 +106,15 @@ export function useCreateClinicalOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ClinicalOrderInput) => ordJson<ClinicalOrder>(`${ORD_BASE}/v1/orders`, { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clinical-orders"] }),
+  });
+}
+
+export function useCancelClinicalOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      ordJson<ClinicalOrder>(`${ORD_BASE}/v1/orders/${id}/cancel`, { method: "POST" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["clinical-orders"] }),
   });
 }

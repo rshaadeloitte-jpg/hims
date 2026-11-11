@@ -11,13 +11,13 @@ export function CriticalAlerts() {
   const criticalAlerts: CriticalAlert[] = orders.flatMap(order =>
     (order.details ?? []).filter(d => d.isCritical && d.resultValue).map(detail => ({
       detailId: detail.detailId,
-      orderId: order.orderId,
+      orderId: order.bookingId ?? order.orderId ?? 0,
       patientId: order.patientId,
       patientName: order.patientName,
       testName: detail.testName,
       resultValue: detail.resultValue || '',
       referenceRange: detail.referenceRange || '',
-      criticalLevel: determineCriticalLevel(detail),
+      criticalLevel: determineCriticalLevel(detail as any),
       notifiedAt: detail.verifiedAt,
     }))
   );

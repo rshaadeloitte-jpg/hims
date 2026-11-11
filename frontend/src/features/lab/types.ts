@@ -19,13 +19,19 @@ export interface LabTest {
 }
 
 export interface LabOrder {
-  orderId: number;
+  bookingId?: number;
+  bookingNo?: string;
+  orderId?: number;
   patientId: number;
   patientName?: string;
   encounterId?: number;
   isOutSourced: boolean;
-  status: LabOrderStatus;
-  orderDate: string;
+  bookingStatus?: number;
+  status: LabOrderStatus | string | boolean;
+  orderDate?: string;
+  addedDatetime?: string;
+  finalizedAt?: string | null;
+  isCritical?: boolean;
   details?: LabDetail[];
 }
 

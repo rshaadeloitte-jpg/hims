@@ -13,46 +13,144 @@ import {
 } from "./zodSchema";
 
 describe("clinicalOrderSchema", () => {
-  it("accepts valid order", () => {
+  it("accepts valid order with encounterId and items", () => {
     const result = clinicalOrderSchema.safeParse({
-      patientId: 1,
-      orderType: "LAB",
-      description: "Fasting glucose",
-      priority: "ROUTINE",
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [
+        {
+          itemType: "LAB",
+          itemId: 10,
+          serviceName: "CBC",
+          rate: 500,
+          qty: 1,
+          doctorSharePercent: 10,
+        },
+        {
+          itemType: "CONSULTATION",
+          itemId: 20,
+          serviceName: "OPD consult",
+          rate: 100,
+          qty: 2,
+        },
+      ],
     });
     expect(result.success).toBe(true);
+  });
+
+  it("accepts valid order with admissionId", () => {
+    const result = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      admissionId: 9001,
+      wardId: 2,
+      concessionPercent: 10,
+      items: [
+        {
+          itemType: "RADIOLOGY",
+          serviceName: "Chest X-Ray",
+          rate: 800,
+          qty: 1,
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.items[0].itemId).toBe(1); // default
+    }
   });
 
   it("rejects missing patientId", () => {
     const result = clinicalOrderSchema.safeParse({
-      patientId: 0,
-      orderType: "LAB",
-      description: "Test",
-      priority: "ROUTINE",
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: 500, qty: 1 }],
     });
     expect(result.success).toBe(false);
   });
 
-  it("rejects invalid priority", () => {
+  it("rejects missing prescriberId", () => {
     const result = clinicalOrderSchema.safeParse({
-      patientId: 1,
-      orderType: "LAB",
-      description: "Test",
-      priority: "HIGH",
+      patientId: 501,
+      encounterId: 7001,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: 500, qty: 1 }],
     });
     expect(result.success).toBe(false);
   });
 
-  it("coerces string patientId", () => {
+  it("rejects when both encounterId and admissionId are supplied", () => {
     const result = clinicalOrderSchema.safeParse({
-      patientId: "42",
-      orderType: "LAB",
-      description: "Test",
-      priority: "URGENT",
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      admissionId: 9001,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: 500, qty: 1 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when neither encounterId nor admissionId is supplied", () => {
+    const result = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: 500, qty: 1 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty items", () => {
+    const result = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unknown itemType", () => {
+    const result = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [{ itemType: "PHARMACY", serviceName: "Paracetamol", rate: 50, qty: 1 }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects negative rate or zero qty", () => {
+    const negRate = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: -10, qty: 1 }],
+    });
+    expect(negRate.success).toBe(false);
+
+    const zeroQty = clinicalOrderSchema.safeParse({
+      patientId: 501,
+      prescriberId: 11,
+      encounterId: 7001,
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: 100, qty: 0 }],
+    });
+    expect(zeroQty.success).toBe(false);
+  });
+
+  it("coerces string IDs and numeric values", () => {
+    const result = clinicalOrderSchema.safeParse({
+      patientId: "501",
+      prescriberId: "11",
+      encounterId: "7001",
+      items: [{ itemType: "LAB", serviceName: "CBC", rate: "500", qty: "2" }],
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.patientId).toBe(42);
+      expect(result.data.patientId).toBe(501);
+      expect(result.data.prescriberId).toBe(11);
+      expect(result.data.encounterId).toBe(7001);
+      expect(result.data.items[0].rate).toBe(500);
+      expect(result.data.items[0].qty).toBe(2);
     }
   });
 });

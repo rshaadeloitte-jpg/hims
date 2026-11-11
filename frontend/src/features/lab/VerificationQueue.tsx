@@ -23,7 +23,7 @@ export function VerificationQueue() {
   const handleVerifyAll = async (order: LabOrder) => {
     const unverifiedDetails = order.details?.filter(d => d.status === 'COMPLETED' && !d.verified) ?? [];
     for (const detail of unverifiedDetails) {
-      await handleVerify(order.orderId, detail.detailId);
+      await handleVerify(order.bookingId ?? order.orderId ?? 0, detail.detailId);
     }
   };
 
@@ -40,18 +40,19 @@ export function VerificationQueue() {
           <div className="bg-gray-50 px-4 py-3 border-b border-gray-200"><h3 className="text-sm font-medium text-gray-900">Orders</h3></div>
           <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
             {pendingVerification.length === 0 ? (<div className="p-4 text-center text-gray-500 text-sm">No orders pending verification</div>) : pendingVerification.map((order) => {
+              const orderIdVal = order.bookingId ?? order.orderId ?? 0;
               const unverifiedCount = order.details?.filter(d => d.status === 'COMPLETED' && !d.verified).length ?? 0;
-              return (<div key={order.orderId} onClick={() => setSelectedOrder(order)} className={`p-4 cursor-pointer transition-colors ${selectedOrder?.orderId === order.orderId ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-gray-50'}`}><div className="flex items-center justify-between mb-2"><span className="font-mono text-sm font-medium text-gray-900">#{order.orderId}</span><span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">{unverifiedCount} pending</span></div><div className="text-xs text-gray-600">Patient #{order.patientId}</div></div>);
+              return (<div key={orderIdVal} onClick={() => setSelectedOrder(order)} className={`p-4 cursor-pointer transition-colors ${(selectedOrder?.bookingId ?? selectedOrder?.orderId) === orderIdVal ? 'bg-blue-50 border-l-4 border-l-blue-600' : 'hover:bg-gray-50'}`}><div className="flex items-center justify-between mb-2"><span className="font-mono text-sm font-medium text-gray-900">#{order.bookingNo ?? orderIdVal}</span><span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">{unverifiedCount} pending</span></div><div className="text-xs text-gray-600">Patient #{order.patientId}</div></div>);
             })}
           </div>
         </div>
         <div className="lg:col-span-2 border border-gray-200 rounded-lg overflow-hidden">
           {selectedOrder ? (<>
-            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between"><div><h3 className="text-sm font-medium text-gray-900">Order #{selectedOrder.orderId}</h3><p className="text-xs text-gray-500">Patient #{selectedOrder.patientId}</p></div><Button variant="primary" size="sm" onClick={() => handleVerifyAll(selectedOrder)} loading={verifyResult.isPending || finalizeResult.isPending} loadingText="Verifying..." disabled={verifyResult.isPending || finalizeResult.isPending}>{verifyResult.isPending || finalizeResult.isPending ? 'Verifying...' : 'Verify All'}</Button></div>
+            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between"><div><h3 className="text-sm font-medium text-gray-900">Order #{selectedOrder.bookingNo ?? selectedOrder.bookingId ?? selectedOrder.orderId}</h3><p className="text-xs text-gray-500">Patient #{selectedOrder.patientId}</p></div><Button variant="primary" size="sm" onClick={() => handleVerifyAll(selectedOrder)} loading={verifyResult.isPending || finalizeResult.isPending} loadingText="Verifying..." disabled={verifyResult.isPending || finalizeResult.isPending}>{verifyResult.isPending || finalizeResult.isPending ? 'Verifying...' : 'Verify All'}</Button></div>
             <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
               {selectedOrder.details?.filter(d => d.status === 'COMPLETED' && !d.verified).map((detail) => (
                 <div key={detail.detailId} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></div><Button variant="primary" size="sm" onClick={() => handleVerify(selectedOrder.orderId, detail.detailId)} loading={verifyResult.isPending} loadingText="Verify">Verify</Button></div>
+                  <div className="flex items-start justify-between mb-3"><div><div className="text-sm font-medium text-gray-900">{detail.testName}</div><div className="text-xs text-gray-500 font-mono">{detail.testCode}</div></div><Button variant="primary" size="sm" onClick={() => handleVerify(selectedOrder.bookingId ?? selectedOrder.orderId ?? 0, detail.detailId)} loading={verifyResult.isPending} loadingText="Verify">Verify</Button></div>
                   <div className="grid grid-cols-2 gap-4 text-sm"><div><Text fontSize="sm" fontWeight="medium">Result</Text><div className={`font-mono text-lg mt-1 ${detail.isCritical ? 'text-red-600 font-bold' : 'text-gray-900'}`}>{detail.resultValue || 'N/A'}{detail.resultUnit && <span className="text-sm text-gray-500 ml-1">{detail.resultUnit}</span>}</div></div><div><Text fontSize="sm" fontWeight="medium">Reference Range</Text><div className="font-mono text-lg text-gray-600 mt-1">{detail.referenceRange || 'N/A'}</div></div></div>
                   {detail.isCritical && <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded"><p className="text-xs text-red-800 font-semibold">⚠️ CRITICAL VALUE - Immediate notification required</p></div>}
                   {detail.remarks && <div className="mt-3"><Text fontSize="sm" fontWeight="medium">Remarks</Text><p className="text-sm text-gray-700 mt-1">{detail.remarks}</p></div>}

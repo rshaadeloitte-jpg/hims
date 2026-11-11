@@ -18,23 +18,51 @@ async function labJson<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ---- Types -----------------------------------------------------------------
 
+export const LAB_ORDER_STATUS_MAP: Record<number, string> = {
+  1: "ORDERED",
+  2: "SAMPLE_COLLECTED",
+  3: "IN_PROGRESS",
+  4: "FINALIZED",
+  5: "CANCELLED",
+};
+
+export function getLabOrderStatusLabel(status?: number | string | boolean | null): string {
+  if (status == null || typeof status === "boolean") return "—";
+  if (typeof status === "number") {
+    return LAB_ORDER_STATUS_MAP[status] ?? String(status);
+  }
+  const numeric = Number(status);
+  if (!isNaN(numeric) && LAB_ORDER_STATUS_MAP[numeric]) {
+    return LAB_ORDER_STATUS_MAP[numeric];
+  }
+  return String(status);
+}
+
 export interface LabOrder {
-  orderId: number;
+  bookingId?: number;
+  bookingNo?: string;
+  orderId?: number;
   patientId: number;
   patientName?: string;
-  encounterId?: number;
+  encounterId?: number | null;
   isOutSourced: boolean;
-  status: string; // e.g. ORDERED / COLLECTED / IN_PROGRESS / CANCELLED
-  orderDate: string;
+  bookingStatus?: number;
+  status?: string | boolean;
+  orderDate?: string;
+  addedDatetime?: string;
+  finalizedAt?: string | null;
+  isCritical?: boolean;
   details?: LabDetail[];
 }
 
 export interface LabDetail {
   detailId: number;
+  bookingId?: number;
   orderId?: number;
   testId?: number;
   testName: string;
   testCode?: string;
+  detailStatus?: number;
   status: string;
   barcode?: string;
   critical?: boolean;
