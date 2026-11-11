@@ -12,7 +12,7 @@ import java.sql.Timestamp;
  * pass_no = ATT/yy/seq, status ISSUED -> RETURNED.
  */
 @Entity
-@Table(name = "t_attendant_pass")
+@Table(name = "t_attendant_pass", schema = "ihms_adt")
 public class AttendantPass extends AdtBase {
 
     @Id

@@ -11,7 +11,7 @@ import jakarta.persistence.Table;
  * census flag drives whether beds in the ward count toward IPD census.
  */
 @Entity
-@Table(name = "m_ward")
+@Table(name = "m_ward", schema = "ihms_adt")
 public class Ward extends AdtBase {
 
     @Id

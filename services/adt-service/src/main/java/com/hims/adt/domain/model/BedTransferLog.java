@@ -9,7 +9,7 @@ import java.sql.Timestamp;
 
 /** One row per patient bed movement (transfer audit). */
 @Entity
-@Table(name = "t_bed_transfer_log")
+@Table(name = "t_bed_transfer_log", schema = "ihms_adt")
 public class BedTransferLog {
 
     @Id
