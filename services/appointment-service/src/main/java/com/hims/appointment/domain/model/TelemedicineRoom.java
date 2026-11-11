@@ -15,7 +15,7 @@ import java.sql.Timestamp;
  * Real video provider (Jitsi/Twilio) integration deferred.
  */
 @Entity
-@Table(name = "t_telemedicine_room")
+@Table(name = "t_telemedicine_room", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)

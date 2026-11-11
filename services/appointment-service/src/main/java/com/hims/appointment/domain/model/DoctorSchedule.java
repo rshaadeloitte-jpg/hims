@@ -15,7 +15,7 @@ import java.time.LocalTime;
  * (BR-OPD-002). dayOfWeek ISO-8601 1=MON..7=SUN.
  */
 @Entity
-@Table(name = "doctor_schedule")
+@Table(name = "doctor_schedule", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)

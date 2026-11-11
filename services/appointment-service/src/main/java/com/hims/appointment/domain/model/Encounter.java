@@ -19,7 +19,7 @@ import java.sql.Timestamp;
  * tables.
  */
 @Entity
-@Table(name = "encounter")
+@Table(name = "encounter", schema = "ihms_appointment")
 @JsonAutoDetect(getterVisibility = JsonAutoDetect.Visibility.NONE,
         fieldVisibility = JsonAutoDetect.Visibility.ANY,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)
