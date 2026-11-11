@@ -65,7 +65,7 @@ describe("useRegisterPatient", () => {
     result.current.mutate({ firstName: "A", mobileNo: "9999999999" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/patients",
+      "/api/v1/patients/register",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ firstName: "A", mobileNo: "9999999999" }),
@@ -307,6 +307,14 @@ describe("covidTrackingSchema", () => {
 
     const invalid = covidTrackingSchema.safeParse({ covidVaccinationStatus: "INVALID" });
     expect(invalid.success).toBe(false);
+  });
+
+  it("treats empty vaccination status as undefined", () => {
+    const result = covidTrackingSchema.safeParse({ covidVaccinationStatus: "" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.covidVaccinationStatus).toBeUndefined();
+    }
   });
 });
 

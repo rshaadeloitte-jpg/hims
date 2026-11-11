@@ -158,22 +158,26 @@ export function RegistrationForm({
 
   const onSubmit = handleSubmit(async (values) => {
     const payload: Record<string, unknown> = {};
-    // Strip empties so backend sees undefined (not "") for optionals
-    for (const [k, v] of Object.entries(values)) {
-      if (v === "" || v == null) continue;
-      if (typeof v === "object" && !Array.isArray(v)) {
-        // For nested objects, only include non-empty
-        const nested: Record<string, unknown> = {};
-        for (const [nk, nv] of Object.entries(v)) {
-          if (nv !== "" && nv != null && nv !== false) {
-            nested[nk] = nv;
-          }
-        }
-        if (Object.keys(nested).length > 0) payload[k] = nested;
-      } else {
-        payload[k] = v;
-      }
-    }
+    // Map form fields -> PatientRegistration entity field names (backend contract).
+    // Drop empties so the backend never sees "" for optionals; server-owned
+    // id/mrno are never sent.
+    if (values.firstName) payload.firstName = values.firstName;
+    if (values.middleName) payload.middleName = values.middleName;
+    if (values.lastName) payload.lastName = values.lastName;
+    if (values.mobileNo) payload.mobileNo = values.mobileNo;
+    if (values.email) payload.email = values.email;
+    if (values.genderId != null) payload.gender = values.genderId;
+    if (values.dateOfBirth) payload.dob = values.dateOfBirth;
+    if (values.bloodGroup) payload.bloodGroup = values.bloodGroup;
+    if (values.maritalStatus) payload.maritalStatus = values.maritalStatus;
+    if (values.address) payload.addressLine1 = values.address;
+    if (values.city) payload.city = values.city;
+    if (values.state) payload.state = values.state;
+    if (values.pincode) payload.pincode = values.pincode;
+    if (values.abhaAddress) payload.healthIdNumber = values.abhaAddress;
+    if (values.aadhaarNumber) payload.aadhaarNo = values.aadhaarNumber;
+    if (values.unitId != null) payload.unitId = values.unitId;
+    if (values.emergencyContact) payload.emergencyContactPhone = values.emergencyContact;
 
     let saved: PatientDetail;
     if (isEdit && patientId) {

@@ -63,7 +63,10 @@ export type MotherChildLinkValues = z.infer<typeof motherChildLinkSchema>;
 
 /** COVID tracking fields */
 export const covidTrackingSchema = z.object({
-  covidVaccinationStatus: z.enum(["UNVACCINATED", "PARTIAL", "FULL", "BOOSTER"]).optional(),
+  covidVaccinationStatus: z.preprocess(
+    (v) => (v === "" || v == null ? undefined : v),
+    z.enum(["UNVACCINATED", "PARTIAL", "FULL", "BOOSTER"]).optional(),
+  ),
   lastCovidVaccineDate: optionalDate,
   covidInfectionHistory: z.boolean().default(false),
   lastCovidInfectionDate: optionalDate,
