@@ -211,18 +211,14 @@ export function useDoctorScheduleList(departmentId?: number, doctorId?: number) 
     staleTime: 60_000,
   });
 }
-export const useDoctorSchedulesList = useDoctorScheduleList;
-export const useSchedules = useDoctorScheduleList;
 
 export function useCreateSchedule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: any) => {
-      const doctorId = Number(vars?.doctorId);
-      const params = vars?.params ? { ...vars.params } : { ...vars };
-      if (params && params.doctorId !== undefined) delete params.doctorId;
-      return appointmentApi.createSchedule(doctorId, params);
-    },
+    mutationFn: ({ doctorId, params }: {
+      doctorId: number;
+      params: Parameters<typeof appointmentApi.createSchedule>[1];
+    }) => appointmentApi.createSchedule(doctorId, params),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["op", "doctor", "schedules"] });
     },
