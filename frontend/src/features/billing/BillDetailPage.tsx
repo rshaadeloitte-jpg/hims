@@ -10,6 +10,10 @@ import {
   useIssueDebitNote,
   useFinalizeBill,
   useApplyConcession,
+  PAYMENT_METHOD_TO_MODE,
+  MODE_TO_PAYMENT_METHOD,
+  getChargeDisplayValues,
+  type CreatePaymentPayload,
 } from "./queries";
 import {
   type PaymentValues,
@@ -22,6 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button, Table, Text } from "@chakra-ui/react";
 import { HimsSelect, TextInput } from "../../components/ui";
+import { ApiError } from "../../api/client";
 
 export function BillDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,6 +40,7 @@ export function BillDetailPage() {
   const [showCredit, setShowCredit] = useState(false);
   const [showDebit, setShowDebit] = useState(false);
   const [showConcession, setShowConcession] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const recordPayment = useRecordPayment();
   const issueCredit = useIssueCreditNote();
@@ -51,9 +57,33 @@ export function BillDetailPage() {
   if (!bill) return <p>Bill not found.</p>;
 
   const handlePayment = async (values: PaymentValues) => {
-    await recordPayment.mutateAsync({ id: billId, payload: values });
-    setShowPayment(false);
-    paymentForm.reset();
+    setPaymentError(null);
+    try {
+      const isAdvance = values.paymentMethod === "ADVANCE";
+      const payload: CreatePaymentPayload = {
+        billId,
+        patientId: bill.patientId,
+        amount: Number(values.amount),
+        advanceUse: isAdvance,
+        modes: isAdvance
+          ? []
+          : [
+              {
+                mode: PAYMENT_METHOD_TO_MODE[values.paymentMethod] ?? 1,
+                amount: Number(values.amount),
+              },
+            ],
+      };
+      await recordPayment.mutateAsync(payload);
+      setShowPayment(false);
+      paymentForm.reset();
+    } catch (err: unknown) {
+      const message =
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Payment failed";
+      setPaymentError(message);
+    }
   };
 
   const handleCredit = async (values: CreditNoteValues) => {
@@ -82,7 +112,7 @@ export function BillDetailPage() {
           {!bill.isSettled && !bill.isCancelled && (
             <>
               <Button onClick={() => finalize.mutate(billId)} variant="primary">Finalize</Button>
-              <Button onClick={() => setShowPayment(true)} variant="secondary">+ Payment</Button>
+              <Button onClick={() => { setPaymentError(null); setShowPayment(true); }} variant="secondary">+ Payment</Button>
               <Button onClick={() => setShowConcession(true)} variant="secondary">Concession</Button>
             </>
           )}
@@ -104,6 +134,11 @@ export function BillDetailPage() {
       {showPayment && (
         <form className="inline-form" onSubmit={paymentForm.handleSubmit(handlePayment)}>
           <h3>Record Payment</h3>
+          {paymentError && (
+            <div className="form-error" role="alert" style={{ color: "red", margin: "4px 0" }}>
+              {paymentError}
+            </div>
+          )}
           <TextInput type="number" step="0.01" placeholder="Amount" {...paymentForm.register("amount")} />
           <HimsSelect {...paymentForm.register("paymentMethod")}>
             <option value="CASH">Cash</option>
@@ -114,7 +149,7 @@ export function BillDetailPage() {
           </HimsSelect>
           <TextInput placeholder="Reference No" {...paymentForm.register("referenceNo")} />
           <Button type="submit" variant="primary" loading={recordPayment.isPending} loadingText="Saving">Save</Button>
-          <Button type="button" onClick={() => setShowPayment(false)} variant="secondary">Cancel</Button>
+          <Button type="button" onClick={() => { setShowPayment(false); setPaymentError(null); }} variant="secondary">Cancel</Button>
         </form>
       )}
 
@@ -152,16 +187,19 @@ export function BillDetailPage() {
       <Table.Root size="sm" variant="line">
         <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Service</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Rate</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Qty</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Tax</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Total</Table.ColumnHeader></Table.Row></Table.Header>
         <Table.Body>
-          {bill.charges?.map((c) => (
-            <Table.Row key={c.chargeId}>
-              <Table.Cell>{c.serviceName}</Table.Cell>
-              <Table.Cell>{c.rate?.toFixed(2)}</Table.Cell>
-              <Table.Cell>{c.qty}</Table.Cell>
-              <Table.Cell>{c.amount?.toFixed(2)}</Table.Cell>
-              <Table.Cell>{c.taxAmount?.toFixed(2)}</Table.Cell>
-              <Table.Cell>{c.totalAmount?.toFixed(2)}</Table.Cell>
-            </Table.Row>
-          ))}
+          {bill.charges?.map((c) => {
+            const { rate, qty, amount, tax, total } = getChargeDisplayValues(c);
+            return (
+              <Table.Row key={c.chargeId}>
+                <Table.Cell>{c.serviceName}</Table.Cell>
+                <Table.Cell>{rate.toFixed(2)}</Table.Cell>
+                <Table.Cell>{qty}</Table.Cell>
+                <Table.Cell>{amount.toFixed(2)}</Table.Cell>
+                <Table.Cell>{tax.toFixed(2)}</Table.Cell>
+                <Table.Cell>{total.toFixed(2)}</Table.Cell>
+              </Table.Row>
+            );
+          })}
           {(!bill.charges || bill.charges.length === 0) && (
             <Table.Row><Table.Cell colSpan={6} className="muted">No charges.</Table.Cell></Table.Row>
           )}
@@ -172,14 +210,30 @@ export function BillDetailPage() {
       <Table.Root size="sm" variant="line">
         <Table.Header><Table.Row><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Date</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Method</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Amount</Table.ColumnHeader><Table.ColumnHeader fontSize="xs" color="gray.600" textTransform="uppercase">Reference</Table.ColumnHeader></Table.Row></Table.Header>
         <Table.Body>
-          {payments.map((p) => (
-            <Table.Row key={p.paymentId}>
-              <Table.Cell>{p.createdAt?.slice(0, 10)}</Table.Cell>
-              <Table.Cell>{p.paymentMethod}</Table.Cell>
-              <Table.Cell>{p.amount?.toFixed(2)}</Table.Cell>
-              <Table.Cell>{p.referenceNo ?? "—"}</Table.Cell>
-            </Table.Row>
-          ))}
+          {payments.map((p) => {
+            const methodDisplay =
+              p.modes && p.modes.length > 0
+                ? p.modes
+                    .map(
+                      (m) =>
+                        MODE_TO_PAYMENT_METHOD[m.mode] ??
+                        (m.mode === 7 ? "Advance" : `Mode ${m.mode}`)
+                    )
+                    .join(", ")
+                : p.paymentMethod ??
+                  (p.advanceConsumptions && p.advanceConsumptions.length > 0
+                    ? "Advance"
+                    : "—");
+            const dateDisplay = (p.addedDatetime ?? p.createdAt)?.slice(0, 10) ?? "—";
+            return (
+              <Table.Row key={p.paymentId}>
+                <Table.Cell>{dateDisplay}</Table.Cell>
+                <Table.Cell>{methodDisplay}</Table.Cell>
+                <Table.Cell>{p.amount?.toFixed(2)}</Table.Cell>
+                <Table.Cell>{p.referenceNo ?? "—"}</Table.Cell>
+              </Table.Row>
+            );
+          })}
           {payments.length === 0 && <Table.Row><Table.Cell colSpan={4} className="muted">No payments.</Table.Cell></Table.Row>}
         </Table.Body>
       </Table.Root>

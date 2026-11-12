@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useBill,
   useBills,
+  usePayments,
   useRecordPayment,
   useIssueCreditNote,
   useIssueDebitNote,
@@ -9,25 +10,49 @@ import {
   useFinalizeBill,
   type Bill,
   type Charge,
+  type ChargeCalculation,
   type Payment,
+  type PaymentModeDetail,
+  type AdvanceConsumption,
+  type CreatePaymentPayload,
+  type PaymentModeLineInput,
   type CreditNote,
   type DebitNote,
   type BillFilter,
   billingQueryKeys,
   generateSafeUUID,
+  PAYMENT_METHOD_TO_MODE,
+  MODE_TO_PAYMENT_METHOD,
+  getChargeDisplayValues,
 } from "./queries";
 
 // Re-export everything from queries
 export {
   useBill,
   useBills,
+  usePayments,
   useRecordPayment,
   useIssueCreditNote,
   useIssueDebitNote,
   useApplyConcession,
   useFinalizeBill,
+  PAYMENT_METHOD_TO_MODE,
+  MODE_TO_PAYMENT_METHOD,
+  getChargeDisplayValues,
 };
-export type { Bill, Charge, Payment, CreditNote, DebitNote, BillFilter };
+export type {
+  Bill,
+  Charge,
+  ChargeCalculation,
+  Payment,
+  PaymentModeDetail,
+  AdvanceConsumption,
+  CreatePaymentPayload,
+  PaymentModeLineInput,
+  CreditNote,
+  DebitNote,
+  BillFilter,
+};
 export { billingQueryKeys };
 
 const BILLING_BASE: string = import.meta.env.VITE_BILLING_API_BASE ?? "";
