@@ -123,13 +123,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void logout_revokesTokenHash() {
+    void logout_revokesTheTokenValidateChecks() {
         when(jwtTokenService.parse("tok-123")).thenReturn(claims);
         when(claims.getExpiration()).thenReturn(java.sql.Timestamp.from(Instant.now().plusSeconds(60)));
 
         authService.logout("tok-123");
 
-        verify(revocationService).revoke(anyString(), any(Instant.class));
+        // Same key validate() and JwtAuthenticationFilter pass to isRevoked.
+        verify(revocationService).revoke(eq("tok-123"), any(Instant.class));
     }
 
     @Test
@@ -181,14 +182,6 @@ class AuthServiceTest {
         assertThat(response.valid()).isFalse();
         assertThat(response.reason()).isEqualTo("REVOKED");
     }
-
-    @Test
-    void sha256_isDeterministicHex() {
-        assertThat(AuthService.sha256("abc")).isEqualTo(AuthService.sha256("abc"))
-                .hasSize(64)
-                .matches("[0-9a-f]+");
-    }
-
 
     @Test
     void changePassword_success_updatesHashAndRevokesToken() {
