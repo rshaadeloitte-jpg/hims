@@ -1405,12 +1405,16 @@ def check_lgd_hierarchy_orphans(
         else:
             bv_orphans.append(r)
 
-    # Village-GP
+    # Village-GP: skip villages LGD maps to no gram panchayat (blank local body)
     vgp_valid = []
     vgp_orphans = []
+    vgp_unmapped = 0
     for r in raw_rows.get("villageGramPanchayatMapping", []):
         v_code = str(r.get("village_code") or "").strip()
         lb_code = str(r.get("local_body_code") or "").strip()
+        if not lb_code:
+            vgp_unmapped += 1
+            continue
         if v_code in village_codes and lb_code in lb_codes:
             vgp_valid.append(r)
         else:
@@ -1460,7 +1464,7 @@ def check_lgd_hierarchy_orphans(
         "uLBWardforState": len(ulb_ward_orphans) + len(colliding_ulb),
         "uLBWardforStateWithCov": cov_blank_districts + len(cov_orphans),
         "allBlockStateWithCoveredVillage": len(bv_orphans),
-        "villageGramPanchayatMapping": len(vgp_orphans),
+        "villageGramPanchayatMapping": vgp_unmapped + len(vgp_orphans),
     }
 
     valid_rows = {

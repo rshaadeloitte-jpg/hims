@@ -888,7 +888,7 @@ class TestLgdHierarchyImport(unittest.TestCase):
 
     def test_nulls_not_distinct_and_blank_district_skip(self):
         """Verify NULLS NOT DISTINCT in V9 migration and blank district skipping in coverage."""
-        v9_path = Path(__file__).resolve().parents[2] / "services" / "reference-service" / "src" / "main" / "resources" / "db" / "migration" / "V9__lgd_geo_local_bodies.sql"
+        v9_path = Path(__file__).resolve().parents[2] / "services" / "reference-service" / "src" / "main" / "resources" / "db" / "migration" / "reference" / "V9__lgd_geo_local_bodies.sql"
         v9_sql = v9_path.read_text(encoding="utf-8")
 
         self.assertIn("UNIQUE NULLS NOT DISTINCT (ward_id, district_id, sub_district_id)", v9_sql)
@@ -944,6 +944,21 @@ class TestLgdHierarchyImport(unittest.TestCase):
         sql = generate_lgd_hierarchy_sql(4, "Chandigarh", self.dummy_paths, "sha", self.dummy_counts)
         self.assertIn("> 0.005", sql)
         self.assertIn("exceed 0.5", sql)
+
+    def test_village_gp_blank_local_body_is_skipped_not_orphaned(self):
+        """Villages LGD maps to no gram panchayat are skipped, not counted toward the 0.5% threshold."""
+        raw_rows = {
+            "districtofSpecificState": [{"district_code": "D1"}],
+            "subDistrictofSpecificState": [{"district_code": "D1", "subdistrict_code": "SD1"}],
+            "villageofSpecificState": [{"sub_district_code": "SD1", "village_code": "V1"}],
+            "priLbSpecificState": [{"localbody_code": "LB1"}],
+            "villageGramPanchayatMapping": [
+                {"village_code": "V1", "local_body_code": "LB1"},
+            ] + [{"village_code": f"V{i}", "local_body_code": ""} for i in range(2, 12)],
+        }
+        valid_rows, skip_counts, _, orphans = check_lgd_hierarchy_orphans(15, raw_rows)
+        self.assertEqual(orphans["villageGramPanchayatMapping"], [])
+        self.assertEqual(skip_counts["villageGramPanchayatMapping"], 10)
 
     def test_ward_code_collision_handling(self):
         """Verify collision across PRI and ULB ward codes is an orphan-class error and not overwritten."""
