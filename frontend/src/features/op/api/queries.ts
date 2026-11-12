@@ -34,8 +34,8 @@ export const opKeys = {
   patientSponsors: (id: number) => ["op", "patient", id, "sponsors"] as const,
   departments: (unitId?: number | null) => ["op", "department", "list", unitId ?? null] as const,
   doctorsMaster: (unitId?: number | null) => ["op", "doctor", "masters", unitId ?? null] as const,
-  doctorSchedules: (departmentId?: number) =>
-    ["op", "doctor", "schedules", departmentId ?? null] as const,
+  doctorSchedules: (departmentId?: number, doctorId?: number) =>
+    ["op", "doctor", "schedules", departmentId ?? null, doctorId ?? null] as const,
   doctorSlots: (doctorId: number, date: string) =>
     ["op", "doctor", doctorId, "slots", date] as const,
   appointmentList: (q: AppointmentListQuery) => ["op", "appointment", "list", q] as const,
@@ -198,6 +198,30 @@ export function useDoctorSchedules(departmentId?: number) {
     },
     enabled: departmentId != null,
     staleTime: 60_000,
+  });
+}
+
+/**
+ * Fetches raw DoctorSchedule rows (not derived doctors) for the management page.
+ */
+export function useDoctorScheduleList(departmentId?: number, doctorId?: number) {
+  return useQuery({
+    queryKey: opKeys.doctorSchedules(departmentId, doctorId),
+    queryFn: () => appointmentApi.doctorSchedules(departmentId, doctorId),
+    staleTime: 60_000,
+  });
+}
+
+export function useCreateSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ doctorId, params }: {
+      doctorId: number;
+      params: Parameters<typeof appointmentApi.createSchedule>[1];
+    }) => appointmentApi.createSchedule(doctorId, params),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["op", "doctor", "schedules"] });
+    },
   });
 }
 

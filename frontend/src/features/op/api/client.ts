@@ -247,6 +247,34 @@ export const appointmentApi = {
       },
     }),
 
+  /** POST /api/v1/doctors/{doctorId}/schedules — create a weekly schedule (query params, no body). */
+  createSchedule: (doctorId: number, params: {
+    unitId?: number | null;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    slotMinutes?: number;
+    deptId?: number;
+    departmentId?: number;
+    clinicId?: number;
+    cabin?: string;
+  }) => {
+    const deptId = params.deptId ?? params.departmentId;
+    return request<DoctorSchedule>(APPT_BASE, `/api/v1/doctors/${doctorId}/schedules`, {
+      method: "POST",
+      query: {
+        ...(params.unitId != null ? { unitId: params.unitId } : {}),
+        dayOfWeek: params.dayOfWeek,
+        startTime: params.startTime,
+        endTime: params.endTime,
+        ...(params.slotMinutes != null ? { slotMinutes: params.slotMinutes } : {}),
+        ...(deptId != null ? { deptId } : {}),
+        ...(params.clinicId != null ? { clinicId: params.clinicId } : {}),
+        ...(params.cabin ? { cabin: params.cabin } : {}),
+      },
+    });
+  },
+
   /** GET /api/v1/masters/doctor — doctor master list for resolving names (unitId optional). */
   doctorsMaster: (unitId?: number | null) =>
     request<Array<Record<string, unknown>>>(

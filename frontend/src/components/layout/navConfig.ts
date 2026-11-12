@@ -38,6 +38,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: "/m/op/walkinVisit", label: "Walk-in Visit" },
       { to: "/m/op/addAppointment", label: "New Appointment" },
       { to: "/m/op/appointmentList", label: "Appointments" },
+      { to: "/m/op/doctorSchedules", label: "Doctor Schedules" },
       { to: "/m/op/abha", label: "ABHA Services" },
       { to: "/m02/walkin", label: "Walk-in Desk" },
       { to: "/m02/booking", label: "Follow-up Booking" },
