@@ -1263,6 +1263,7 @@ def check_lgd_hierarchy_orphans(
     state_code: int | str,
     raw_rows: dict[str, list[dict]],
     known_districts: set[str] | None = None,
+    orphan_threshold: float = 0.005,
 ) -> tuple[dict[str, list[dict]], dict[str, int], set[str], dict[str, list[dict]]]:
     """Validate parent-child relationships, detect collisions, and check 0.5% threshold.
 
@@ -1440,16 +1441,16 @@ def check_lgd_hierarchy_orphans(
         total_kind_rows = len(raw_rows.get(kind, []))
         if total_kind_rows > 0:
             rate = len(o_list) / total_kind_rows
-            if rate > 0.005:
+            if rate > orphan_threshold:
                 sys.stderr.write(
                     f"[lgd-hierarchy] Orphan threshold exceeded for {kind}: "
-                    f"{len(o_list)} of {total_kind_rows} ({rate:.2%}) > 0.5%\n"
+                    f"{len(o_list)} of {total_kind_rows} ({rate:.2%}) > {orphan_threshold:.1%}\n"
                 )
                 print(f"[lgd-hierarchy] First 20 orphans for {kind}:")
                 for idx, o in enumerate(o_list[:20], 1):
                     print(f"  [{idx}] {o}")
                 raise RuntimeError(
-                    f"State {state_code} rolled back: orphans for {kind} exceed 0.5% threshold ({len(o_list)}/{total_kind_rows})"
+                    f"State {state_code} rolled back: orphans for {kind} exceed {orphan_threshold:.1%} threshold ({len(o_list)}/{total_kind_rows})"
                 )
 
     skip_counts = {
@@ -2306,6 +2307,7 @@ def process_lgd_hierarchy_state(
     zip_path: str,
     dry_run: bool = False,
     known_districts: set[str] | None = None,
+    orphan_threshold: float = 0.005,
 ) -> tuple[dict[str, dict[str, int]], int, str, str]:
     """Process a single state zip archive for LGD full hierarchy import."""
     st_code, st_name = lgd_hierarchy.state_of(zip_path)
@@ -2316,7 +2318,7 @@ def process_lgd_hierarchy_state(
     raw_rows = {k: list(lgd_hierarchy.iter_rows(zip_path, k)) for k in lgd_hierarchy.KINDS}
 
     valid_rows, skip_counts, colliding_wards, orphans_per_kind = check_lgd_hierarchy_orphans(
-        st_code, raw_rows, known_districts=known_districts
+        st_code, raw_rows, known_districts=known_districts, orphan_threshold=orphan_threshold
     )
 
     counts = {}
@@ -2555,7 +2557,7 @@ def handle_lgd_hierarchy(args: argparse.Namespace) -> int:
         try:
             t0 = time.time()
             counts, st_code, st_name, file_sha256 = process_lgd_hierarchy_state(
-                zip_path, dry_run=dry_run
+                zip_path, dry_run=dry_run, orphan_threshold=args.orphan_threshold
             )
             elapsed = time.time() - t0
 
@@ -2618,6 +2620,10 @@ def main() -> int:
     p_hier.add_argument("dir", help="Directory containing state zip files")
     p_hier.add_argument("--state", help="Filter by state code (e.g. 4 or 31)")
     p_hier.add_argument("--dry-run", action="store_true", help="Parse and validate read-only, write nothing")
+    p_hier.add_argument(
+        "--orphan-threshold", type=float, default=0.005,
+        help="Max orphan fraction per kind before a state rolls back (default 0.005); orphans are always skipped",
+    )
     p_hier.set_defaults(func=handle_lgd_hierarchy)
 
     args = parser.parse_args()
