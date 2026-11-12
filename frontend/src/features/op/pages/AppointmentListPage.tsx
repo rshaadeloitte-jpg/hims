@@ -8,7 +8,11 @@ import {
   useAppointmentList,
   useCancelAppointment,
   useCheckInAppointment,
+  useCompleteAppointment,
+  useDepartments,
+  useDoctorsMaster,
   useNoShowAppointment,
+  usePatients,
 } from "../api/queries";
 import { DataTable, type DataTableColumn } from "../components/DataTable";
 import { AppointmentStatusBadge } from "../components/StatusBadges";
@@ -20,6 +24,7 @@ import type {
   AppointmentListResponse,
   AppointmentStatus,
 } from "../api/types";
+import type { ApiError } from "../../../api/client";
 
 /**
  * AppointmentListPage — legacy `appointmentList:showAppointments` mapped.
@@ -86,11 +91,13 @@ export function AppointmentListPage() {
   const [showCancel, setShowCancel] = useState<boolean>(false);
   const [showReschedule, setShowReschedule] = useState<boolean>(false);
   const [rescheduleReason, setRescheduleReason] = useState<string>("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const list = useAppointmentList({ date, status: filter === "all" ? "all" : filter, page, size: PAGE_SIZE });
   const cancel = useCancelAppointment();
   const noShow = useNoShowAppointment();
   const checkIn = useCheckInAppointment();
+  const complete = useCompleteAppointment();
 
   const rawList = list.data;
   const rawItems: unknown[] = Array.isArray(rawList)
@@ -99,10 +106,80 @@ export function AppointmentListPage() {
 
   const normalizedItems = useMemo(() => rawItems.map(normalizeAppointment), [rawItems]);
 
+  const patientIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const item of normalizedItems) {
+      if (typeof item.patientId === "number" && item.patientId > 0) {
+        ids.add(item.patientId);
+      }
+    }
+    return Array.from(ids);
+  }, [normalizedItems]);
+
+  const patientQueries = usePatients(patientIds);
+  const departmentsQuery = useDepartments(null);
+  const doctorsQuery = useDoctorsMaster(null);
+
+  const patientMap = useMemo(() => {
+    const map = new Map<number, { name: string; mrn?: string }>();
+    patientQueries.forEach((q, idx) => {
+      const p = q.data;
+      if (p) {
+        const fullName = [p.firstName, p.middleName, p.lastName].filter(Boolean).join(" ");
+        const name = fullName.trim() || p.firstName || `#${p.id}`;
+        map.set(patientIds[idx], { name, mrn: p.mrn });
+      }
+    });
+    return map;
+  }, [patientQueries, patientIds]);
+
+  const doctorMap = useMemo(() => {
+    const map = new Map<number, string>();
+    const docs = doctorsQuery.data ?? [];
+    for (const d of docs) {
+      const id = Number(d.id);
+      if (!id) continue;
+      const fullName = [d.firstName, d.lastName].filter(Boolean).join(" ");
+      const name = fullName
+        ? (fullName.startsWith("Dr.") ? fullName : `Dr. ${fullName}`)
+        : (d.name ? String(d.name) : `Doctor #${id}`);
+      map.set(id, name);
+    }
+    return map;
+  }, [doctorsQuery.data]);
+
+  const departmentMap = useMemo(() => {
+    const map = new Map<number, string>();
+    const depts = departmentsQuery.data ?? [];
+    for (const d of depts) {
+      if (d.id != null) {
+        const name = d.description || ((d as unknown as Record<string, unknown>).name as string) || d.code || `#${d.id}`;
+        map.set(d.id, name);
+      }
+    }
+    return map;
+  }, [departmentsQuery.data]);
+
+  const enrichedItems: Appointment[] = useMemo(() => {
+    return normalizedItems.map((a) => {
+      const pInfo = patientMap.get(a.patientId);
+      const docName = a.doctorName ?? doctorMap.get(a.doctorId);
+      const dId = a.departmentId ?? a.deptId;
+      const deptName = a.departmentName ?? (dId != null ? departmentMap.get(dId) : undefined);
+      return {
+        ...a,
+        patientName: a.patientName ?? pInfo?.name,
+        patientMrn: a.patientMrn ?? pInfo?.mrn,
+        doctorName: docName,
+        departmentName: deptName,
+      };
+    });
+  }, [normalizedItems, patientMap, doctorMap, departmentMap]);
+
   const visible: Appointment[] = useMemo(() => {
     const f = STATUS_FILTERS.find((s) => s.key === filter);
-    return f ? normalizedItems.filter(f.predicate) : normalizedItems;
-  }, [normalizedItems, filter]);
+    return f ? enrichedItems.filter(f.predicate) : enrichedItems;
+  }, [enrichedItems, filter]);
 
   const total: number = Array.isArray(rawList)
     ? visible.length
@@ -112,8 +189,8 @@ export function AppointmentListPage() {
 
   // Highlight card data:
   const appointmentInList = useMemo(
-    () => (highlight != null ? normalizedItems.find((a) => a.id === highlight) : undefined),
-    [normalizedItems, highlight],
+    () => (highlight != null ? enrichedItems.find((a) => a.id === highlight) : undefined),
+    [enrichedItems, highlight],
   );
   const { data: fetchedApptRaw } = useAppointment(highlight ?? undefined);
   const highlightedAppointment = useMemo(() => {
@@ -125,7 +202,59 @@ export function AppointmentListPage() {
   const effectivePatientId = highlightedAppointment?.patientId;
   const { patient: highlightedPatient } = usePatient(effectivePatientId ?? undefined);
 
+  const handleCheckIn = async (id: number) => {
+    setActionError(null);
+    try {
+      await checkIn.mutateAsync(id);
+      await list.refetch();
+    } catch (err: unknown) {
+      const message = (err as ApiError)?.message || (err as Error)?.message || "Check-in failed";
+      setActionError(message);
+    }
+  };
+
+  const handleNoShow = async (id: number) => {
+    setActionError(null);
+    try {
+      await noShow.mutateAsync(id);
+      await list.refetch();
+    } catch (err: unknown) {
+      const message = (err as ApiError)?.message || (err as Error)?.message || "No-show failed";
+      setActionError(message);
+    }
+  };
+
+  const handleComplete = async (id: number) => {
+    setActionError(null);
+    try {
+      await complete.mutateAsync(id);
+      await list.refetch();
+    } catch (err: unknown) {
+      const message = (err as ApiError)?.message || (err as Error)?.message || "Complete failed";
+      setActionError(message);
+    }
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selected) return;
+    setActionError(null);
+    try {
+      await cancel.mutateAsync({ id: selected.id, reason: cancelReason.trim() });
+      setShowCancel(false);
+      setCancelReason("");
+      setSelected(null);
+      await list.refetch();
+    } catch (err: unknown) {
+      const message = (err as ApiError)?.message || (err as Error)?.message || "Cancellation failed";
+      setActionError(message);
+      setShowCancel(false);
+      setCancelReason("");
+      setSelected(null);
+    }
+  };
+
   const setFilterAndPage = (next: StatusFilter, nextPage: number) => {
+    setActionError(null);
     setFilter(next);
     setPage(nextPage);
     const params = new URLSearchParams(searchParams);
@@ -183,10 +312,10 @@ export function AppointmentListPage() {
     {
       key: "patient",
       header: "Patient",
-      accessor: (a) => a.patientName ?? `#${a.patientId}`,
+      accessor: (a) => a.patientName ?? (a.patientId ? `#${a.patientId}` : "—"),
       render: (a) => (
         <div>
-          <div>{a.patientName ?? `#${a.patientId}`}</div>
+          <div>{a.patientName ?? (a.patientId ? `#${a.patientId}` : "—")}</div>
           {a.patientMrn ? <div className="muted small">{a.patientMrn}</div> : null}
         </div>
       ),
@@ -194,7 +323,7 @@ export function AppointmentListPage() {
     {
       key: "doctor",
       header: "Doctor",
-      accessor: (a) => a.doctorName ?? `#${a.doctorId}`,
+      accessor: (a) => a.doctorName ?? (a.doctorId ? `#${a.doctorId}` : "—"),
     },
     {
       key: "department",
@@ -234,7 +363,7 @@ export function AppointmentListPage() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void checkIn.mutateAsync(a.id);
+                  void handleCheckIn(a.id);
                 }}
                 disabled={checkIn.isPending}
                 loading={checkIn.isPending}
@@ -271,7 +400,7 @@ export function AppointmentListPage() {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void noShow.mutateAsync(a.id);
+                  void handleNoShow(a.id);
                 }}
                 disabled={noShow.isPending}
                 loading={noShow.isPending}
@@ -279,6 +408,20 @@ export function AppointmentListPage() {
                 No-show
               </Button>
             </>
+          ) : (a.apptStatus ?? a.status) === 2 ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleComplete(a.id);
+              }}
+              disabled={complete.isPending}
+              loading={complete.isPending}
+            >
+              Complete
+            </Button>
           ) : null}
         </div>
       ),
@@ -359,6 +502,11 @@ export function AppointmentListPage() {
       </nav>
 
       <section className="card">
+        {actionError ? (
+          <p className="alert alert--error" role="alert">
+            {actionError}
+          </p>
+        ) : null}
         {list.isError ? (
           <p className="alert alert--error" role="alert">
             Could not load appointments: {String((list.error as Error)?.message ?? list.error)}
@@ -438,14 +586,7 @@ export function AppointmentListPage() {
           setSelected(null);
         }}
         onConfirm={() => {
-          if (!selected) return;
-          void cancel
-            .mutateAsync({ id: selected.id, reason: cancelReason.trim() })
-            .then(() => {
-              setShowCancel(false);
-              setCancelReason("");
-              setSelected(null);
-            });
+          void handleCancelConfirm();
         }}
       />
 

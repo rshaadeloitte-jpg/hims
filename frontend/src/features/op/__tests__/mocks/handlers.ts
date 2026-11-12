@@ -54,6 +54,19 @@ const samplePatient: Patient = {
   ],
 };
 
+const samplePatient2: Patient = {
+  id: 7002,
+  mrn: "MRN-7002",
+  isTempMrn: false,
+  firstName: "Ravi",
+  lastName: "Kumar",
+  dateOfBirth: "1983-07-20",
+  age: 41,
+  sex: "M",
+  mobile: "+91 98765 12345",
+  status: true,
+};
+
 const sampleSearch: PatientSearchHit[] = [
   { id: 7001, mrn: "MRN-7001", firstName: "Asha", lastName: "Verma", sex: "F", age: 33, mobile: "+91 98765 43210" },
   { id: 7002, mrn: "MRN-7002", firstName: "Ravi", lastName: "Kumar", sex: "M", age: 41, abha: "11-1111-2222-3333" },
@@ -165,6 +178,7 @@ export const handlers = [
   http.get("/api/v1/patients/:id", ({ params }) => {
     const id = Number(params.id);
     if (id === 7001) return ok(samplePatient);
+    if (id === 7002) return ok(samplePatient2);
     if (id === 9099) return err(404, "NOT_FOUND", `Patient ${id} not found`);
     return err(404, "NOT_FOUND", `Patient ${id} not found`);
   }),
@@ -228,19 +242,25 @@ export const handlers = [
       startAt, endAt: body.endAt ?? startAt, status: 1, source: "WALK_IN",
     } as Appointment, 201);
   }),
-  http.put("/api/v1/appointments/:id/cancel", async ({ params, request }) => {
-    const body = (await request.json()) as { reason?: string };
-    if (!body.reason || body.reason.trim().length === 0) {
-      return err(400, "BEXA003", "Cancellation reason is required");
-    }
-    return ok({ ...sampleAppointments[0], id: Number(params.id), status: 4 });
+  http.post("/api/v1/appointments/:id/cancel", ({ params }) =>
+    ok({ ...sampleAppointments[0], id: Number(params.id), status: 4, apptStatus: 4 }),
+  ),
+  http.post("/api/v1/appointments/:id/checkin", ({ params }) =>
+    ok({ ...sampleAppointments[0], id: Number(params.id), status: 2, apptStatus: 2 }),
+  ),
+  http.post("/api/v1/appointments/:id/noshow", ({ params }) =>
+    ok({ ...sampleAppointments[0], id: Number(params.id), status: 6, apptStatus: 6 }),
+  ),
+  http.post("/api/v1/appointments/:id/complete", ({ params }) =>
+    ok({ ...sampleAppointments[0], id: Number(params.id), status: 3, apptStatus: 3 }),
+  ),
+  http.post("/api/v1/appointments/:id/reschedule", async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    return ok({ ...sampleAppointments[0], id: Number(params.id), status: 5, apptStatus: 5, ...body }, 201);
   }),
-  http.put("/api/v1/appointments/:id/checkin", ({ params }) =>
-    ok({ ...sampleAppointments[0], id: Number(params.id), status: 2 }),
-  ),
-  http.put("/api/v1/appointments/:id/noshow", ({ params }) =>
-    ok({ ...sampleAppointments[0], id: Number(params.id), status: 6 }),
-  ),
+  http.put("/api/v1/appointments/:id/cancel", () => err(405, "METHOD_NOT_ALLOWED", "Request method 'PUT' is not supported")),
+  http.put("/api/v1/appointments/:id/checkin", () => err(405, "METHOD_NOT_ALLOWED", "Request method 'PUT' is not supported")),
+  http.put("/api/v1/appointments/:id/noshow", () => err(405, "METHOD_NOT_ALLOWED", "Request method 'PUT' is not supported")),
 
   /* ── queue-service ── */
   http.get("/api/v1/queue/tokens", () => ok([sampleToken])),

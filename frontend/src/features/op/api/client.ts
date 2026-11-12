@@ -203,21 +203,36 @@ export const appointmentApi = {
     return request<Appointment>(APPT_BASE, "/api/v1/appointments", { method: "POST", body: payload });
   },
 
-  /** PUT /api/v1/appointments/{id}/cancel — terminal 4. */
-  cancel: (id: number, reason: string) =>
-    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/cancel`, { method: "PUT", body: { reason } }),
+  /** POST /api/v1/appointments/{id}/cancel — terminal 4 (MIG-031). */
+  cancel: (id: number, _reason?: string) =>
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/cancel`, { method: "POST" }),
 
-  /** PUT /api/v1/appointments/{id}/noshow — terminal 6. */
+  /** POST /api/v1/appointments/{id}/noshow — terminal 6 (MIG-031). */
   noShow: (id: number) =>
-    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/noshow`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/noshow`, { method: "POST" }),
 
-  /** PUT /api/v1/appointments/{id}/checkin — BOOKED -> CHECKED_IN. */
+  /** POST /api/v1/appointments/{id}/checkin — BOOKED -> CHECKED_IN. */
   checkIn: (id: number) =>
-    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/checkin`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/checkin`, { method: "POST" }),
 
-  /** PUT /api/v1/appointments/{id}/complete — CHECKED_IN -> COMPLETED. */
+  /** POST /api/v1/appointments/{id}/complete — CHECKED_IN -> COMPLETED. */
   complete: (id: number) =>
-    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/complete`, { method: "PUT" }),
+    request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/complete`, { method: "POST" }),
+
+  /** POST /api/v1/appointments/{id}/reschedule — BOOKED|CHECKED_IN -> RESCHEDULED + fresh BOOKED row. */
+  reschedule: (id: number, body: BookingRequest | Record<string, unknown>) => {
+    const payload: Record<string, unknown> = { ...body };
+    if (!payload.apptDate && typeof body.startAt === "string") {
+      payload.apptDate = body.startAt.slice(0, 10);
+    }
+    if (!payload.slotStart && typeof body.startAt === "string") {
+      payload.slotStart = body.startAt.includes("T") ? body.startAt.split("T")[1] : body.startAt;
+    }
+    return request<Appointment>(APPT_BASE, `/api/v1/appointments/${id}/reschedule`, {
+      method: "POST",
+      body: payload,
+    });
+  },
 
   /** GET /api/v1/doctors/{id}/slots?date=YYYY-MM-DD — slot picker cascade. */
   slots: (doctorId: number, date: string) =>

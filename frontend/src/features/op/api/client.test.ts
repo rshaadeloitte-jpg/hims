@@ -91,6 +91,101 @@ describe("op client doctor schedules and slots", () => {
   });
 });
 
+describe("op client appointment actions use POST", () => {
+  it("calls POST /checkin with no body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 501, status: 2 }),
+    });
+    await appointmentApi.checkIn(501);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/appointments/501/checkin",
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+  });
+
+  it("calls POST /complete with no body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 501, status: 3 }),
+    });
+    await appointmentApi.complete(501);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/appointments/501/complete",
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+  });
+
+  it("calls POST /cancel with no body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 501, status: 4 }),
+    });
+    await appointmentApi.cancel(501, "Patient request");
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/appointments/501/cancel",
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+  });
+
+  it("calls POST /noshow with no body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 501, status: 6 }),
+    });
+    await appointmentApi.noShow(501);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/appointments/501/noshow",
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    expect(fetchMock.mock.calls[0][1].body).toBeUndefined();
+  });
+
+  it("calls POST /reschedule with slot booking body", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ id: 502, status: 1 }),
+    });
+    await appointmentApi.reschedule(501, {
+      patientId: 10,
+      doctorId: 100,
+      scheduleId: 5,
+      departmentId: 1,
+      apptDate: "2026-11-13",
+      slotStart: "10:00:00",
+    });
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/appointments/501/reschedule",
+    );
+    expect(fetchMock.mock.calls[0][1].method).toBe("POST");
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.patientId).toBe(10);
+    expect(body.doctorId).toBe(100);
+    expect(body.apptDate).toBe("2026-11-13");
+    expect(body.slotStart).toBe("10:00:00");
+  });
+
+  it("calls GET /api/v1/masters/doctor/all when unitId is null or omitted", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+    await appointmentApi.doctorsMaster(null);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      "http://localhost:3000/api/v1/masters/doctor/all",
+    );
+  });
+});
+
 describe("department → doctor mapping (deriveDoctorsFromSchedules)", () => {
   it("derives unique doctors and resolves names from doctor master", () => {
     const schedules: DoctorSchedule[] = [

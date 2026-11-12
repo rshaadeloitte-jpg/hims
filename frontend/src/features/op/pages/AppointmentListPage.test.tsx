@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { http, HttpResponse } from "msw";
+import { server } from "../__tests__/mocks/server";
 import { AppointmentListPage } from "./AppointmentListPage";
 import "../__tests__/setup";
 
@@ -131,6 +133,157 @@ describe("AppointmentListPage", () => {
     await waitFor(() => {
       expect(screen.queryByText("Asha Verma")).not.toBeInTheDocument();
       expect(screen.getByText("Ravi Kumar")).toBeInTheDocument();
+    });
+  });
+
+  it("resolves patient, doctor, and department display names when appointment row has only IDs, falling back to ID if unresolved", async () => {
+    server.use(
+      http.get("/api/v1/appointments", () => {
+        return HttpResponse.json([
+          {
+            id: 9005,
+            patientId: 7001,
+            doctorId: 100,
+            departmentId: 1,
+            apptDate: "2024-08-15",
+            slotStart: "11:00:00",
+            apptStatus: 1,
+            status: true,
+            visitType: "APPOINTMENT",
+            source: "ONLINE",
+          },
+          {
+            id: 9006,
+            patientId: 9999,
+            doctorId: 9999,
+            departmentId: 9999,
+            apptDate: "2024-08-15",
+            slotStart: "11:30:00",
+            apptStatus: 1,
+            status: true,
+            visitType: "APPOINTMENT",
+            source: "ONLINE",
+          },
+        ]);
+      }),
+    );
+
+    render(wrap());
+    // 7001 -> Asha Verma, 100 -> Dr. Anjali Rao, 1 -> General Medicine
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+      expect(screen.getByText("Dr. Anjali Rao")).toBeInTheDocument();
+      expect(screen.getByText("General Medicine")).toBeInTheDocument();
+    });
+
+    // 9999 -> fallback #9999
+    expect(screen.getAllByText("#9999").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("performs check-in using POST and refreshes the list", async () => {
+    let postCalled = false;
+    let listFetchCount = 0;
+    server.use(
+      http.post("/api/v1/appointments/:id/checkin", () => {
+        postCalled = true;
+        return HttpResponse.json({ id: 9001, apptStatus: 2, status: 2 });
+      }),
+      http.get("/api/v1/appointments", () => {
+        listFetchCount++;
+        return HttpResponse.json([
+          {
+            id: 9001,
+            patientId: 7001,
+            patientName: "Asha Verma",
+            doctorId: 100,
+            doctorName: "Dr. Anjali Rao",
+            apptStatus: postCalled ? 2 : 1,
+            status: true,
+            visitType: "WALK_IN",
+          },
+        ]);
+      }),
+    );
+
+    render(wrap());
+    const checkInBtn = await screen.findByRole("button", { name: /check in/i });
+    fireEvent.click(checkInBtn);
+
+    await waitFor(() => {
+      expect(postCalled).toBe(true);
+      expect(listFetchCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("shows backend error message when an action fails", async () => {
+    server.use(
+      http.post("/api/v1/appointments/:id/checkin", () => {
+        return HttpResponse.json(
+          { status: "ERROR", errorCode: "APPT_ILLEGAL_TRANSITION", message: "Patient is not in BOOKED state" },
+          { status: 400 },
+        );
+      }),
+    );
+
+    render(wrap());
+    const checkInBtn = await screen.findByRole("button", { name: /check in/i });
+    fireEvent.click(checkInBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("Patient is not in BOOKED state");
+    });
+  });
+
+  it("cancels appointment with POST, closes dialog, and refreshes the list", async () => {
+    let cancelCalled = false;
+    server.use(
+      http.post("/api/v1/appointments/:id/cancel", () => {
+        cancelCalled = true;
+        return HttpResponse.json({ id: 9001, apptStatus: 4, status: 4 });
+      }),
+    );
+
+    render(wrap());
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+    });
+
+    const table = screen.getByRole("table");
+    const cancelBtn = within(table).getByRole("button", { name: /^cancel$/i });
+    fireEvent.click(cancelBtn);
+
+    const reasonInput = screen.getByLabelText(/reason for cancellation/i);
+    fireEvent.input(reasonInput, { target: { value: "Doctor unavailable" } });
+
+    const confirmBtn = screen.getByRole("button", { name: /^cancel appointment$/i });
+    expect((confirmBtn as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(cancelCalled).toBe(true);
+    });
+  });
+
+  it("marks appointment as no-show with POST and refreshes the list", async () => {
+    let noShowCalled = false;
+    server.use(
+      http.post("/api/v1/appointments/:id/noshow", () => {
+        noShowCalled = true;
+        return HttpResponse.json({ id: 9001, apptStatus: 6, status: 6 });
+      }),
+    );
+
+    render(wrap());
+    await waitFor(() => {
+      expect(screen.getByText("Asha Verma")).toBeInTheDocument();
+    });
+
+    const table = screen.getByRole("table");
+    const noShowBtn = within(table).getByRole("button", { name: /no-show/i });
+    fireEvent.click(noShowBtn);
+
+    await waitFor(() => {
+      expect(noShowCalled).toBe(true);
     });
   });
 });

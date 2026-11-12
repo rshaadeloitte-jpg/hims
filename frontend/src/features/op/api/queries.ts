@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   abhaApi,
   appointmentApi,
@@ -32,6 +33,7 @@ export const opKeys = {
   patient: (id: number) => ["op", "patient", id] as const,
   patientSponsors: (id: number) => ["op", "patient", id, "sponsors"] as const,
   departments: (unitId?: number | null) => ["op", "department", "list", unitId ?? null] as const,
+  doctorsMaster: (unitId?: number | null) => ["op", "doctor", "masters", unitId ?? null] as const,
   doctorSchedules: (departmentId?: number) =>
     ["op", "doctor", "schedules", departmentId ?? null] as const,
   doctorSlots: (doctorId: number, date: string) =>
@@ -58,6 +60,20 @@ export function usePatient(id: number | undefined) {
     queryKey: id ? opKeys.patient(id) : ["op", "patient", "none"],
     queryFn: () => patientApi.get(id!),
     enabled: typeof id === "number",
+  });
+}
+
+export function usePatients(ids: number[]) {
+  const uniqueIds = useMemo(
+    () => Array.from(new Set(ids.filter((id) => typeof id === "number" && id > 0))),
+    [ids],
+  );
+  return useQueries({
+    queries: uniqueIds.map((id) => ({
+      queryKey: opKeys.patient(id),
+      queryFn: () => patientApi.get(id),
+      staleTime: 60_000,
+    })),
   });
 }
 
@@ -102,6 +118,14 @@ export function useDepartments(unitId?: number | null) {
   return useQuery({
     queryKey: opKeys.departments(effectiveUnitId),
     queryFn: () => appointmentApi.departments(effectiveUnitId),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useDoctorsMaster(unitId?: number | null) {
+  return useQuery({
+    queryKey: opKeys.doctorsMaster(unitId),
+    queryFn: () => appointmentApi.doctorsMaster(unitId),
     staleTime: 5 * 60_000,
   });
 }
@@ -360,7 +384,7 @@ export function useCreateAppointment() {
 export function useCancelAppointment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) => appointmentApi.cancel(id, reason),
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) => appointmentApi.cancel(id, reason),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["op", "appointment"] });
     },
@@ -377,10 +401,31 @@ export function useCheckInAppointment() {
   });
 }
 
+export function useCompleteAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => appointmentApi.complete(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["op", "appointment"] });
+    },
+  });
+}
+
 export function useNoShowAppointment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => appointmentApi.noShow(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["op", "appointment"] });
+    },
+  });
+}
+
+export function useRescheduleAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: import("./types").BookingRequest | Record<string, unknown> }) =>
+      appointmentApi.reschedule(id, body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["op", "appointment"] });
     },
