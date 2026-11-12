@@ -81,7 +81,11 @@ export function AppointmentListPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<StatusFilter>((searchParams.get("filter") as StatusFilter) || "all");
   const [page, setPage] = useState<number>(Number(searchParams.get("page") || "0") || 0);
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // Local calendar date (toISOString would give the UTC date, i.e. yesterday before 05:30 IST).
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
   const [date, setDate] = useState<string>(searchParams.get("date") || today);
 
   const dateParam = searchParams.get("date");
