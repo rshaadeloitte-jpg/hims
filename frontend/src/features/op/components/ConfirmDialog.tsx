@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Textarea } from "@chakra-ui/react";
 import { FormField } from "../../../components/ui";
 
@@ -50,6 +50,9 @@ export function ConfirmDialog({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const cancelRef = useRef<HTMLButtonElement | null>(null);
 
+  const isReasonMissing = Boolean(reasonField?.required && !reasonField.value.trim());
+  const [attempted, setAttempted] = useState(false);
+
   useEffect(() => {
     const d = dialogRef.current;
     if (!d) return;
@@ -59,8 +62,17 @@ export function ConfirmDialog({
       requestAnimationFrame(() => cancelRef.current?.focus());
     } else if (!open && d.open) {
       d.close();
+      setAttempted(false);
     }
   }, [open]);
+
+  const handleConfirm = () => {
+    if (isReasonMissing) {
+      setAttempted(true);
+      return;
+    }
+    onConfirm();
+  };
 
   return (
     <dialog
@@ -83,7 +95,11 @@ export function ConfirmDialog({
         <div className="confirm-dialog__content">{body}</div>
         {reasonField ? (
           <div className="confirm-dialog__reason">
-            <FormField label={reasonField.label} required={reasonField.required}>
+            <FormField
+              label={reasonField.label}
+              required={reasonField.required}
+              error={attempted && isReasonMissing ? "Reason is required" : undefined}
+            >
               <Textarea
                 bg="white"
                 borderColor="gray.300"
@@ -110,14 +126,21 @@ export function ConfirmDialog({
           >
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            className={`btn ${confirmTone === "danger" ? "btn-danger" : "btn-primary"}`}
-            onClick={onConfirm}
-            disabled={busy || (reasonField?.required && !reasonField.value.trim())}
+          <div
+            style={{ display: "inline-block" }}
+            onClickCapture={() => {
+              if (isReasonMissing) setAttempted(true);
+            }}
           >
-            {busy ? "Working…" : confirmLabel}
-          </button>
+            <button
+              type="button"
+              className={`btn ${confirmTone === "danger" ? "btn-danger" : "btn-primary"}`}
+              onClick={handleConfirm}
+              disabled={busy || isReasonMissing}
+            >
+              {busy ? "Working…" : confirmLabel}
+            </button>
+          </div>
         </div>
       </div>
     </dialog>

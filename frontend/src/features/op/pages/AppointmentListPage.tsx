@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@chakra-ui/react";
@@ -81,7 +81,15 @@ export function AppointmentListPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<StatusFilter>((searchParams.get("filter") as StatusFilter) || "all");
   const [page, setPage] = useState<number>(Number(searchParams.get("page") || "0") || 0);
-  const [date] = useState<string>(searchParams.get("date") || new Date().toISOString().slice(0, 10));
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [date, setDate] = useState<string>(searchParams.get("date") || today);
+
+  const dateParam = searchParams.get("date");
+  useEffect(() => {
+    if (dateParam && dateParam !== date) {
+      setDate(dateParam);
+    }
+  }, [dateParam]);
   const highlightParam = searchParams.get("highlight");
   const [highlight] = useState<number | null>(
     highlightParam ? Number(highlightParam) : null,
@@ -263,6 +271,24 @@ export function AppointmentListPage() {
     if (nextPage === 0) params.delete("page");
     else params.set("page", String(nextPage));
     setSearchParams(params, { replace: true });
+  };
+
+  const handleDateChange = (nextDate: string) => {
+    setActionError(null);
+    setDate(nextDate);
+    setPage(0);
+    const params = new URLSearchParams(searchParams);
+    if (nextDate) {
+      params.set("date", nextDate);
+    } else {
+      params.delete("date");
+    }
+    params.delete("page");
+    setSearchParams(params, { replace: true });
+  };
+
+  const handleTodayClick = () => {
+    handleDateChange(today);
   };
 
   const columns: DataTableColumn<Appointment>[] = [
@@ -499,6 +525,23 @@ export function AppointmentListPage() {
             </Button>
           );
         })}
+        <div className="filter-date-group">
+          <input
+            type="date"
+            aria-label="Date"
+            className="filter-date-input"
+            value={date}
+            onChange={(e) => handleDateChange(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleTodayClick}
+          >
+            Today
+          </Button>
+        </div>
       </nav>
 
       <section className="card">

@@ -51,6 +51,45 @@ describe("ConfirmDialog", () => {
     expect(confirmBtn).toBeDisabled();
     fireEvent.click(confirmBtn);
     expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText("Reason is required")).toBeInTheDocument();
+  });
+
+  it("disables confirm with whitespace reason and displays error when confirm is attempted", () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog
+        open
+        title="Cancel"
+        body={<p>Body</p>}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+        reasonField={{ label: "Reason", required: true, value: "   ", onChange: vi.fn() }}
+      />,
+    );
+    const confirmBtn = screen.getByRole("button", { name: /confirm/i });
+    expect(confirmBtn).toBeDisabled();
+    fireEvent.click(confirmBtn);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText("Reason is required")).toBeInTheDocument();
+  });
+
+  it("enables confirm and does not show error when required reason is provided", () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog
+        open
+        title="Cancel"
+        body={<p>Body</p>}
+        onCancel={vi.fn()}
+        onConfirm={onConfirm}
+        reasonField={{ label: "Reason", required: true, value: "Patient request", onChange: vi.fn() }}
+      />,
+    );
+    const confirmBtn = screen.getByRole("button", { name: /confirm/i });
+    expect(confirmBtn).not.toBeDisabled();
+    expect(screen.queryByText("Reason is required")).not.toBeInTheDocument();
+    fireEvent.click(confirmBtn);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("uses the danger tone for destructive confirms", () => {

@@ -7,11 +7,11 @@ import { server } from "../__tests__/mocks/server";
 import { AppointmentListPage } from "./AppointmentListPage";
 import "../__tests__/setup";
 
-const wrap = () => {
+const wrap = (initialEntries = ["/m/op/appointmentList"]) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return (
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={["/m/op/appointmentList"]}>
+      <MemoryRouter initialEntries={initialEntries}>
         <Routes>
           <Route path="/m/op/appointmentList" element={<AppointmentListPage />} />
           <Route path="/m/op/addAppointment" element={<div>add appt</div>} />
@@ -46,15 +46,25 @@ describe("AppointmentListPage", () => {
     expect(screen.getByText("Ravi Kumar")).toBeInTheDocument();
   });
 
-  it("opens the cancel dialog with a required reason field", async () => {
+  it("opens the cancel dialog with a required reason field, disables confirm when blank, and shows error text", async () => {
     render(wrap());
     const cancelBtn = await screen.findByRole("button", { name: /^cancel$/i });
     fireEvent.click(cancelBtn);
     expect(screen.getAllByText(/cancel appointment/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByLabelText(/reason for cancellation/i)).toBeInTheDocument();
+    const reasonInput = screen.getByLabelText(/reason for cancellation/i);
+    expect(reasonInput).toBeInTheDocument();
     // Confirm is disabled until a reason is entered
     const confirmBtn = screen.getAllByRole("button", { name: /cancel appointment/i })[0];
     expect(confirmBtn.hasAttribute("disabled") || (confirmBtn as HTMLButtonElement).disabled).toBeTruthy();
+
+    // Attempting confirm with empty reason shows inline error
+    fireEvent.click(confirmBtn);
+    expect(screen.getByText("Reason is required")).toBeInTheDocument();
+
+    // Entering a reason clears the error and enables confirm
+    fireEvent.change(reasonInput, { target: { value: "Patient request" } });
+    expect(screen.queryByText("Reason is required")).not.toBeInTheDocument();
+    expect((confirmBtn as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("requires a reschedule reason before the reschedule confirm is enabled", async () => {
@@ -234,11 +244,14 @@ describe("AppointmentListPage", () => {
     });
   });
 
-  it("cancels appointment with POST, closes dialog, and refreshes the list", async () => {
+  it("cancels appointment with POST (with no body), closes dialog, and refreshes the list", async () => {
     let cancelCalled = false;
+    let requestHadNoBody = false;
     server.use(
-      http.post("/api/v1/appointments/:id/cancel", () => {
+      http.post("/api/v1/appointments/:id/cancel", async ({ request }) => {
         cancelCalled = true;
+        const text = await request.text();
+        requestHadNoBody = text === "";
         return HttpResponse.json({ id: 9001, apptStatus: 4, status: 4 });
       }),
     );
@@ -261,7 +274,70 @@ describe("AppointmentListPage", () => {
 
     await waitFor(() => {
       expect(cancelCalled).toBe(true);
+      expect(requestHadNoBody).toBe(true);
     });
+  });
+
+  it("refetches appointment list when date is changed, syncing search params and resetting page", async () => {
+    let requestedDate: string | null = null;
+    server.use(
+      http.get("/api/v1/appointments", ({ request }) => {
+        const url = new URL(request.url);
+        requestedDate = url.searchParams.get("date");
+        if (requestedDate === "2026-11-20") {
+          return HttpResponse.json([
+            {
+              id: 9991,
+              patientId: 7001,
+              patientName: "Future Patient",
+              doctorId: 100,
+              doctorName: "Dr. Anjali Rao",
+              apptDate: "2026-11-20",
+              slotStart: "10:00:00",
+              apptStatus: 1,
+              status: true,
+              visitType: "WALK_IN",
+            },
+          ]);
+        }
+        return HttpResponse.json([
+          {
+            id: 9001,
+            patientId: 7001,
+            patientName: "Asha Verma",
+            doctorId: 100,
+            doctorName: "Dr. Anjali Rao",
+            apptStatus: 1,
+            status: true,
+            visitType: "WALK_IN",
+          },
+        ]);
+      }),
+    );
+
+    render(wrap(["/m/op/appointmentList?page=2"]));
+
+    const dateInput = await screen.findByLabelText(/date/i);
+    expect(dateInput).toBeInTheDocument();
+    expect(dateInput).toHaveAttribute("type", "date");
+
+    // Change date to 2026-11-20
+    fireEvent.change(dateInput, { target: { value: "2026-11-20" } });
+
+    await waitFor(() => {
+      expect(screen.getByText("Future Patient")).toBeInTheDocument();
+    });
+    expect(requestedDate).toBe("2026-11-20");
+
+    // Clicking Today quick button sets date back to today
+    const todayBtn = screen.getByRole("button", { name: "Today" });
+    fireEvent.click(todayBtn);
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    await waitFor(() => {
+      expect(requestedDate).toBe(todayStr);
+    });
+    expect((dateInput as HTMLInputElement).value).toBe(todayStr);
   });
 
   it("marks appointment as no-show with POST and refreshes the list", async () => {
