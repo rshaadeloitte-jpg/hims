@@ -200,6 +200,36 @@ export const handlers = [
     const deptId = Number(url.searchParams.get("departmentId") ?? url.searchParams.get("deptId") ?? "0");
     return ok(sampleSchedules.filter((s) => !deptId || s.departmentId === deptId));
   }),
+  http.post("/api/v1/doctors/:id/schedules", async ({ params, request }) => {
+    const url = new URL(request.url);
+    const doctorId = Number(params.id);
+    const dayOfWeek = Number(url.searchParams.get("dayOfWeek") ?? "1");
+    const startTime = url.searchParams.get("startTime") ?? "09:00:00";
+    const endTime = url.searchParams.get("endTime") ?? "17:00:00";
+    const slotMinutes = Number(url.searchParams.get("slotMinutes") ?? "15");
+    const deptId = url.searchParams.get("deptId");
+    const cabin = url.searchParams.get("cabin");
+    if (!url.searchParams.get("unitId")) {
+      return err(400, "BEXA003", "unitId is required");
+    }
+    if (!url.searchParams.get("dayOfWeek") || !url.searchParams.get("startTime") || !url.searchParams.get("endTime")) {
+      return err(400, "BEXA003", "dayOfWeek, startTime, endTime are required");
+    }
+    return ok(
+      {
+        id: 9999,
+        doctorId,
+        departmentId: deptId ? Number(deptId) : undefined,
+        dayOfWeek,
+        startTime,
+        endTime,
+        slotMinutes,
+        cabin: cabin ?? undefined,
+        status: true,
+      } as DoctorSchedule,
+      201,
+    );
+  }),
   http.get("/api/v1/doctors/:id/slots", ({ params, request }) => {
     const url = new URL(request.url);
     const date = url.searchParams.get("date") ?? "";

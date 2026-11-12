@@ -8,6 +8,8 @@
 export { WalkinVisitPage } from "./pages/WalkinVisitPage";
 export { AddAppointmentPage } from "./pages/AddAppointmentPage";
 export { AppointmentListPage } from "./pages/AppointmentListPage";
+export { DoctorSchedulesPage } from "./pages/DoctorSchedulesPage";
+export { default as DoctorSchedulePage } from "./pages/DoctorSchedulesPage";
 export { AbhaPage } from "./pages/AbhaPage";
 
 // Re-exports for the API surface and shared widgets (useful for tests and for

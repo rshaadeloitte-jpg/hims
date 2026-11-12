@@ -7,6 +7,7 @@ import {
   AbhaPage,
   AddAppointmentPage,
   AppointmentListPage,
+  DoctorSchedulesPage,
   WalkinVisitPage,
 } from "./features/op";
 import { AppointmentBooking } from "./features/opd/AppointmentBooking";
@@ -104,6 +105,7 @@ function AuthenticatedRoutes() {
           <Route path="/m/op/walkinVisit" element={<WalkinVisitPage />} />
           <Route path="/m/op/addAppointment" element={<AddAppointmentPage />} />
           <Route path="/m/op/appointmentList" element={<AppointmentListPage />} />
+          <Route path="/m/op/doctorSchedules" element={<DoctorSchedulesPage />} />
           <Route path="/m/op/abha" element={<AbhaPage />} />
           <Route path="/m02/walkin" element={<WalkinDesk />} />
           <Route path="/m02/booking" element={<AppointmentBooking />} />
