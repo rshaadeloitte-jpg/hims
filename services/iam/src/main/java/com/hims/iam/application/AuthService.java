@@ -20,11 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -82,7 +78,7 @@ public class AuthService {
         Instant until = claims != null && claims.getExpiration() != null
                 ? claims.getExpiration().toInstant()
                 : Instant.now().plusSeconds(3600);
-        revocationService.revoke(sha256(token), until);
+        revocationService.revoke(token, until);
     }
 
     public ValidateResponse validate(String token) {
@@ -144,14 +140,5 @@ public class AuthService {
                 .map(g -> roleMasterRepository.findById(g.getRoleId()).map(UserRoleMaster::getCode).orElse(null))
                 .filter(code -> code != null)
                 .toList();
-    }
-
-    static String sha256(String value) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }
