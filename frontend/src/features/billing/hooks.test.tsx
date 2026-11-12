@@ -12,6 +12,11 @@ import {
   usePaymentReceipt,
   useDayCloseSummary,
   useRevenueAnalytics,
+  usePayments,
+  useRecordPayment,
+  getChargeDisplayValues,
+  PAYMENT_METHOD_TO_MODE,
+  MODE_TO_PAYMENT_METHOD,
 } from "./hooks";
 
 function wrapper() {
@@ -271,5 +276,151 @@ describe("useRevenueAnalytics", () => {
     const { result } = renderHook(() => useRevenueAnalytics("DAILY", 30), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.totalRevenue).toBe(25000);
+  });
+});
+
+describe("usePayments and useRecordPayment with real endpoints", () => {
+  it("usePayments calls GET /api/v1/payments?billId={id}", async () => {
+    const mockPayments = [
+      {
+        paymentId: 10,
+        billId: 42,
+        patientId: 505,
+        amount: 250,
+        transactionType: 2,
+        changeAmount: 0,
+        modes: [{ modeDetailId: 1, paymentId: 10, mode: 1, amount: 250 }],
+        advanceConsumptions: [],
+        addedDatetime: "2026-11-12T09:00:00Z",
+      },
+    ];
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockPayments,
+    });
+
+    const { result } = renderHook(() => usePayments(42), { wrapper: wrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/payments\?billId=42$/),
+      expect.anything(),
+    );
+    expect(result.current.data?.[0]?.modes?.[0]?.mode).toBe(1);
+  });
+
+  it("useRecordPayment posts to POST /api/v1/payments with structured body", async () => {
+    const mockCreated = {
+      paymentId: 11,
+      billId: 42,
+      patientId: 505,
+      amount: 500,
+      transactionType: 2,
+      modes: [{ modeDetailId: 2, paymentId: 11, mode: 1, amount: 500 }],
+    };
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      json: async () => mockCreated,
+    });
+
+    const { result } = renderHook(() => useRecordPayment(), { wrapper: wrapper() });
+    result.current.mutate({
+      billId: 42,
+      patientId: 505,
+      amount: 500,
+      advanceUse: false,
+      modes: [{ mode: 1, amount: 500 }],
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/payments$/),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          billId: 42,
+          patientId: 505,
+          amount: 500,
+          advanceUse: false,
+          modes: [{ mode: 1, amount: 500 }],
+        }),
+      }),
+    );
+  });
+
+  it("maps payment methods to backend mode integers", () => {
+    expect(PAYMENT_METHOD_TO_MODE.CASH).toBe(1);
+    expect(PAYMENT_METHOD_TO_MODE.CARD).toBe(2);
+    expect(PAYMENT_METHOD_TO_MODE.CHEQUE).toBe(3);
+    expect(PAYMENT_METHOD_TO_MODE.UPI).toBe(4);
+    expect(PAYMENT_METHOD_TO_MODE.ADVANCE).toBe(7);
+
+    expect(MODE_TO_PAYMENT_METHOD[1]).toBe("Cash");
+    expect(MODE_TO_PAYMENT_METHOD[2]).toBe("Card");
+    expect(MODE_TO_PAYMENT_METHOD[3]).toBe("Cheque");
+    expect(MODE_TO_PAYMENT_METHOD[4]).toBe("UPI");
+    expect(MODE_TO_PAYMENT_METHOD[7]).toBe("Advance");
+  });
+
+  it("getChargeDisplayValues maps real charge fields and calculations", () => {
+    // Charge with calculations array from BillingCalculator
+    const chargeWithCalcs = {
+      chargeId: 1,
+      serviceId: 900,
+      serviceName: "X-Ray Chest",
+      rate: 1000,
+      qty: 1,
+      totalBeforeFinalization: 1000,
+      selfBeforeFinalization: 580,
+      nonselfBeforeFinalization: 600,
+      calculations: [
+        {
+          lineTotal: 1000,
+          selfRate: 400,
+          nonSelfRate: 600,
+          concession: 0,
+          taxTotal: 180,
+          selfAmount: 580,
+          nonSelfAmount: 600,
+        },
+      ],
+      isCancelled: false,
+    };
+    const display1 = getChargeDisplayValues(chargeWithCalcs);
+    expect(display1.amount).toBe(1000);
+    expect(display1.tax).toBe(180);
+    expect(display1.total).toBe(1180);
+
+    // Charge loaded from DB after finalize (snapshot columns populated, no calculations)
+    const chargeFromDb = {
+      chargeId: 2,
+      serviceId: 901,
+      serviceName: "Blood Test",
+      rate: 300,
+      qty: 2,
+      totalBeforeFinalization: 600,
+      selfBeforeFinalization: 600,
+      nonselfBeforeFinalization: 0,
+      isCancelled: false,
+    };
+    const display2 = getChargeDisplayValues(chargeFromDb);
+    expect(display2.amount).toBe(600);
+    expect(display2.tax).toBe(0);
+    expect(display2.total).toBe(600);
+
+    // Interim charge (rate * qty)
+    const interimCharge = {
+      chargeId: 3,
+      serviceId: 902,
+      serviceName: "Consultation",
+      rate: 350,
+      qty: 1,
+      isCancelled: false,
+    };
+    const display3 = getChargeDisplayValues(interimCharge);
+    expect(display3.amount).toBe(350);
+    expect(display3.tax).toBe(0);
+    expect(display3.total).toBe(350);
   });
 });

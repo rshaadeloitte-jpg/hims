@@ -33,6 +33,45 @@ async function billingJson<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ---- Types -----------------------------------------------------------------
 
+export interface ChargeCalculation {
+  lineTotal?: number;
+  selfRate?: number;
+  nonSelfRate?: number;
+  concession?: number;
+  taxA?: number;
+  taxB?: number;
+  taxC?: number;
+  taxTotal?: number;
+  selfAmount?: number;
+  nonSelfAmount?: number;
+  doctorShare?: number | null;
+  hospitalShare?: number | null;
+}
+
+export interface Charge {
+  chargeId: number;
+  billId?: number;
+  serviceId: number;
+  serviceName: string;
+  rate: number;
+  qty: number;
+  taxPctA?: number;
+  taxPctB?: number;
+  taxPctC?: number;
+  applyAfterConcession?: boolean;
+  coPayPct?: number;
+  concessionPlanPct?: number;
+  concessionBillPct?: number;
+  totalBeforeFinalization?: number;
+  selfBeforeFinalization?: number;
+  nonselfBeforeFinalization?: number;
+  calculations?: ChargeCalculation[] | ChargeCalculation;
+  amount?: number;
+  taxAmount?: number;
+  totalAmount?: number;
+  isCancelled?: boolean;
+}
+
 export interface Bill {
   billId: number;
   patientId: number;
@@ -59,27 +98,101 @@ export interface Bill {
   charges?: Charge[];
 }
 
-export interface Charge {
-  chargeId: number;
-  billId?: number;
-  serviceId: number;
-  serviceName: string;
-  rate: number;
-  qty: number;
+export interface PaymentModeDetail {
+  modeDetailId?: number;
+  paymentId?: number;
+  mode: number;
   amount: number;
-  taxAmount: number;
-  totalAmount: number;
-  isCancelled: boolean;
+}
+
+export interface AdvanceConsumption {
+  consumptionId?: number;
+  advanceId: number;
+  paymentId?: number;
+  consumedAmount: number;
 }
 
 export interface Payment {
   paymentId: number;
   billId: number;
+  patientId?: number;
   amount: number;
-  paymentMethod: string;
+  transactionType?: number;
+  changeAmount?: number;
+  modes?: PaymentModeDetail[];
+  advanceConsumptions?: AdvanceConsumption[];
+  paymentMethod?: string;
   referenceNo?: string;
   remarks?: string;
-  createdAt: string;
+  addedDatetime?: string;
+  createdAt?: string;
+}
+
+export interface PaymentModeLineInput {
+  mode: number;
+  amount: number;
+}
+
+export interface CreatePaymentPayload {
+  billId: number;
+  patientId: number;
+  amount: number;
+  advanceUse: boolean;
+  modes: PaymentModeLineInput[];
+}
+
+export const PAYMENT_METHOD_TO_MODE: Record<string, number> = {
+  CASH: 1,
+  CARD: 2,
+  CHEQUE: 3,
+  UPI: 4,
+  ADVANCE: 7,
+};
+
+export const MODE_TO_PAYMENT_METHOD: Record<number, string> = {
+  1: "Cash",
+  2: "Card",
+  3: "Cheque",
+  4: "UPI",
+  7: "Advance",
+};
+
+export function getChargeDisplayValues(c: Charge) {
+  const calc: ChargeCalculation | undefined = Array.isArray(c.calculations)
+    ? c.calculations[0]
+    : (c.calculations as ChargeCalculation | undefined);
+
+  const rate = c.rate ?? 0;
+  const qty = c.qty ?? 1;
+
+  const amount =
+    calc?.lineTotal ??
+    c.totalBeforeFinalization ??
+    c.amount ??
+    rate * qty;
+
+  const tax =
+    calc?.taxTotal ??
+    (calc?.taxA != null || calc?.taxB != null || calc?.taxC != null
+      ? (calc.taxA ?? 0) + (calc.taxB ?? 0) + (calc.taxC ?? 0)
+      : c.taxAmount ?? 0);
+
+  const total =
+    calc?.selfAmount != null && calc?.nonSelfAmount != null
+      ? calc.selfAmount + calc.nonSelfAmount
+      : c.selfBeforeFinalization != null && c.nonselfBeforeFinalization != null
+        ? c.selfBeforeFinalization + c.nonselfBeforeFinalization
+        : c.totalBeforeFinalization != null
+          ? c.totalBeforeFinalization
+          : c.totalAmount ?? amount + tax;
+
+  return {
+    rate,
+    qty,
+    amount,
+    tax,
+    total,
+  };
 }
 
 export interface CreditNote {
@@ -210,7 +323,7 @@ export function useApplyConcession() {
 export function usePayments(billId: number) {
   return useQuery<Payment[]>({
     queryKey: billingQueryKeys.payments(billId),
-    queryFn: () => billingJson<Payment[]>(`${BILLING_BASE}/api/v1/bills/${billId}/payments`),
+    queryFn: () => billingJson<Payment[]>(`${BILLING_BASE}/api/v1/payments?billId=${billId}`),
     enabled: billId > 0,
   });
 }
@@ -218,14 +331,46 @@ export function usePayments(billId: number) {
 export function useRecordPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
-      billingJson<Payment>(`${BILLING_BASE}/api/v1/bills/${id}/payments`, {
+    mutationFn: (vars: CreatePaymentPayload | { id: number; payload: Record<string, unknown> }) => {
+      let body: CreatePaymentPayload;
+      if ("billId" in vars && "patientId" in vars && "modes" in vars) {
+        body = vars;
+      } else {
+        const v = vars as { id: number; payload: Record<string, unknown> };
+        const p = v.payload;
+        if ("modes" in p) {
+          body = {
+            billId: (p.billId as number) ?? v.id,
+            patientId: (p.patientId as number) ?? 0,
+            amount: Number(p.amount),
+            advanceUse: Boolean(p.advanceUse),
+            modes: (p.modes as PaymentModeLineInput[]) ?? [],
+          };
+        } else {
+          const method = String(p.paymentMethod ?? "CASH").toUpperCase();
+          const isAdvance = method === "ADVANCE" || Boolean(p.advanceUse);
+          const amount = Number(p.amount);
+          body = {
+            billId: v.id,
+            patientId: (p.patientId as number) ?? 0,
+            amount,
+            advanceUse: isAdvance,
+            modes: isAdvance ? [] : [{ mode: PAYMENT_METHOD_TO_MODE[method] ?? 1, amount }],
+          };
+        }
+      }
+      return billingJson<Payment>(`${BILLING_BASE}/api/v1/payments`, {
         method: "POST",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: (_, { id }) => {
-      void qc.invalidateQueries({ queryKey: billingQueryKeys.payments(id) });
-      void qc.invalidateQueries({ queryKey: billingQueryKeys.bill(id) });
+        body: JSON.stringify(body),
+      });
+    },
+    onSuccess: (_, vars) => {
+      const billId = "billId" in vars ? vars.billId : vars.id;
+      if (billId) {
+        void qc.invalidateQueries({ queryKey: billingQueryKeys.payments(billId) });
+        void qc.invalidateQueries({ queryKey: billingQueryKeys.bill(billId) });
+      }
+      void qc.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }
