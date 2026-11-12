@@ -48,13 +48,13 @@ describe("ConfirmDialog", () => {
       />,
     );
     const confirmBtn = screen.getByRole("button", { name: /confirm/i });
-    expect(confirmBtn).toBeDisabled();
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(confirmBtn);
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText("Reason is required")).toBeInTheDocument();
   });
 
-  it("disables confirm with whitespace reason and displays error when confirm is attempted", () => {
+  it("marks confirm aria-disabled with whitespace reason and displays error when confirm is attempted", () => {
     const onConfirm = vi.fn();
     render(
       <ConfirmDialog
@@ -67,7 +67,7 @@ describe("ConfirmDialog", () => {
       />,
     );
     const confirmBtn = screen.getByRole("button", { name: /confirm/i });
-    expect(confirmBtn).toBeDisabled();
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(confirmBtn);
     expect(onConfirm).not.toHaveBeenCalled();
     expect(screen.getByText("Reason is required")).toBeInTheDocument();

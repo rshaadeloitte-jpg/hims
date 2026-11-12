@@ -126,21 +126,18 @@ export function ConfirmDialog({
           >
             {cancelLabel}
           </button>
-          <div
-            style={{ display: "inline-block" }}
-            onClickCapture={() => {
-              if (isReasonMissing) setAttempted(true);
-            }}
+          {/* Not `disabled` when the reason is missing: browsers swallow clicks on disabled
+              buttons, so the user would get no "Reason is required" feedback. */}
+          <button
+            type="button"
+            className={`btn ${confirmTone === "danger" ? "btn-danger" : "btn-primary"}`}
+            onClick={handleConfirm}
+            disabled={busy}
+            aria-disabled={isReasonMissing || undefined}
+            style={isReasonMissing ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           >
-            <button
-              type="button"
-              className={`btn ${confirmTone === "danger" ? "btn-danger" : "btn-primary"}`}
-              onClick={handleConfirm}
-              disabled={busy || isReasonMissing}
-            >
-              {busy ? "Working…" : confirmLabel}
-            </button>
-          </div>
+            {busy ? "Working…" : confirmLabel}
+          </button>
         </div>
       </div>
     </dialog>

@@ -53,9 +53,10 @@ describe("AppointmentListPage", () => {
     expect(screen.getAllByText(/cancel appointment/i).length).toBeGreaterThanOrEqual(1);
     const reasonInput = screen.getByLabelText(/reason for cancellation/i);
     expect(reasonInput).toBeInTheDocument();
-    // Confirm is disabled until a reason is entered
+    // Confirm looks disabled until a reason is entered, but stays clickable so the error can show
     const confirmBtn = screen.getAllByRole("button", { name: /cancel appointment/i })[0];
-    expect(confirmBtn.hasAttribute("disabled") || (confirmBtn as HTMLButtonElement).disabled).toBeTruthy();
+    expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
+    expect((confirmBtn as HTMLButtonElement).disabled).toBe(false);
 
     // Attempting confirm with empty reason shows inline error
     fireEvent.click(confirmBtn);
@@ -64,7 +65,7 @@ describe("AppointmentListPage", () => {
     // Entering a reason clears the error and enables confirm
     fireEvent.change(reasonInput, { target: { value: "Patient request" } });
     expect(screen.queryByText("Reason is required")).not.toBeInTheDocument();
-    expect((confirmBtn as HTMLButtonElement).disabled).toBe(false);
+    expect(confirmBtn).not.toHaveAttribute("aria-disabled");
   });
 
   it("requires a reschedule reason before the reschedule confirm is enabled", async () => {
@@ -72,9 +73,9 @@ describe("AppointmentListPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: /reschedule/i }));
     expect(screen.getAllByText(/reschedule appointment/i).length).toBeGreaterThanOrEqual(1);
     const confirm = screen.getByRole("button", { name: /mark for reschedule/i }) as HTMLButtonElement;
-    expect(confirm.disabled).toBe(true);
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
     fireEvent.input(screen.getByLabelText(/reschedule reason/i), { target: { value: "Doctor unavailable" } });
-    expect(confirm.disabled).toBe(false);
+    expect(confirm).not.toHaveAttribute("aria-disabled");
   });
 
   it("navigates to /m/op/addAppointment when the New appointment button is clicked", async () => {
