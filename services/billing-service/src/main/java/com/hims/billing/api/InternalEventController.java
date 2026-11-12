@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * Internal event-relay ingress (WP-S1) — models the FUTURE KAFKA CONSUMER of
- * ihms.ordering.events. Consumes ONLY E-13 OrderCreated and creates the bill
+ * Internal event-relay ingress (WP-S1) — HTTP twin of the PostgreSQL event-bus
+ * consumer of ihms.ordering.events (BillingSagaEventConsumer). Consumes ONLY E-13 OrderCreated and creates the bill
  * DRAFT idempotently keyed on eventId. Tagged internal; default-deny still
  * applies (no SecurityConfig exemption until MIG-004 service-to-service auth).
  */

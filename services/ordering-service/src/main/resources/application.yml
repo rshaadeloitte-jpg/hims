@@ -20,19 +20,8 @@ spring:
   flyway:
     enabled: false
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-      properties:
-        enable.idempotence: true
-        spring.json.add.type.headers: false
-
 app:
-  kafka:
+  eventbus:
     topic:
       ordering-events: ${ORDERING_EVENTS_TOPIC:ihms.ordering.events}
       ordering-dlq: ${ORDERING_DLQ_TOPIC:dlt.ihms.ordering.events}
@@ -66,7 +55,6 @@ info:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
-
 
 ihms:
   security:

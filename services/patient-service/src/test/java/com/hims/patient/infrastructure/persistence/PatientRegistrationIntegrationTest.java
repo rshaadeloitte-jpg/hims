@@ -14,12 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * L2 — MIG-030 patient service on real PG16 + Kafka: V1 schema applies,
+ * L2 — MIG-030 patient service on real PG16: V1 schema applies,
  * BR-PAT-001 MRN formula on live sequence ids, BR-PAT-002 duplicate matrix on
  * real indexes, outbox rows written in the registration tx and relayed to
- * Kafka (E-01 envelope), document linkage persists.
+ * the ihms_eventbus log (E-01 envelope), document linkage persists.
  *
  * NO class-level @Transactional: the service runs REQUIRES_NEW; an outer tx
  * holding uncommitted DELETEs deadlocks ON CONFLICT inserts (IMP-DEC-038
@@ -46,9 +46,8 @@ class PatientRegistrationIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+    /** ihms_eventbus is owned by iam's Flyway; apply the same idempotent script here. */
+    static final Path EVENTBUS_DDL = Path.of("../iam/src/main/resources/db/migration/V5__pg_eventbus.sql");
 
     @Autowired PatientRegistrationService service;
     @Autowired OutboxService outboxService;
@@ -57,7 +56,9 @@ class PatientRegistrationIntegrationTest {
     @Autowired JdbcTemplate jdbc;
 
     @BeforeEach
-    void clean() {
+    void clean() throws Exception {
+        jdbc.execute(Files.readString(EVENTBUS_DDL));
+        jdbc.update("DELETE FROM ihms_eventbus.event_log");
         jdbc.update("DELETE FROM ihms_patient.outbox");            // auto-commit per statement
         jdbc.update("DELETE FROM ihms_patient.patient_document");
         jdbc.update("DELETE FROM ihms_patient.patient_registration");
@@ -183,7 +184,7 @@ class PatientRegistrationIntegrationTest {
     }
 
     @Test
-    void outboxToKafka_roundTrip_marksPublished_withCatalogEnvelope() throws Exception {
+    void outboxToEventBus_roundTrip_marksPublished_withCatalogEnvelope() throws Exception {
         PatientRegistration p = service.register(json(PATIENT_JSON), 7L);
         OutboxEvent pending = outboxRepository.findAll().getFirst();
         assertThat(pending.getStatus()).isEqualTo(OutboxEvent.OutboxStatus.PENDING);
@@ -202,5 +203,11 @@ class PatientRegistrationIntegrationTest {
         assertThat(finalState.getPublishedAt()).isNotNull();
         // envelope payload carries the E-01 kickoff subset keyed by patientId
         assertThat(finalState.getPartitionKey()).isEqualTo(String.valueOf(p.getId()));
+        Map<String, Object> logged = jdbc.queryForMap(
+                "SELECT topic, partition_key, envelope->>'eventType' AS event_type FROM ihms_eventbus.event_log "
+                        + "WHERE event_id = ?", pending.getEventId());
+        assertThat(logged).containsEntry("topic", "ihms.patient.registration")
+                .containsEntry("partition_key", String.valueOf(p.getId()))
+                .containsEntry("event_type", "PatientRegistered");
     }
 }

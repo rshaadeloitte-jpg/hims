@@ -22,16 +22,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: false
-  kafka:
-    bootstrap-servers: localhost:29092
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
 
 app:
   billing:
     base-url: http://localhost:8098
-  kafka:
+  eventbus:
     topic:
       billing-events: ihms.billing.events
       dlq: dlt.ihms.billing.events

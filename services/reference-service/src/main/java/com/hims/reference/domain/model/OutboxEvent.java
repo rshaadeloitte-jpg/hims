@@ -16,7 +16,7 @@ import java.util.UUID;
 
 /**
  * Transactional outbox row (IMP-DEC-004). Written inside the business transaction,
- * published by {@code KafkaOutboxRelay}. Envelope fields per KAFKA-EVENT-CATALOG:
+ * published by {@code PostgresOutboxRelay}. Envelope fields per KAFKA-EVENT-CATALOG:
  * eventId, eventType, version, occurredAt, producerService, entityId, partitionKey,
  * payload, idempotencyKey.
  */
@@ -75,6 +75,15 @@ public class OutboxEvent {
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
+
+    /** Retry backoff gate; DB default stamps it on insert so a new row is due immediately. */
+    @Column(name = "next_attempt_at", nullable = false, insertable = false,
+            columnDefinition = "timestamp(3) default current_timestamp")
+    private Timestamp nextAttemptAt;
+
+    /** When a relay last claimed the row. */
+    @Column(name = "locked_at")
+    private Timestamp lockedAt;
 
     public Long getId() {
         return id;
@@ -194,5 +203,13 @@ public class OutboxEvent {
 
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Timestamp getNextAttemptAt() {
+        return nextAttemptAt;
+    }
+
+    public Timestamp getLockedAt() {
+        return lockedAt;
     }
 }

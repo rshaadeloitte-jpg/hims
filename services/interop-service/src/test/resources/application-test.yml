@@ -17,8 +17,6 @@ spring:
         globally_quoted_identifiers: true
   flyway:
     enabled: false
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
 
 server:
   port: 0

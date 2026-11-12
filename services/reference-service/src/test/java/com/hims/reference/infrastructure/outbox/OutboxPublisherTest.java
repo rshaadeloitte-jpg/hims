@@ -3,17 +3,18 @@ package com.hims.reference.infrastructure.outbox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.reference.domain.model.OutboxEvent;
 import com.hims.reference.domain.repository.OutboxRepository;
+import com.hims.reference.infrastructure.eventbus.PgEventBus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.domain.Pageable;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,7 +29,7 @@ class OutboxPublisherTest {
     private OutboxRepository repository;
 
     @Mock
-    private KafkaTemplate<Object, Object> kafkaTemplate;
+    private PgEventBus eventBus;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -36,10 +37,7 @@ class OutboxPublisherTest {
     @SuppressWarnings("unchecked")
     void publish_sendsEnvelopeWithCatalogFields() throws Exception {
         when(repository.claim(any(Long.class), eq(1))).thenReturn(1);
-        when(kafkaTemplate.send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper,
+        OutboxPublisher publisher = new OutboxPublisher(repository, eventBus, objectMapper,
                 "ihms.master.master-data-changed", "dlt.ihms.master.master-data-changed", 3);
 
         OutboxEvent event = new OutboxEvent();
@@ -56,9 +54,9 @@ class OutboxPublisherTest {
 
         publisher.publish(event);
 
-        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(kafkaTemplate).send(eq("ihms.master.master-data-changed"), eq("unitmaster"), captor.capture());
-        Map<String, Object> envelope = (Map<String, Object>) captor.getValue();
+        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(eventBus).send(eq("ihms.master.master-data-changed"), eq("unitmaster"), captor.capture());
+        Map<String, Object> envelope = captor.getValue();
         assertThat(envelope).containsEntry("eventType", "MasterDataChanged");
         assertThat(envelope).containsEntry("entityId", 1L);
         assertThat(envelope).containsEntry("partitionKey", "unitmaster");
@@ -69,12 +67,12 @@ class OutboxPublisherTest {
     }
 
     @Test
-    void publish_whenKafkaFails_marksFailed() throws Exception {
+    void publish_whenBusInsertFails_marksFailedWithBackoff() throws Exception {
         when(repository.claim(any(Long.class), eq(1))).thenReturn(1);
-        when(kafkaTemplate.send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any()))
-                .thenThrow(new RuntimeException("broker down"));
+        when(eventBus.send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any()))
+                .thenThrow(new RuntimeException("bus down"));
 
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper,
+        OutboxPublisher publisher = new OutboxPublisher(repository, eventBus, objectMapper,
                 "ihms.master.master-data-changed", "dlt.ihms.master.master-data-changed", 3);
 
         OutboxEvent event = new OutboxEvent();
@@ -89,16 +87,18 @@ class OutboxPublisherTest {
 
         publisher.publish(event);
 
-        verify(repository).markFailed(eq(11L), eq(1), eq(OutboxEvent.OutboxStatus.FAILED));
+        ArgumentCaptor<Timestamp> next = ArgumentCaptor.forClass(Timestamp.class);
+        verify(repository).markFailed(eq(11L), eq(1), eq(OutboxEvent.OutboxStatus.FAILED), next.capture());
+        assertThat(next.getValue().toInstant()).isAfter(java.time.Instant.now());
     }
 
     @Test
     void publish_whenExceedsMaxAttempts_marksDlq() throws Exception {
         when(repository.claim(any(Long.class), eq(3))).thenReturn(1);
-        when(kafkaTemplate.send(any(), any(), any()))
-                .thenThrow(new RuntimeException("broker down"));
+        when(eventBus.send(any(), any(), any()))
+                .thenThrow(new RuntimeException("bus down"));
 
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper,
+        OutboxPublisher publisher = new OutboxPublisher(repository, eventBus, objectMapper,
                 "ihms.master.master-data-changed", "dlt.ihms.master.master-data-changed", 3);
 
         OutboxEvent event = new OutboxEvent();
@@ -114,7 +114,7 @@ class OutboxPublisherTest {
 
         publisher.publish(event);
 
-        verify(repository).markFailed(eq(12L), eq(3), eq(OutboxEvent.OutboxStatus.DLQ));
+        verify(repository).markFailed(eq(12L), eq(3), eq(OutboxEvent.OutboxStatus.DLQ), any(Timestamp.class));
     }
 
     @Test
@@ -122,12 +122,12 @@ class OutboxPublisherTest {
     void publish_dlqAfterMaxAttempts_routesToDlqTopic() throws Exception {
         // F-10 (AGT-10): after the attempt cap the event goes to the configured DLQ topic.
         when(repository.claim(any(Long.class), eq(3))).thenReturn(1);
-        when(kafkaTemplate.send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any()))
-                .thenThrow(new org.springframework.kafka.KafkaException("broker down"));
-        when(kafkaTemplate.send(eq("dlt.ihms.master.master-data-changed"), eq("unitmaster"), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
+        when(eventBus.send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any()))
+                .thenThrow(new RuntimeException("bus down"));
+        when(eventBus.send(eq("dlt.ihms.master.master-data-changed"), eq("unitmaster"), any()))
+                .thenReturn(true);
 
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper,
+        OutboxPublisher publisher = new OutboxPublisher(repository, eventBus, objectMapper,
                 "ihms.master.master-data-changed", "dlt.ihms.master.master-data-changed", 2);
 
         OutboxEvent event = new OutboxEvent();
@@ -144,11 +144,32 @@ class OutboxPublisherTest {
 
         publisher.publish(event);
 
-        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
-        verify(kafkaTemplate).send(eq("dlt.ihms.master.master-data-changed"), eq("unitmaster"), captor.capture());
-        Map<?, ?> dlq = (Map<?, ?>) captor.getValue();
+        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(eventBus).send(eq("dlt.ihms.master.master-data-changed"), eq("unitmaster"), captor.capture());
+        Map<String, Object> dlq = captor.getValue();
         assertThat(dlq.get("dlqAfterAttempts")).isEqualTo(3);
         assertThat(dlq.get("eventId")).isEqualTo("123e4567-e89b-42d3-a456-556642440000");
-        verify(repository).markFailed(eq(11L), eq(3), eq(OutboxEvent.OutboxStatus.DLQ));
+        verify(repository).markFailed(eq(11L), eq(3), eq(OutboxEvent.OutboxStatus.DLQ), any(Timestamp.class));
+    }
+
+    @Test
+    void publishDue_claimsDueBatchAndPublishesEachRow() throws Exception {
+        OutboxEvent a = new OutboxEvent();
+        a.setId(21L);
+        a.setEventId(UUID.randomUUID());
+        a.setEventType("MasterDataChanged");
+        a.setAggregateId(3L);
+        a.setPartitionKey("unitmaster");
+        a.setOccurredAt(Timestamp.valueOf("2026-08-14 10:00:00"));
+        a.setPayload("{}");
+        when(repository.findDue(eq(3), any(Timestamp.class), any(Pageable.class))).thenReturn(List.of(a));
+        when(repository.claim(21L, 1)).thenReturn(1);
+
+        OutboxPublisher publisher = new OutboxPublisher(repository, eventBus, objectMapper,
+                "ihms.master.master-data-changed", "dlt.ihms.master.master-data-changed", 3);
+
+        assertThat(publisher.publishDue(100)).isEqualTo(1);
+        verify(eventBus).send(eq("ihms.master.master-data-changed"), eq("unitmaster"), any());
+        verify(repository).markPublished(eq(21L), any(Timestamp.class));
     }
 }

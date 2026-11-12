@@ -42,7 +42,7 @@ jobs:
           done
           curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
 
-      - name: Maven verify (unit + contract + Testcontainers PG16/Kafka via Podman)
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
         run: mvn -B verify
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
@@ -135,7 +135,7 @@ jobs:
           path: services/appointment-service/target/surefire-reports/
 
   patient-service-build-test:
-    name: patient-service build + test (L0/L1/L2 via Testcontainers PG16+Kafka on Podman)
+    name: patient-service build + test (L0/L1/L2 via Testcontainers PG16 on Podman)
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -162,7 +162,7 @@ jobs:
           done
           curl -sf --unix-socket /tmp/podman.sock http://localhost/_ping
 
-      - name: Maven verify (unit + contract + Testcontainers PG16/Kafka via Podman)
+      - name: Maven verify (unit + contract + Testcontainers PG16 via Podman)
         run: mvn -B verify
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"   # rootless Podman: Ryuk cannot bind-mount the socket (IMP-DEC-028)
@@ -322,7 +322,7 @@ jobs:
           cp .env.example .env
           podman-compose -f docker-compose.yml up -d
           podman ps --format 'table {{.Names}}\t{{.Status}}'
-          # await healthchecks (PG/Redis fast; Kafka/Solr slower)
+          # await healthchecks (PG fast; Solr slower)
           for i in $(seq 1 60); do
             summary=$(podman ps --format '{{.Names}}={{.Status}}' | tr '\n' ' ')
             echo "t+$((i*10))s: $summary"
@@ -330,9 +330,7 @@ jobs:
               *"unhealthy"*) echo "UNHEALTHY"; exit 1;;
             esac
             if ! echo "$summary" | grep -q "ihms-pg.*(healthy)"; then sleep 10; continue; fi
-            if ! echo "$summary" | grep -q "ihms-kafka.*(healthy)"; then sleep 10; continue; fi
             if ! echo "$summary" | grep -q "ihms-solr.*(healthy)"; then sleep 10; continue; fi
-            if ! echo "$summary" | grep -q "ihms-redis.*(healthy)"; then sleep 10; continue; fi
             if ! echo "$summary" | grep -q "ihms-solr-zk.*(healthy)"; then sleep 10; continue; fi
             echo "ALL HEALTHY"; break
           done
