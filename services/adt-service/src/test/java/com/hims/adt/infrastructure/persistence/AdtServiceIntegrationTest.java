@@ -10,23 +10,19 @@ import com.hims.adt.infrastructure.outbox.OutboxEvent;
 import com.hims.adt.infrastructure.outbox.OutboxRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Timestamp;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * L2 — MIG-032 on real PostgreSQL 16 + Kafka: V1 schema applies (ihms_adt incl.
+ * L2 — MIG-032 on real PostgreSQL 16 (outbox -> ihms_eventbus): V1 schema applies (ihms_adt incl.
  * §A5 seeds + CLEANING row), BR-IPD-001 ipdNo template, BR-IPD-002 CAS claims
  * under parallel contention (exactly-one-winner per bed, exactly-one ACTIVE
  * admission per patient via uq_t_admission_active), transfer CLEANING +
@@ -62,9 +58,8 @@ class AdtServiceIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+    /** ihms_eventbus is owned by iam's Flyway; apply the same idempotent script here. */
+    static final Path EVENTBUS_DDL = Path.of("../iam/src/main/resources/db/migration/V5__pg_eventbus.sql");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -74,7 +69,9 @@ class AdtServiceIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
 
     @BeforeEach
-    void clean() {
+    void clean() throws Exception {
+        jdbc.execute(Files.readString(EVENTBUS_DDL));
+        jdbc.update("DELETE FROM ihms_eventbus.event_log");
         jdbc.update("DELETE FROM ihms_adt.outbox");
         jdbc.update("DELETE FROM ihms_adt.r_clearance_checklist");
         jdbc.update("DELETE FROM ihms_adt.t_bed_reservation");
@@ -387,12 +384,12 @@ class AdtServiceIntegrationTest {
         assertThat(events).isEqualTo(1);
     }
 
-    // ------------------------------------------------------------------ Kafka roundtrip
+    // ------------------------------------------------------------------ event-bus roundtrip
 
     @Test
     void outboxRelay_publishesAllFourLifecycleEventsToIhmsAdtLifecycleTopic() throws Exception {
-        long wardA = newWard("Kafka General");
-        long wardB = newWard("Kafka ICU");
+        long wardA = newWard("Bus General");
+        long wardB = newWard("Bus ICU");
         Bed g1 = freeBed(wardA, "KG-1");
         Bed icu = freeBed(wardB, "KI-1");
 
@@ -402,26 +399,22 @@ class AdtServiceIntegrationTest {
         clearAllDepartments(admitted.getId());
         admissionService.discharge(admitted.getId(), "NORMAL", false, null, null);
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(
-                Map.of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers(),
-                        ConsumerConfig.GROUP_ID_CONFIG, "mig032-test-" + System.nanoTime(),
-                        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(),
-                        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()))) {
-            consumer.subscribe(List.of("ihms.adt.lifecycle"));
+        {
+            String topic = "ihms.adt.lifecycle";
 
             long deadline = System.currentTimeMillis() + 60_000;
             Set<String> seen = new java.util.HashSet<>();
             JsonNode admittedEnvelope = null;
             while (System.currentTimeMillis() < deadline && !seen.containsAll(Set.of(
                     "PatientAdmitted", "PatientDischarged", "BedTransferred", "BedStatusChanged"))) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                List<String> records = envelopes(topic);
                 for (var r : records) {
-                    seen.add(extractEventType(r.value()));
-                    if ("PatientAdmitted".equals(extractEventType(r.value()))) {
-                        admittedEnvelope = MAPPER.readTree(r.value());
+                    seen.add(extractEventType(r));
+                    if ("PatientAdmitted".equals(extractEventType(r))) {
+                        admittedEnvelope = MAPPER.readTree(r);
                     }
                 }
+                Thread.sleep(500);
             }
             assertThat(seen).contains("PatientAdmitted", "PatientDischarged",
                     "BedTransferred", "BedStatusChanged");
@@ -437,6 +430,12 @@ class AdtServiceIntegrationTest {
         Integer unpublished = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM ihms_adt.outbox WHERE status <> 'PUBLISHED'", Integer.class);
         assertThat(unpublished).isEqualTo(0);
+    }
+
+    /** Envelopes the relay appended to an ihms_eventbus topic, in publish order. */
+    private List<String> envelopes(String topic) {
+        return jdbc.queryForList("SELECT envelope::text FROM ihms_eventbus.event_log WHERE topic = ? ORDER BY id",
+                String.class, topic);
     }
 
     private static String extractEventType(String envelopeJson) {

@@ -20,20 +20,8 @@ spring:
   flyway:
     enabled: false
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-      properties:
-        enable.idempotence: true
-        spring.json.add.type.headers: false
-
-
 app:
-  kafka:
+  eventbus:
     topic:
       # MIG-031: single appointment/encounter event stream, patientId-keyed
       # (encounterId for EncounterClosed) per the ordering rule of KAFKA-EVENT-CATALOG §6.
@@ -71,7 +59,6 @@ info:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
-
 
 ihms:
   security:

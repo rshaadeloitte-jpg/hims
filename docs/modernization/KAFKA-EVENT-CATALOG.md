@@ -1,6 +1,8 @@
 # iHMS / OHUM PAS NG — Kafka Event Catalog (PRELIMINARY)
 
 **Status: PRELIMINARY — synthesized from discovery (no re-exploration).**
+
+> **Transport update (2026-11-12): Kafka is retired.** The event catalog (types, envelopes, partition keys, topic names, idempotency rules) is unchanged, but events now travel over the **PostgreSQL-native bus `ihms_eventbus`** on the shared `hims` database. "Topic" below means an `ihms_eventbus.event_log.topic` value, and "consumer group" means a row in `ihms_eventbus.subscription`. See **§7** for the current transport. §4 and §5 describe the original Kafka design and are kept as the record of that decision.
 **Sources:** `10-target-architecture.md` §7.1, `_discovery/agent-10/findings.md` §2/§3/§4, `07-integrations-and-search.md`, `06-business-rules-catalog.md`, `05-database-catalog.md`.
 **Selection rule:** a candidate becomes an **accepted event only when legacy evidence shows ≥2 independent consumers/side-effects**, or it **replaces a proven DB-poll async pipeline**. Everything else stays synchronous REST until a saga/outbox exists.
 
@@ -226,7 +228,7 @@
 ## 4. Outbox Pattern Recommendation
 
 1. **Transactional outbox per PG schema**: each producer service writes domain rows + `outbox` rows in the **same PG transaction** (guaranteed atomicity — solves the current "Solr/HL7 in Spring tx" inconsistency, `agent-10 §2`).
-2. **Relay**: `pg_logical`/Debezium-class CDC on the outbox table → Kafka topics (`10 §5`). Kafka ≥2 consumers per topic; DLQ topics `dlt.*`; retention policy per event class (revenue events 90 days, master events 7 days — `[UNKNOWN]` actual compliance requirement, see §6 Q6).
+2. **Relay** *(superseded by §7: the relay now writes to `ihms_eventbus`)*: `pg_logical`/Debezium-class CDC on the outbox table → Kafka topics (`10 §5`). Kafka ≥2 consumers per topic; DLQ topics `dlt.*`; retention policy per event class (revenue events 90 days, master events 7 days — `[UNKNOWN]` actual compliance requirement, see §6 Q6).
 3. **Event envelope (all events)**: `{eventId (UUID), eventType, version, occurredAt, producerService, entityId, partitionKey, payload, idempotencyKey}`. Schema registry (JSON Schema or Avro) — Avro recommended for revenue events.
 4. **Exactly-once vs at-least-once**: Kafka offers at-least-once; **all consumers must be idempotent** (see Idempotency column per event). Legacy already operates at-least-once (`SOLR_STATUS=0` flag drainers, `SYNCHRONIZED` queue flags) — no regression.
 5. **Saga scaffolding** for revenue flows (`10 §5`): choreographed Order→Bill→Payment with compensation (bill cancellation procs `CIMS_SETTLEDBILLCANCELLATION/CIMS_UNSETTLEDBILLCANCELLATION` map to compensation handlers).
@@ -267,3 +269,47 @@
 4. Audit stream: dedicated `audit-*` topic for `T_AUDIT`/`T_TRX_HISTORY` events (59 services, 568 call sites — `08 §1`) — **not designed yet**; candidate (next free id — E-13 was taken by the WP-S1 OrderCreated event).
 5. Multi-unit tenancy in partition keys (unitId on nearly every table, `05 §7`) — cross-unit fan-out design.
 6. ABDM/HCX JWE payloads: encrypt in producer (Interop) or consumer-side adapter? (Legacy encrypts at the edge, `07 #1/#2`.)
+
+---
+
+## 7. Current transport — PostgreSQL event bus (replaces Kafka, 2026-11-12)
+
+All services share one PostgreSQL database (`hims`, one schema per module), so the transport is plain SQL. There is no broker to run or monitor.
+
+**Schema** (`ihms_eventbus`, owned by iam's Flyway: `services/iam/src/main/resources/db/migration/V5__pg_eventbus.sql`; iam is the only bundle that runs Flyway on startup):
+
+| Table | Role |
+|---|---|
+| `event_log` | One row per published envelope: `topic` (same names as the old Kafka topics, including `dlt.*` DLQ topics), `event_id`, `event_type`, `partition_key`, `envelope` JSONB. `UNIQUE (topic, event_id)`, so a relay retry is a no-op. |
+| `subscription` | `(consumer_group, topic)`. A group sees only events published after it subscribed, the same as Kafka's `auto.offset.reset=latest`. |
+| `delivery` | Per-group work queue. Trigger `trg_event_log_fan_out` inserts one row per subscribed group and runs `pg_notify('ihms_eventbus', topic)`. Status: `PENDING → PROCESSING → DONE`; on failure it returns to `PENDING` with `next_attempt_at` backoff, and becomes `FAILED` (the dead letter) once `retry_count` hits the cap or the error is not retryable. |
+
+**Producer side (12 outbox modules):** adt, nursing, ot, appointment, billing, payments, rcm, ordering, lab, patient, item and reference.
+1. The business transaction writes the `outbox` row, as before.
+2. `PostgresOutboxRelay` (it was `KafkaOutboxRelay`) calls `OutboxPublisher.publishDue(batch)` on each tick.
+3. In one transaction, `publishDue` claims due rows with `FOR UPDATE SKIP LOCKED` (`status IN (PENDING, FAILED)`, `attempts < max`, `next_attempt_at <= now`).
+4. `PgEventBus.send` inserts each envelope into `event_log`, and the row is marked `PUBLISHED`. Steps 3 and 4 commit together, so publishing to the bus and marking the outbox happen atomically, with no dual write.
+5. On a non-database failure, the row goes to `FAILED` with exponential backoff (10 s, 20 s, 40 s … capped at 5 min) in `next_attempt_at`. When attempts run out it becomes `DLQ`, and its envelope is written to the `dlt.*` topic.
+6. Each outbox table gained `next_attempt_at` and `locked_at` columns, plus a partial index `idx_outbox_due (next_attempt_at, created_at) WHERE status IN ('PENDING','FAILED')`.
+
+**Consumer side:** `billing-saga` on `ihms.ordering.events`, handled by `BillingSagaEventConsumer`, which replaced `BillingSagaKafkaConsumer` and `BillingKafkaConfig`.
+1. Each poll (1 s) claims a batch with one `UPDATE … WHERE id IN (SELECT … FOR UPDATE SKIP LOCKED) RETURNING`. That claim also takes back `PROCESSING` rows whose `locked_at` is older than 300 s, which covers an instance crash.
+2. Each envelope goes through the unchanged `BillingSagaIngressService`. Idempotency still comes from `t_consumed_event` and `uq_t_bill_saga_event`.
+3. Retry policy: 5 attempts with exponential backoff. `InvalidBillingRequestException` is not retried, as it wasn't under Kafka. `POST /api/v1/internal/events` remains a second ingress for the same handler.
+
+**Ordering:** within a group, rows are claimed and processed in `delivery.id` order, which is publish order. Several instances of one group can interleave, so per-key ordering holds only with one consumer instance, the same as the per-partition guarantee of a single-partition topic.
+
+**Retention:** `CALL ihms_eventbus.purge(interval '7 days')` runs hourly. It deletes log rows older than the window, but only when no delivery for them is still outstanding, so `FAILED` deliveries keep their events. pg_cron schedules it where the extension is installed. The current Windows PostgreSQL 18 host has no pg_cron, so iam's `CacheMaintenanceJob` runs it there.
+
+**Operational queries:**
+```sql
+-- backlog per group
+SELECT consumer_group, status, count(*) FROM ihms_eventbus.delivery GROUP BY 1, 2;
+-- dead letters with their envelopes
+SELECT d.id, d.retry_count, d.last_error, e.envelope FROM ihms_eventbus.delivery d
+JOIN ihms_eventbus.event_log e ON e.id = d.event_log_id WHERE d.status = 'FAILED';
+-- replay a dead letter
+UPDATE ihms_eventbus.delivery SET status = 'PENDING', retry_count = 0, next_attempt_at = now() WHERE id = :id;
+-- producer-side dead letters
+SELECT * FROM ihms_adt.outbox WHERE status = 'DLQ';   -- per module schema
+```

@@ -7,11 +7,6 @@ import com.hims.ordering.application.OrderService;
 import com.hims.ordering.application.PrescriptionService;
 import com.hims.ordering.domain.model.ClinicalOrder;
 import com.hims.ordering.domain.model.SagaState;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +14,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * L2 — MIG-033 saga on real PG16 + Kafka (Docker required; skipped without it):
+ * L2 — MIG-033 saga on real PG16 (Docker required; skipped without it):
  *   1. Order placement writes clinical_order + order_item + saga_state + ONE
  *      OrderInitiated outbox row in a SINGLE transaction.
  *   2. Confirm choreography: all applicable steps SUCCEEDED -> order CONFIRMED,
@@ -45,8 +39,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *      and writes the OrderFailed event in the SAME tx (no lost-update window).
  *   4. Cancel after partial confirmation compensates and emits OrderFailed too.
  *   5. Multi-item prescription + BR-ORD-005 rejection rolls back EVERYTHING.
- *   6. Kafka roundtrip: relay publishes OrderInitiated / OrderFailed /
- *      PrescriptionCreated to ihms.ordering.events and marks rows PUBLISHED.
+ *   6. Event-bus roundtrip: relay publishes OrderInitiated / OrderFailed /
+ *      PrescriptionCreated to ihms.ordering.events (ihms_eventbus.event_log)
+ *      and marks rows PUBLISHED.
  * NOTE: no class-level @Transactional — saga events must COMMIT for the relay
  * (IMP-DEC-038 lesson); each test cleans its own tables in FK order instead.
  */
@@ -59,10 +54,8 @@ class OrderingSagaIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka =
-            new KafkaContainer(org.testcontainers.utility.DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+    /** ihms_eventbus is owned by iam's Flyway; apply the same idempotent script here. */
+    static final Path EVENTBUS_DDL = Path.of("../iam/src/main/resources/db/migration/V5__pg_eventbus.sql");
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -75,11 +68,10 @@ class OrderingSagaIntegrationTest {
     @Autowired
     private JdbcTemplate jdbc;
 
-    /** Kafka consumer used for the roundtrip test (lazy; only test 6 touches Kafka). */
-    private KafkaConsumer<String, String> consumer;
-
     @BeforeEach
-    void cleanTables() {
+    void cleanTables() throws Exception {
+        jdbc.execute(Files.readString(EVENTBUS_DDL));
+        jdbc.update("DELETE FROM ihms_eventbus.event_log");
         // FK order: outbox -> saga_state -> order_item -> clinical_order;
         // prescription_item -> prescription
         jdbc.update("DELETE FROM ihms_ordering.outbox");
@@ -88,14 +80,6 @@ class OrderingSagaIntegrationTest {
         jdbc.update("DELETE FROM ihms_ordering.clinical_order");
         jdbc.update("DELETE FROM ihms_ordering.prescription_item");
         jdbc.update("DELETE FROM ihms_ordering.prescription");
-    }
-
-    @AfterEach
-    void closeConsumer() {
-        if (consumer != null) {
-            consumer.close();
-            consumer = null;
-        }
     }
 
     // ------------------------------------------------------------------ helpers
@@ -298,17 +282,7 @@ class OrderingSagaIntegrationTest {
     // ------------------------------------------------------------------ 6
 
     @Test
-    void kafkaRoundtripDeliversAllThreeEventTypesAndPublishesOutbox() throws Exception {
-        Map<String, Object> consumerProps = new HashMap<>();
-        consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "mig033-test-" + System.nanoTime());
-        consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(List.of("ihms.ordering.events"));
-
+    void eventBusRoundtripDeliversAllThreeEventTypesAndPublishesOutbox() throws Exception {
         long id = placeLabOrder();                       // OrderInitiated
         orderService.failStep(id, SagaState.LAB, "integration failure");   // OrderFailed
         prescriptionService.create(601L, 9002L, null, 12L, 3L,
@@ -318,15 +292,18 @@ class OrderingSagaIntegrationTest {
         JsonNode initiatedEnvelope = null;
         Instant deadline = Instant.now().plusSeconds(60);
         while (seen.size() < 3 && Instant.now().isBefore(deadline)) {
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
-            for (ConsumerRecord<String, String> r : records) {
-                JsonNode envelope = MAPPER.readTree(r.value());
+            List<String> records = jdbc.queryForList(
+                    "SELECT envelope::text FROM ihms_eventbus.event_log WHERE topic = 'ihms.ordering.events' ORDER BY id",
+                    String.class);
+            for (String r : records) {
+                JsonNode envelope = MAPPER.readTree(r);
                 String type = envelope.get("eventType").asText();
                 seen.add(type);
                 if ("OrderInitiated".equals(type)) {
                     initiatedEnvelope = envelope;
                 }
             }
+            Thread.sleep(500);
         }
         assertThat(seen).containsExactlyInAnyOrder("OrderInitiated", "OrderFailed", "PrescriptionCreated");
 

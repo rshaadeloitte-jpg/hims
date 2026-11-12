@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.billing.BillingServiceApplication;
 import com.hims.billing.configuration.DevSecurityConfig;
+import com.hims.billing.infrastructure.eventbus.PgEventBus;
 import com.hims.billing.configuration.JwtConfig;
 import com.hims.billing.infrastructure.outbox.OutboxRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -57,7 +57,7 @@ class BillControllerContractTest {
     private OutboxRepository outboxRepository;
 
     @MockitoBean
-    private KafkaTemplate<Object, Object> kafkaTemplate;
+    private PgEventBus eventBus;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

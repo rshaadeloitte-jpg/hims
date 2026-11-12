@@ -20,28 +20,10 @@ spring:
   flyway:
     enabled: false
 
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:29092}
-    consumer:
-      group-id: billing-saga
-      auto-offset-reset: latest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    listener:
-      missing-topics-fatal: false
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-      properties:
-        enable.idempotence: true
-        spring.json.add.type.headers: false
-
 app:
   billing:
     base-url: ${BILLING_BASE_URL:http://localhost:8098}
-  kafka:
+  eventbus:
     topic:
       ordering-events: ${ORDERING_EVENTS_TOPIC:ihms.ordering.events}
       billing-events: ${BILLING_EVENTS_TOPIC:ihms.billing.events}
@@ -50,6 +32,13 @@ app:
       payment-dlq: ${PAYMENT_DLQ_TOPIC:dlt.ihms.payment.events}
       rcm-events: ${RCM_EVENTS_TOPIC:ihms.rcm.events}
       rcm-dlq: ${RCM_DLQ_TOPIC:dlt.ihms.rcm.events}
+    # billing-saga consumer group on ihms_eventbus (replaces the Kafka listener)
+    consumer:
+      enabled: ${EVENTBUS_CONSUMER_ENABLED:true}
+      poll-interval-ms: 1000
+      batch-size: 50
+      max-attempts: 5
+      lock-timeout-seconds: 300
   outbox:
     poll-interval-ms: 5000
     max-attempts: 5

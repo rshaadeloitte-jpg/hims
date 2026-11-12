@@ -1,7 +1,8 @@
 # iHMS Modernization — Local Development Platform (Wave 0, MIG-003/MIG-006)
 #
-# Infrastructure (PostgreSQL, Redis, Kafka, Solr, ZooKeeper) is now provided by
-# EXTERNAL connections — see platform/.env for hosts/ports. Nothing to run here.
+# Infrastructure (PostgreSQL, Solr) is provided by EXTERNAL connections. Redis and
+# Kafka are retired: caching and events run on PostgreSQL (ihms_cache, ihms_eventbus).
+# See platform/.env for hosts/ports. Nothing to run here.
 # This file is retained for compatibility (gateway build context lives under
 # platform/gateway).
 

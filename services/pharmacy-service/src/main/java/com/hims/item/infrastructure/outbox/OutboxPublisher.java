@@ -1,20 +1,21 @@
 package com.hims.item.infrastructure.outbox;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hims.pharmacy.infrastructure.eventbus.PgEventBus;
 import com.hims.item.domain.model.OutboxEvent;
 import com.hims.item.domain.repository.OutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Transactional outbox publisher (same contract as reference-service): CAS claim,
@@ -26,7 +27,7 @@ public class OutboxPublisher {
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisher.class);
 
     private final OutboxRepository repository;
-    private final KafkaTemplate<Object, Object> kafkaTemplate;
+    private final PgEventBus eventBus;
     private final ObjectMapper objectMapper;
     private final String topic;
     private final String stockTopic;
@@ -34,14 +35,14 @@ public class OutboxPublisher {
     private final int maxAttempts;
 
     public OutboxPublisher(OutboxRepository repository,
-                           KafkaTemplate<Object, Object> kafkaTemplate,
+                           PgEventBus eventBus,
                            ObjectMapper objectMapper,
-                           @Value("${app.kafka.topic.item-data-changed}") String topic,
-                           @Value("${app.kafka.topic.stock-movement}") String stockTopic,
-                           @Value("${app.kafka.topic.dlq}") String dlqTopic,
+                           @Value("${app.eventbus.topic.item-data-changed}") String topic,
+                           @Value("${app.eventbus.topic.stock-movement}") String stockTopic,
+                           @Value("${app.eventbus.topic.dlq}") String dlqTopic,
                            @Value("${app.outbox.max-attempts:3}") int maxAttempts) {
         this.repository = repository;
-        this.kafkaTemplate = kafkaTemplate;
+        this.eventBus = eventBus;
         this.objectMapper = objectMapper;
         this.topic = topic;
         this.stockTopic = stockTopic;
@@ -56,6 +57,25 @@ public class OutboxPublisher {
      */
     private String topicFor(OutboxEvent event) {
         return "InventoryUpdated".equals(event.getEventType()) ? stockTopic : topic;
+    }
+
+    /**
+     * Claims up to {@code batchSize} due rows with FOR UPDATE SKIP LOCKED and
+     * dispatches them in this one transaction, so concurrent relay instances never
+     * pick the same row and the bus insert commits together with the PUBLISHED mark.
+     */
+    @Transactional
+    public int publishDue(int batchSize) {
+        List<OutboxEvent> due = repository.findDue(maxAttempts, Timestamp.from(Instant.now()),
+                PageRequest.of(0, batchSize));
+        due.forEach(this::publish);
+        return due.size();
+    }
+
+    /** Exponential retry backoff: 10s, 20s, 40s ... capped at 5 minutes. */
+    static Timestamp nextAttemptAt(int attempts) {
+        long delaySeconds = Math.min(300L, 5L << Math.min(attempts, 6));
+        return Timestamp.from(Instant.now().plusSeconds(delaySeconds));
     }
 
     @Transactional
@@ -75,8 +95,7 @@ public class OutboxPublisher {
         envelope.put("idempotencyKey", event.getIdempotencyKey());
         try {
             envelope.put("payload", objectMapper.readTree(event.getPayload()));
-            kafkaTemplate.send(topicFor(event), event.getPartitionKey(), envelope)
-                    .get(10, TimeUnit.SECONDS);
+            eventBus.send(topicFor(event), event.getPartitionKey(), envelope);
             repository.markPublished(event.getId(), Timestamp.from(Instant.now()));
         } catch (Exception e) {
             log.error("Outbox publish failed for event id={} type={}", event.getId(), event.getEventType(), e);
@@ -85,7 +104,7 @@ public class OutboxPublisher {
             if (next == OutboxEvent.OutboxStatus.DLQ) {
                 publishToDlq(event, envelope, e);
             }
-            repository.markFailed(event.getId(), nextAttempts, next);
+            repository.markFailed(event.getId(), nextAttempts, next, nextAttemptAt(nextAttempts));
         }
     }
 
@@ -94,7 +113,7 @@ public class OutboxPublisher {
         dlqEnvelope.put("dlqReason", cause.getClass().getSimpleName() + ": " + String.valueOf(cause.getMessage()));
         dlqEnvelope.put("dlqAfterAttempts", event.getAttempts() + 1);
         try {
-            kafkaTemplate.send(dlqTopic, event.getPartitionKey(), dlqEnvelope).get(10, TimeUnit.SECONDS);
+            eventBus.send(dlqTopic, event.getPartitionKey(), dlqEnvelope);
             log.warn("Outbox event id={} type={} routed to DLQ topic {}", event.getId(), event.getEventType(), dlqTopic);
         } catch (Exception dlqError) {
             log.error("DLQ topic publish failed for event id={}", event.getId(), dlqError);

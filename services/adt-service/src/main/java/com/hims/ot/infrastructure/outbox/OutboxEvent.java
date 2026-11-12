@@ -72,6 +72,15 @@ public class OutboxEvent {
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
 
+    /** Retry backoff gate; DB default stamps it on insert so a new row is due immediately. */
+    @Column(name = "next_attempt_at", nullable = false, insertable = false,
+            columnDefinition = "timestamp(3) default current_timestamp")
+    private Timestamp nextAttemptAt;
+
+    /** When a relay last claimed the row. */
+    @Column(name = "locked_at")
+    private Timestamp lockedAt;
+
     public Long getId() { return id; }
     public UUID getEventId() { return eventId; }
     public void setEventId(UUID eventId) { this.eventId = eventId; }
@@ -101,4 +110,6 @@ public class OutboxEvent {
     public void setPublishedAt(Timestamp publishedAt) { this.publishedAt = publishedAt; }
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public Timestamp getNextAttemptAt() { return nextAttemptAt; }
+    public Timestamp getLockedAt() { return lockedAt; }
 }

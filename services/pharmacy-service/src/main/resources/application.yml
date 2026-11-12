@@ -19,16 +19,6 @@ spring:
         globally_quoted_identifiers: true
   flyway:
     enabled: false
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-      properties:
-        enable.idempotence: true
-        spring.json.add.type.headers: false
 
 server:
   port: ${SERVER_PORT:8101}
@@ -55,13 +45,12 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{corr:-}] %logger{36} - %msg%n"
 
-
 app:
   item-service:
     base-url: ${ITEM_SERVICE_URL:http://localhost:8082}   # single-writer stock API (D-1)
   pharmacy:
     store-id: ${PHARMACY_STORE_ID:1}                      # pharmacy dispensing store at item-service
-  kafka:
+  eventbus:
     topic:
       item-data-changed: ${ITEM_DATA_CHANGED_TOPIC:ihms.item.master-data-changed}
       stock-movement: ${STOCK_MOVEMENT_TOPIC:ihms.item.stock-movement}

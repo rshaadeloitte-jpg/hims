@@ -2,3 +2,9 @@ ihms:
   security:
     jwt:
       secret: test-only-secret-key-0123456789abcdef0123456789abcdef
+
+# No ihms_eventbus schema on H2: keep the billing-saga poller off in tests.
+app:
+  eventbus:
+    consumer:
+      enabled: false

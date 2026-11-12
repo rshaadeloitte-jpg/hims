@@ -1,5 +1,7 @@
 # iHMS / OHUM PAS NG — PostgreSQL Migration Design (Oracle → PG)
 
+> **Update (2026-11-12): Redis and Kafka are retired.** Caching uses the UNLOGGED table `ihms_cache.app_cache`, and events use the `ihms_eventbus` schema, both on this PostgreSQL. Where this document says "Redis cache key" or "replaced by Kafka topics", read the PG cache or the PG event bus; see **§10** and `KAFKA-EVENT-CATALOG.md` §7.
+
 **Status: PRELIMINARY — synthesized from completed discovery (no re-exploration).**
 **Sources:** `05-database-catalog.md`, `_discovery/agent-05/findings.md`, `10-target-architecture.md`, `_discovery/agent-10/findings.md`, `07-integrations-and-search.md`, `06-business-rules-catalog.md`.
 **Method:** evidence-first; every mapping cites legacy evidence (file:line). **No naive type conversion** — every type decision is driven by usage semantics, proc cross-talk, and business rules. Unknowns are marked `[UNKNOWN]`. Contradictions between source docs are flagged inline and in §8.
@@ -305,3 +307,38 @@ Per §2.1: `START WITH GREATEST(last_number, MAX(id)+1)`; run **after** initial 
 - 102 TRUNC / 70 SYSDATE / 53 TRUNC(SYSDATE) / 27 DUAL / 25 DECODE / 24 TO_DATE / 19 ROWNUM / 6 NVL / 6 TO_CHAR / 2 MERGE / 2 LISTAGG / 2 TO_TIMESTAMP / 1 FETCH FIRST (Java); 486 ROWNUM / 474 TO_CHAR / 287 SYSDATE / 190 NEXTVAL / 84 NVL / 17 TRUNC / 11 TO_DATE / 6 DECODE / 1 CONNECT BY (procs)
 - ~436 `getQ(` native call sites + ~2,000 raw SQL literals to audit for PG syntax
 - 9 existing dual-dialect branch sites to extend, not replace
+
+---
+
+## 10. Caching and eventing on PostgreSQL (replaces Redis and Kafka)
+
+Both schemas are platform-shared and owned by iam's Flyway, because iam is the only bundle that runs Flyway on startup. The other bundles keep `spring.flyway.enabled: false`, and their module migrations are applied by hand.
+
+| Migration | Creates |
+|---|---|
+| `services/iam/.../V4__pg_cache.sql` | `ihms_cache.app_cache` (**UNLOGGED**), plus the procedures `expire_entries()`, `evict_lru(max_rows)` and `maintain(max_rows)` |
+| `services/iam/.../V5__pg_eventbus.sql` | `ihms_eventbus.event_log`, `subscription` and `delivery`, the fan-out/NOTIFY trigger and `purge(retention)`. It also adds `next_attempt_at` and `locked_at` plus `idx_outbox_due` to the 12 relayed `outbox` tables (guarded by `to_regclass`, idempotent). |
+
+Each module also ships an idempotent copy of the outbox `ALTER` (`db/migration/<module>/V*__outbox_queue_columns.sql`), so a database built from module migrations alone gets the columns too.
+
+### 10.1 Cache (`ihms_cache.app_cache`)
+- **UNLOGGED**: writes skip the WAL, and the table is not replicated. **After an unclean PostgreSQL shutdown it is truncated.** Nothing stored there may be the only copy, and every read treats a miss as "go to the source of truth".
+- **Read**: `UPDATE … SET last_read_timestamp = now() WHERE cache_key = ? AND expires_at > now() RETURNING cache_value`. That is one statement which both filters by TTL and touches the row for LRU.
+- **Write**: `INSERT … ON CONFLICT (cache_key) DO UPDATE`.
+- **Maintenance**: `CALL ihms_cache.maintain(100000)` every minute runs TTL delete and then LRU trim. pg_cron runs it where installed; otherwise iam's `CacheMaintenanceJob` (`@Scheduled`) does.
+- **Adapter**: `com.hims.iam.infrastructure.cache.PgCacheStore`. It runs outside caller transactions (`NOT_SUPPORTED`), and any cache error reads as a miss or a dropped write, so the cache can never fail a request.
+- **First user**: `PgTokenRevocationService`, the Redis-backed revoke list planned for Catalog #22. Revocations are now shared across iam instances and survive clean restarts. After a crash the list is empty again, which is the same exposure the in-memory list had on every restart, bounded by the 30-min token TTL.
+
+### 10.2 PostgreSQL sizing for the extra workload
+The host (`10.68.61.102`, PostgreSQL 18.4 on Windows, not a compose service) currently runs `max_connections = 1000` and `shared_buffers = 128MB`.
+
+The extra workload is small:
+- 12 relays poll every 5 s.
+- One consumer polls every 1 s.
+- iam checks the cache once per authenticated request.
+
+These run over the existing Hikari pools, so connection count does not change. The server's settings should be changed through `ALTER SYSTEM` by the DBA:
+- `shared_buffers`: the 128 MB default is low for this database whatever the cache does. Raise it to about 25 % of the host's RAM (restart required).
+- `work_mem`: 16 MB. Claim queries sort small batches, so the default is fine. Raise it for reporting, not for the bus.
+- `max_connections`: no change needed. The pools add up to fewer than 300 connections.
+- `autovacuum`: `delivery` and `outbox` are high-churn queue tables. Consider `ALTER TABLE ihms_eventbus.delivery SET (autovacuum_vacuum_scale_factor = 0.02)`.

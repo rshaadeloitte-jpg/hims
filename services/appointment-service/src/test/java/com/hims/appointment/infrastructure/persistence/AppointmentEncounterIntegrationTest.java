@@ -9,22 +9,18 @@ import com.hims.appointment.domain.model.Appointment;
 import com.hims.appointment.domain.model.AppointmentStatus;
 import com.hims.appointment.domain.model.DoctorSchedule;
 import com.hims.appointment.domain.model.Encounter;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -42,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * L2 — MIG-031 on real PostgreSQL 16 + Kafka: V1 schema objects, slot
+ * L2 — MIG-031 on real PostgreSQL 16 (outbox -> ihms_eventbus): V1 schema objects, slot
  * materialization + double-booking prevention (incl. concurrent CAS race),
  * token issuance, check-in with daily-counter OPD numbers, VisitStatus 11/12
  * split-brain guards, reschedule/cancel slot release, daily close job, and the
@@ -59,9 +55,8 @@ class AppointmentEncounterIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
+    /** ihms_eventbus is owned by iam's Flyway; apply the same idempotent script here. */
+    static final Path EVENTBUS_DDL = Path.of("../iam/src/main/resources/db/migration/V5__pg_eventbus.sql");
 
     @Autowired AppointmentService appointments;
     @Autowired EncounterService encounters;
@@ -70,7 +65,9 @@ class AppointmentEncounterIntegrationTest {
     private static final LocalTime SLOT = LocalTime.of(9, 30);
 
     @BeforeEach
-    void clean() {
+    void clean() throws Exception {
+        jdbc.execute(Files.readString(EVENTBUS_DDL));
+        jdbc.update("DELETE FROM ihms_eventbus.event_log");
         jdbc.update("DELETE FROM ihms_appointment.outbox");
         jdbc.update("DELETE FROM ihms_appointment.encounter");
         jdbc.update("DELETE FROM ihms_appointment.appointment");
@@ -359,7 +356,7 @@ class AppointmentEncounterIntegrationTest {
         assertThat(events).isEqualTo(1);
     }
 
-    // ------------------------------------------------------------------ Kafka roundtrip
+    // ------------------------------------------------------------------ event-bus roundtrip
 
     @Test
     void outboxRelay_publishesToAppointmentEncounterTopic_withEnvelope() throws Exception {
@@ -368,20 +365,16 @@ class AppointmentEncounterIntegrationTest {
         appointments.cancel(appointments.book(new AppointmentService.BookingSpec(
                 601L, 11L, clinicId, 1L, 5L, MONDAY, LocalTime.of(11, 0), null)).getId());
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(
-                Map.of(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers(),
-                        ConsumerConfig.GROUP_ID_CONFIG, "mig031-test-" + System.nanoTime(),
-                        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                        ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName(),
-                        ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()))) {
-            consumer.subscribe(List.of("ihms.appointment.encounter"));
+        {
+            String topic = "ihms.appointment.encounter";
 
             long deadline = System.currentTimeMillis() + 60_000;
             Set<String> seen = new java.util.HashSet<>();
             while (System.currentTimeMillis() < deadline && !seen.containsAll(Set.of(
                     "AppointmentBooked", "EncounterCreated", "AppointmentCancelled"))) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
-                records.forEach(r -> seen.add(extractEventType(r.value())));
+                List<String> records = envelopes(topic);
+                records.forEach(r -> seen.add(extractEventType(r)));
+                Thread.sleep(500);
             }
             assertThat(seen).contains("AppointmentBooked", "EncounterCreated", "AppointmentCancelled");
         }
@@ -390,6 +383,12 @@ class AppointmentEncounterIntegrationTest {
         Integer unpublished = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM ihms_appointment.outbox WHERE status <> 'PUBLISHED'", Integer.class);
         assertThat(unpublished).isEqualTo(0);
+    }
+
+    /** Envelopes the relay appended to an ihms_eventbus topic, in publish order. */
+    private List<String> envelopes(String topic) {
+        return jdbc.queryForList("SELECT envelope::text FROM ihms_eventbus.event_log WHERE topic = ? ORDER BY id",
+                String.class, topic);
     }
 
     private static String extractEventType(String envelopeJson) {

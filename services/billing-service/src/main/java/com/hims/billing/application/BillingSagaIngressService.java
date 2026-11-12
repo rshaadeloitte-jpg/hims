@@ -27,10 +27,10 @@ import java.util.Map;
  * ihms.ordering.events) and creates the bill DRAFT + one t_charge per line,
  * idempotent per envelope eventId.
  *
- * TRANSPORT STUB (disclosed at every site): production is a Kafka listener on
- * ihms.ordering.events; the contract-stubbed stand-in is POST
- * /api/v1/internal/events fed with the EXACT outbox envelope in tests. The
- * ingress logic itself is transport-agnostic.
+ * TRANSPORT: production delivery is the PostgreSQL event-bus consumer
+ * (BillingSagaEventConsumer, group billing-saga on ihms.ordering.events);
+ * POST /api/v1/internal/events is a second ingress fed with the EXACT outbox
+ * envelope (tests, manual replay). The ingress logic itself is transport-agnostic.
  *
  * IDEMPOTENCY (three layers):
  *   1. fast path: t_consumed_event lookup by eventId -> DUPLICATE / rejected-replay;
